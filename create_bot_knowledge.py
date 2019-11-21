@@ -34,6 +34,9 @@ logging.basicConfig(level=logging.INFO)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
+
+_UPDATE_KNOWLEDGE = bool(int(os.getenv("UPDATE_KNOWLEDGE", 0)))
+
 PROJECTS = [
     # AiCoE Team
     # ("log-anomaly-detector", "aicoe"),
@@ -114,9 +117,10 @@ def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge
 
         if not source_knowledge_repo.exists():
             os.mkdir(source_knowledge_repo)
-        else:
             _LOGGER.info(f"No knowledge from any repo has ever been created use update_knowledge=False first.")
             return 0
+        else:
+            pass
 
         source_knowledge_file = source_knowledge_repo.joinpath(f'{project[1] + "-" + project[0]}.json')
 
@@ -215,4 +219,4 @@ if __name__ == "__main__":
         _LOGGER.warning("Please insert one project in PROJECTS variable.")
 
     for project in PROJECTS:
-        extract_knowledge_from_repository(project=project, update_knowledge=False)
+        extract_knowledge_from_repository(project=project, update_knowledge=_UPDATE_KNOWLEDGE)
