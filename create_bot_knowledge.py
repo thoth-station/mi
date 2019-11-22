@@ -39,7 +39,7 @@ PROJECTS = [
     # ("log-anomaly-detector", "aicoe"),
 
     # # Thoth Team
-    ("amun-api", "thoth-station"),
+    # ("amun-api", "thoth-station"),
     # ("common", "thoth-station"),
     # ("core", "thoth-station"),
     # ("cve-update-job", "thoth-station"),
@@ -83,25 +83,21 @@ def connect_to_source(project: Tuple[str, str]):
 def check_directory(knowledge_dir, update_knowledge: bool):
     if not knowledge_dir.exists():
         if update_knowledge:
-            _LOGGER.info(f"No knowledge from any repo has ever been created, try using update_knowledge=False first.")
-            raise ValueError
+            raise ValueError(f"No knowledge from any repo has ever been created, try using update_knowledge=False first.")
 
         os.mkdir(knowledge_dir)
 
 def check_file(project_knowledge, update_knowledge: bool):
     if not update_knowledge:
         if project_knowledge.exists():
-            _LOGGER.info(f"There is already knowledge from repo {project[1] + '/' + project[0]}")
-            _LOGGER.info(f"To update knowledge from a repo, use update_knowledge=True")
-            raise ValueError
+            raise ValueError(f"There is already knowledge from repo {project[1] + '/' + project[0]}",
+                             f"To update knowledge from a repo, use update_knowledge=True")
+            
     else:
         if not project_knowledge.exists():
-            _LOGGER.info(f"No previous knowledge from repo {project[1] + '/' + project[0]}")
-            _LOGGER.info(f"To create knowledge from a new repo, use update_knowledge=False")
-            raise ValueError
+            raise ValueError(f"No previous knowledge from repo {project[1] + '/' + project[0]}",
+                             f"To create knowledge from a new repo, use update_knowledge=False")
 
-def gather_pull_requests():
-    pass
 
 def pull_analysis(pull, results):
     commits = pull.commits
@@ -128,6 +124,7 @@ def pull_analysis(pull, results):
         "PR_author": author,
         "PR_commits_number": commits
     }
+
 
 def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge: bool = False):
 
@@ -181,8 +178,6 @@ def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge
         json.dump(project_results, fp)
 
     _LOGGER.info(f"New knowledge file for {project[1] + '/' + project[0]} created")
-
-    return
 
 
 if __name__ == "__main__":
