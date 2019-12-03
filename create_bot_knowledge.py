@@ -32,7 +32,7 @@ from ogr.abstract import Issue, IssueComment, IssueStatus, PullRequest, PRCommen
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-_GITHUB_ACCESS_TOKEN = 'a065981b6034f15156bbba651bea2687c4934194'
+_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 PROJECTS = [
     # AiCoE Team
