@@ -32,14 +32,14 @@ from ogr.abstract import Issue, IssueComment, IssueStatus, PullRequest, PRCommen
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+_GITHUB_ACCESS_TOKEN = 'a065981b6034f15156bbba651bea2687c4934194'
 
 PROJECTS = [
     # AiCoE Team
     # ("log-anomaly-detector", "aicoe"),
 
     # # Thoth Team
-    # ("amun-api", "thoth-station"),
+    ("amun-api", "thoth-station"),
     # ("common", "thoth-station"),
     # ("core", "thoth-station"),
     # ("cve-update-job", "thoth-station"),
@@ -115,7 +115,7 @@ def pull_analysis(pull, results):
     pr_approved_by = str(approvation.user.login) if approvation is not None else None
     pr_ttr = pr_approved - pr_created if approvation is not None else None
     
-    results[str(pull.id)] = {
+    results[str(pull.number)] = {
         "PR_labels": label_names,
         "PR_created": pr_created,
         "PR_approved": pr_approved,
@@ -135,11 +135,13 @@ def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge
     _LOGGER.info("Considering repo: %r" % (project[1] + "/" + project[0]))
 
     current_path = Path().cwd()
+    
     knowledge_dir = current_path.joinpath("./Bot_Knowledge")
     check_directory(knowledge_dir, update_knowledge)
 
     project_knowledge = knowledge_dir.joinpath(f'{project[1] + "-" + project[0]}.json')
-    
+    check_file(project_knowledge, update_knowledge)
+
     _LOGGER.info(f"Gathering ids of all closed PRs from {project[1] + '/' + project[0]} ...")
     pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
 
@@ -164,7 +166,7 @@ def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge
 
     results = data['results'] if update_knowledge else {}
     
-    for pr_number, pr in enumerate(pull_requests):
+    for pr_number, pr in enumerate(pull_requests, start=1):
         pull = repo.get_pull(pr.id)
         
         _LOGGER.info(f"Analyzing PR {pr_number}/{len(pull_requests)}")
