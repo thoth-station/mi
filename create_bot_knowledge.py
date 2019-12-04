@@ -161,7 +161,7 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
 
     if not pull_requests:
         _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
-        #return
+        return
 
     for pr_number, pr in enumerate(pull_requests, start=1):
         pull = repo.get_pull(pr.id)
