@@ -21,8 +21,7 @@ import logging
 import os
 import json
 
-from typing import List
-from typing import Tuple
+from typing import List, Tuple, Dict, Optional, Union
 from pathlib import Path
 
 from github import Github
@@ -67,9 +66,9 @@ def connect_to_source(project: Tuple[str, str]):
 
     :param project: Tuple source repo and repo name.
     """
-    # TODO: It should use only one library for source.
+    # TODO: It should ufrom ogr.services.github.pull_request import GithubPullRequest
 
-    # Connect using ogr
+    # Connect using ogrfrom ogr.services.github.pull_request import GithubPullRequest
     service = GithubService(token=_GITHUB_ACCESS_TOKEN)
 
     # Connect using PyGitHub
@@ -80,21 +79,23 @@ def connect_to_source(project: Tuple[str, str]):
     return service, repo
 
 
-def check_directory(knowledge_dir):
+def check_directory(knowledge_dir : Path):
     if not knowledge_dir.exists():
         _LOGGER.info("No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
         os.mkdir(knowledge_dir)
 
-def is_old_knowledge(project_knowledge):
+
+def is_old_knowledge(project_knowledge : Path) -> bool:
     if project_knowledge.exists():
         _LOGGER.info("Previous collected knowledge of repo %s/%s found" % (project[1], project[0]))
         return True
     
     _LOGGER.info("No previous knowledge from repo %s/%s found" % (project[1], project[0]),
                  "New knowledge file will be created")
+    return False
 
 
-def pull_analysis(pull, results):
+def pull_analysis(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional[str], float]]]):
     commits = pull.commits
     # TODO: Use commits to extract information.
     # commits = [commit for commit in pull.get_commits()]
@@ -160,7 +161,7 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
 
     if not pull_requests:
         _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
-        return
+        #return
 
     for pr_number, pr in enumerate(pull_requests, start=1):
         pull = repo.get_pull(pr.id)
