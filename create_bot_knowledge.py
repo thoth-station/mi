@@ -66,9 +66,9 @@ def connect_to_source(project: Tuple[str, str]):
 
     :param project: Tuple source repo and repo name.
     """
-    # TODO: It should ufrom ogr.services.github.pull_request import GithubPullRequest
+    # TODO: It should use only one library for source.
 
-    # Connect using ogrfrom ogr.services.github.pull_request import GithubPullRequest
+    # Connect using ogr
     service = GithubService(token=_GITHUB_ACCESS_TOKEN)
 
     # Connect using PyGitHub
