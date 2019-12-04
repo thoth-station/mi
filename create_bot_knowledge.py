@@ -80,23 +80,18 @@ def connect_to_source(project: Tuple[str, str]):
     return service, repo
 
 
-def check_directory(knowledge_dir, update_knowledge: bool):
+def check_directory(knowledge_dir):
     if not knowledge_dir.exists():
-        if update_knowledge:
-            raise ValueError("No knowledge from any repo has ever been created, try using update_knowledge=False first.")
-
+        _LOGGER.info("No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
         os.mkdir(knowledge_dir)
 
-def check_file(project_knowledge, update_knowledge: bool):
-    if not update_knowledge:
-        if project_knowledge.exists():
-            raise ValueError("There is already knowledge from repo %s/%s" % (project[1], project[0]),
-                             "To update knowledge from a repo, use update_knowledge=True")
-            
-    else:
-        if not project_knowledge.exists():
-            raise ValueError("No previous knowledge from repo %s/%s" % (project[1], project[0]),
-                             "To create knowledge from a new repo, use update_knowledge=False")
+def is_old_knowledge(project_knowledge):
+    if project_knowledge.exists():
+        _LOGGER.info("Previous collected knowledge of repo %s/%s found" % (project[1], project[0]))
+        return True
+    
+    _LOGGER.info("No previous knowledge from repo %s/%s found" % (project[1], project[0]),
+                 "New knowledge file will be created")
 
 
 def pull_analysis(pull, results):
@@ -126,7 +121,7 @@ def pull_analysis(pull, results):
     }
 
 
-def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge: bool = False):
+def extract_knowledge_from_repository(project: Tuple[str, str]):
 
     service, repo = connect_to_source(project=project)
 
@@ -137,35 +132,36 @@ def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge
     current_path = Path().cwd()
     
     knowledge_dir = current_path.joinpath("./Bot_Knowledge")
-    check_directory(knowledge_dir, update_knowledge)
+    check_directory(knowledge_dir)
 
     project_knowledge = knowledge_dir.joinpath(f'{project[1] + "-" + project[0]}.json')
-    check_file(project_knowledge, update_knowledge)
 
     _LOGGER.info("Gathering ids of all closed PRs from %s/%s ..." % (project[1], project[0]))
     pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
+    results = {}
 
-    if update_knowledge:
+    if is_old_knowledge(project_knowledge):
+        _LOGGER.info("Update operation will be executed")
+ 
         with open(project_knowledge, "r") as fp:
             data = json.load(fp)
+        results = data['results']
 
-        current_prs = [int(pr_id) for pr_id in data["results"].keys()]
+        current_prs = [int(pr_id) for pr_id in results.keys()]
         _LOGGER.debug("Currently gathered PR ids %s" % current_prs)
 
         refreshed_prs = [pr.id for pr in pull_requests]
 
-        only_new_prs = list(set(refreshed_prs) - set(current_prs))
+        only_new_prs = set(refreshed_prs) - set(current_prs)
         _LOGGER.debug("New PR ids are %s" % only_new_prs)
 
-        #pull_requests = [pull_requests[id] for id in only_new_prs]
         pull_requests = [pr for pr in pull_requests if pr.id in only_new_prs]
+        
 
     if not pull_requests:
         _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
         return
 
-    results = data['results'] if update_knowledge else {}
-    
     for pr_number, pr in enumerate(pull_requests, start=1):
         pull = repo.get_pull(pr.id)
         
@@ -187,4 +183,4 @@ if __name__ == "__main__":
         _LOGGER.warning("Please insert one project in PROJECTS variable.")
 
     for project in PROJECTS:
-        extract_knowledge_from_repository(project=project, update_knowledge=True)
+        extract_knowledge_from_repository(project=project)
