@@ -79,23 +79,26 @@ def connect_to_source(project: Tuple[str, str]):
     return service, repo
 
 
-def check_directory(knowledge_dir : Path):
+def check_directory(knowledge_dir: Path):
+    """Check if directory for bot knowledge exists. If not, create one."""
     if not knowledge_dir.exists():
         _LOGGER.info("No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
         os.mkdir(knowledge_dir)
 
 
-def is_old_knowledge(project_knowledge : Path) -> bool:
+def is_old_knowledge(project_knowledge: Path) -> bool:
+    """Check if old knowledge exists for repository."""
     if project_knowledge.exists():
         _LOGGER.info("Previous collected knowledge of repo %s/%s found" % (project[1], project[0]))
         return True
-    
+
     _LOGGER.info("No previous knowledge from repo %s/%s found" % (project[1], project[0]),
                  "New knowledge file will be created")
     return False
 
 
 def pull_analysis(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional[str], float]]]):
+    """Analyse pull request and save its desired features to results."""
     commits = pull.commits
     # TODO: Use commits to extract information.
     # commits = [commit for commit in pull.get_commits()]
@@ -110,7 +113,7 @@ def pull_analysis(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional
     pr_approved = approvation.submitted_at.timestamp() if approvation is not None else None
     pr_approved_by = str(approvation.user.login) if approvation is not None else None
     pr_ttr = pr_approved - pr_created if approvation is not None else None
-    
+
     results[str(pull.number)] = {
         "PR_labels": label_names,
         "PR_created": pr_created,
@@ -123,7 +126,12 @@ def pull_analysis(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional
 
 
 def extract_knowledge_from_repository(project: Tuple[str, str]):
+    """
+    For given project extract information about each closed Pull Request.
 
+    Extracted information for all of the closed pull requests are then
+    saved to json file into the ./Bot_Knowledge directory.
+    """
     service, repo = connect_to_source(project=project)
 
     ogr_project = service.get_project(repo=project[0], namespace=project[1])
@@ -131,7 +139,7 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
     _LOGGER.info("Considering repo: %r" % (project[1] + "/" + project[0]))
 
     current_path = Path().cwd()
-    
+
     knowledge_dir = current_path.joinpath("./Bot_Knowledge")
     check_directory(knowledge_dir)
 
@@ -143,7 +151,7 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
 
     if is_old_knowledge(project_knowledge):
         _LOGGER.info("Update operation will be executed")
- 
+
         with open(project_knowledge, "r") as fp:
             data = json.load(fp)
         results = data['results']
@@ -157,7 +165,6 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
         _LOGGER.debug("New PR ids are %s" % only_new_prs)
 
         pull_requests = [pr for pr in pull_requests if pr.id in only_new_prs]
-        
 
     if not pull_requests:
         _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
@@ -165,13 +172,13 @@ def extract_knowledge_from_repository(project: Tuple[str, str]):
 
     for pr_number, pr in enumerate(pull_requests, start=1):
         pull = repo.get_pull(pr.id)
-        
+
         _LOGGER.info("Analyzing PR number %d/%d" % (pr_number, len(pull_requests)))
         _LOGGER.debug("PR ID: %d" % pr.id)
         _LOGGER.debug("PR commits number: %d" % pull.commits)
-        
+
         pull_analysis(pull, results)
-    
+
     project_results = {"name": project[1] + "/" + project[0], "results": results}
     with open(project_knowledge, "w") as fp:
         json.dump(project_results, fp)
