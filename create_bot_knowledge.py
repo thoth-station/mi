@@ -36,12 +36,12 @@ logging.basicConfig(level=logging.INFO)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
-PROJECTS = [
+PROJECTS = os.getenv("PROJECTS") #[
     # AiCoE Team
     # ("log-anomaly-detector", "aicoe"),
 
     # # Thoth Team
-    ("amun-api", "thoth-station"),
+    # ("amun-api", "thoth-station"),
     # ("common", "thoth-station"),
     # ("core", "thoth-station"),
     # ("cve-update-job", "thoth-station"),
@@ -61,7 +61,7 @@ PROJECTS = [
     # ("thamos", "thoth-station"),
     # ("thoth-ops", "thoth-station"),
     # ("user-api", "thoth-station"),
-]
+#]
 
 
 def connect_to_source(project: Tuple[str, str]) -> Tuple[GithubService, Repository]:
@@ -139,12 +139,15 @@ def get_only_new_entities(old_data: json, new_data) -> List:
     old_knowledge_ids = [int(id) for id in old_data.keys()]
     _LOGGER.debug("Currently gathered ids %s" % old_knowledge_ids)
 
-    new_knowledge_ids = {pr.id for pr in new_data}
+    new_knowledge_ids = [pr.number for pr in new_data]
 
     only_new_ids = set(new_knowledge_ids) - set(old_knowledge_ids)
-    _LOGGER.debug("New ids are %s" % only_new_ids)
+    if len(only_new_ids) == 0:
+        _LOGGER.info("No new knowledge found for update")
+    else:
+        _LOGGER.debug("New ids to be examined are %s" % only_new_ids)
 
-    return [x for x in new_data if x.id in only_new_ids]
+    return [x for x in new_data if x.number in only_new_ids]
 
 
 def load_previous_knowledge(file_path: Path):
@@ -211,6 +214,9 @@ def issues_analysis(project: Repository, project_knowledge: Path):
     data = load_previous_knowledge(data_path)
     current_issues = [issue for issue in project.get_issues(state='closed') if issue.pull_request is None]
     new_issues = get_only_new_entities(data, current_issues)
+    
+    if len(new_issues) == 0:
+        return
 
     for idx, issue in enumerate(new_issues, 1):
         _LOGGER.info("Analysing ISSUE no. %d/%d" % (idx, len(new_issues)))
@@ -248,7 +254,7 @@ def analyze_pull_request(pull: PullRequest, results: Dict[str, Dict[str, Union[O
         #"time_to_approve": time_to_approve,
         "closed_at": closed_at,
         "closed_by": pull.as_issue().closed_by.login,
-        "time_to_close": created_at - closed_at,
+        "time_to_close": closed_at - created_at,
         "merged_at": merged_at,
         "commits_number": commits, 
         "referenced_issues": get_referenced_issues(pull),
@@ -275,13 +281,16 @@ def pull_request_analysis(project: Repository, project_knowledge: Path):
     current_pulls = project.get_pulls(state='closed')
     new_pulls = get_only_new_entities(prev_pulls, current_pulls)
 
+    if len(new_pulls) == 0:
+        return
+
     for idx, pullrequest in enumerate(new_pulls, 1):
         _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
         analyze_pull_request(pullrequest, prev_pulls)
         analyze_pull_request_reviews(pullrequest.get_reviews(), prev_pullrevs)
 
-    save_knowledge(prev_pulls, pulls_data_path)
-    save_knowledge(prev_pullrevs, pullrevs_data_path)
+    save_knowledge(pulls_data_path, prev_pulls)
+    save_knowledge(pullrevs_data_path, prev_pullrevs)
 
 
 def analyze_pull_request_reviews(reviews: PullRequestReview, results):
@@ -292,71 +301,9 @@ def analyze_pull_request_reviews(reviews: PullRequestReview, results):
         results[review.id] = {
             "author": review.user.name,
             "words_count": len(review.body.split(' ')),
-            "submitted_at": review.submitted_at,
+            "submitted_at": review.submitted_at.timestamp(),
             "state": review.state,
         }
-
-
-
-def extract_knowledge_from_repository(project: Tuple[str, str]):
-    """
-    For given project extract information about each closed Pull Request.
-
-    Extracted information for all of the closed pull requests are then
-    saved to json file into the ./Bot_Knowledge directory.
-    """
-    service, repo = connect_to_source(project=project)
-
-    ogr_project = service.get_project(repo=project[0], namespace=project[1])
-    _LOGGER.info("------------------------------------------------------------------------------------")
-    _LOGGER.info("Considering repo: %r" % (project[1] + "/" + project[0]))
-
-    current_path = Path().cwd()
-
-    knowledge_dir = current_path.joinpath("./Bot_Knowledge")
-    check_directory(knowledge_dir)
-
-    project_knowledge = knowledge_dir.joinpath(f'{project[1] + "-" + project[0]}.json')
-
-    _LOGGER.info("Gathering ids of all closed PRs from %s/%s ..." % (project[1], project[0]))
-    pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
-    results = {}
-
-    if is_old_knowledge(project_knowledge):
-        _LOGGER.info("Update operation will be executed")
-
-        with open(project_knowledge, "r") as fp:
-            data = json.load(fp)
-        results = data['results']
-
-        current_prs = [int(pr_id) for pr_id in results.keys()]
-        _LOGGER.debug("Currently gathered PR ids %s" % current_prs)
-
-        refreshed_prs = [pr.id for pr in pull_requests]
-
-        only_new_prs = set(refreshed_prs) - set(current_prs)
-        _LOGGER.debug("New PR ids are %s" % only_new_prs)
-
-        pull_requests = [pr for pr in pull_requests if pr.id in only_new_prs]
-
-    if not pull_requests:
-        _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
-        return
-
-    for pr_number, pr in enumerate(pull_requests, start=1):
-        pull = repo.get_pull(pr.id)
-
-        _LOGGER.info("Analyzing PR number %d/%d" % (pr_number, len(pull_requests)))
-        _LOGGER.debug("PR ID: %d" % pr.id)
-        _LOGGER.debug("PR commits number: %d" % pull.commits)
-
-        analyze_pull_request(pull, results)
-
-    project_results = {"name": project[1] + "/" + project[0], "results": results}
-    with open(project_knowledge, "w") as fp:
-        json.dump(project_results, fp)
-
-    _LOGGER.info("New knowledge file for %s/%s created" % (project[1], project[0]))
 
 
 if __name__ == "__main__":
@@ -374,5 +321,6 @@ if __name__ == "__main__":
         git_project = service.get_project(repo=project[0], namespace=project[1])
 
         check_directory(project_path)
+        
         issues_analysis(pygithub, project_path)
         pull_request_analysis(pygithub, project_path)
