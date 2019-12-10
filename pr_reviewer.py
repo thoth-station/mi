@@ -41,6 +41,14 @@ BOTS_NAMES = [
     "dependabot[bot]",
 ]
 
+DASH_LENGHT = 143
+
+
+def get_logger_dashline() -> str:
+    """Create dashline string used for logger output."""
+    # rows, columns = os.popen('stty size', 'r').read().split()
+    return ''.join(['-' for col in range(0, int(DASH_LENGHT))])
+
 
 def convert_label2num(label: str) -> int:
     """Conver label string in numerical value."""
@@ -118,7 +126,11 @@ def convert_score2label(mean_score: float) -> str:
 
 
 def project_ttr_author_violin_plots(project_data):
+    """Print graph with violin plots for each developer in project.
 
+    Arguments:
+        project_data -- loaded json file from previously extracted knowledge
+    """
     results = project_data['results']
     reviewers = {pr['PR_approved_by']
                  for pr in results.values() if pr['PR_approved_by'] is not None}
@@ -146,6 +158,7 @@ def project_ttr_author_violin_plots(project_data):
 
 
 def set_color_scheme(vplots):
+    """Set color scheme for violin plots."""
     for plot in vplots['bodies']:
         plot.set_facecolor('#D43F3A')
         plot.set_edgecolor('black')
@@ -153,6 +166,7 @@ def set_color_scheme(vplots):
 
 
 def set_xlabels(ax, labels):
+    """Set x axis labels for violin plot."""
     ax.set_xlabel('Authors')
     ax.set_xticks(np.arange(1, len(labels) + 1))
     ax.set_xticklabels(labels)
@@ -179,9 +193,7 @@ def evaluate_reviewers(
         f'{project[1] + "-" + project[0]}.json')
 
     if not source_knowledge_file.exists():
-        _LOGGER.info(
-            "-----------------------------------------------------------------------------------------------------------------------------------------------"
-        )
+        _LOGGER.info(get_logger_dashline())
         _LOGGER.info(
             f"No previous knowledge from repo {project[1] + '/' + project[0]}")
         _LOGGER.info(f"To create knowledge, use create_bot_knowledge.py")
@@ -199,7 +211,7 @@ def evaluate_reviewers(
 
     # Team Analysis
     ##############################################################################
-    ###################### MTTR in Time per Project ##############################
+    #  MTTR in Time per Project
     ##############################################################################
 
     MTTR_time = []
@@ -262,12 +274,8 @@ def evaluate_reviewers(
     total_number_PR = len([pr for pr in data["results"].values()])
     Number_PR_reviewed = len(
         [pr for pr in data["results"].values() if pr["PR_approved"]])
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
+    _LOGGER.info(get_logger_dashline())
+    _LOGGER.info(get_logger_dashline())
     if use_median:
         _LOGGER.info("{:40} --> {:^12} |{:^18} | {:^9} | {:^26} |".format(
             "Project",
@@ -289,9 +297,7 @@ def evaluate_reviewers(
                 timedelta(seconds=MTTR))
         )
     )
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
+    _LOGGER.info(get_logger_dashline())
     # PR Authors (who opened the PR?)
     authors = []
     for pr in data["results"].values():
@@ -305,9 +311,8 @@ def evaluate_reviewers(
             "Author reviews", "N. PR rev", "MTTR", "MLenPR", "N. commits c", "% Tot Commits c", "Time last rev", "Score"
         )
     )
-
     ##############################################################################
-    ###################### TTR in Time per Project ###############################
+    # TTR in Time per Project
     ##############################################################################
     # Plot results
     fig, ax = plt.subplots()
@@ -449,9 +454,8 @@ def evaluate_reviewers(
                 mean_PR_length = "size/XS"
                 relative_score = 0.01
                 PR_scores = 0.01
-
             ##############################################################################
-            ###################### MTTR in Time per Project ##############################
+            # MTTR in Time per Project
             ##############################################################################
             MTTR_author_time = []
             pr_list_ttr = []
@@ -501,9 +505,7 @@ def evaluate_reviewers(
                      MTTR_time_per_id, "-o", label=author)
 
             ##############################################################################
-
-            ##############################################################################
-            ################ TTR in Time per Author in Project ###########################
+            # TTR in Time per Author in Project
             ##############################################################################
 
             # Plot results
@@ -543,9 +545,7 @@ def evaluate_reviewers(
                                                       for el in inputs_plots], "-o", label=author)
 
             ##############################################################################
-
-            ##############################################################################
-            ############################### Evaluate Score ###############################
+            # Evaluate Score
             ##############################################################################
 
             # Relative scores contributions:
@@ -567,13 +567,15 @@ def evaluate_reviewers(
             last_review_author_time = inputs_plots[len(inputs_plots) - 1][3]
             # TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
 
+            first_approve_to_last_rev = last_review_author_time - first_PR_approved_time
+            first_approve_to_now = now_time - first_PR_approved_time
+
             final_score = (
                 k1 * (Number_PR_reviewed_author / Number_PR_reviewed)
                 * k2 * (MTTR / MTTR_author)
                 * k3 * (np.mean(PR_scores) / relative_score)
                 * k4 * (total_number_commits_author / total_number_commits)
-                * k5 * (((last_review_author_time - first_PR_approved_time).total_seconds())/((now_time - first_PR_approved_time).total_seconds()))
-            )
+                * k5 * first_approve_to_last_rev.total_seconds() / first_approve_to_now.total_seconds())
 
             contributor_reviewer.append([
                 author,
@@ -582,8 +584,7 @@ def evaluate_reviewers(
                 mean_PR_length,
                 total_number_commits_author,
                 total_number_commits_author/total_number_commits*100,
-                inputs_plots[len(inputs_plots) -
-                             1][0].strftime("%m/%d/%Y, %H:%M:%S"),
+                inputs_plots[len(inputs_plots)-1][0].strftime("%m/%d/%Y, %H:%M:%S"),
                 final_score])
 
             bot_decision_score.append((author, final_score))
@@ -602,8 +603,7 @@ def evaluate_reviewers(
                 final_score,
             ]
 
-            human_percentage += (total_number_commits_author /
-                                 total_number_commits)*100
+            human_percentage += (total_number_commits_author / total_number_commits)*100
 
         else:
             if author in BOTS_NAMES:
@@ -616,8 +616,7 @@ def evaluate_reviewers(
                     total_number_commits_author/total_number_commits*100,
                     "n/a",
                     "n/a"])
-                bot_percentage += (total_number_commits_author /
-                                   total_number_commits)*100
+                bot_percentage += (total_number_commits_author / total_number_commits)*100
             else:
                 contributor_never_reviewed.append([
                     author,
@@ -628,8 +627,7 @@ def evaluate_reviewers(
                     total_number_commits_author/total_number_commits*100,
                     "n/a",
                     "n/a"])
-                human_percentage += (total_number_commits_author /
-                                     total_number_commits)*100
+                human_percentage += (total_number_commits_author / total_number_commits)*100
 
     # Sort by score
     contributor_reviewer = sorted(
@@ -637,9 +635,7 @@ def evaluate_reviewers(
 
     for contributor in contributor_reviewer:
         # Show statistics
-        _LOGGER.info(
-            "-----------------------------------------------------------------------------------------------------------------------------------------------"
-        )
+        _LOGGER.info(get_logger_dashline())
         _LOGGER.info(
             "{:20} --> {:^9} | {:^25} | {:^9} | {:^12} | {:^14.3f}% | {:15} | {:^8.4f} |".format(
                 contributor[0],
@@ -654,9 +650,7 @@ def evaluate_reviewers(
         )
 
         if detailed_statistics:
-            _LOGGER.info(
-                "-----------------------------------------------------------------------------------------------------------------------------------------------"
-            )
+            _LOGGER.info(get_logger_dashline())
             _LOGGER.info("{:20} -> % {}".format("Reviewed for", 'PR reviewed'))
             for reviewed_for, percentage in author_reviewer_statistics[contributor[0]].items():
                 if reviewed_for != author and percentage > 0:
@@ -676,15 +670,11 @@ def evaluate_reviewers(
                     author_contribution_scores[contributor[0]][7],
                 )
             )
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
+    _LOGGER.info(get_logger_dashline())
 
     if not analyze_single_scores and not filter_contributors:
         for contributor in contributor_never_reviewed:
-            _LOGGER.info(
-                "-----------------------------------------------------------------------------------------------------------------------------------------------"
-            )
+            _LOGGER.info(get_logger_dashline())
             _LOGGER.info("{:20} --> {:^9} | {:^25} | {:^9} | {:^12} | {:^14.3f}% | {:^20} | {:^8} |".format(
                 contributor[0],
                 contributor[1],
@@ -694,14 +684,10 @@ def evaluate_reviewers(
                 contributor[5],
                 contributor[6],
                 contributor[7]))
-        _LOGGER.info(
-            "-----------------------------------------------------------------------------------------------------------------------------------------------"
-        )
+        _LOGGER.info(get_logger_dashline())
 
         for contributor in bot_contributor:
-            _LOGGER.info(
-                "-----------------------------------------------------------------------------------------------------------------------------------------------"
-            )
+            _LOGGER.info(get_logger_dashline())
             _LOGGER.info("{:20} --> {:^9} | {:^25} | {:^9} | {:^12} | {:^14.3f}% | {:^20} | {:^8} |".format(
                 contributor[0],
                 contributor[1],
@@ -711,9 +697,8 @@ def evaluate_reviewers(
                 contributor[5],
                 contributor[6],
                 contributor[7]))
-
     ##############################################################################
-    ################ MTTR in Time per Author in Project ###########################
+    # MTTR in Time per Author in Project
     ##############################################################################
     if use_median:
         ax1.set(
@@ -738,9 +723,7 @@ def evaluate_reviewers(
         f"MTTR-in-time-{project[1] + '-' + project[0] + '-authors'}.png")
     fig1.savefig(author_results_mttr)
     ##############################################################################
-
-    ##############################################################################
-    ################ TTR in Time per Author in Project ###########################
+    # TTR in Time per Author in Project
     ##############################################################################
     ax2.set(
         xlabel="PR created date",
@@ -758,9 +741,7 @@ def evaluate_reviewers(
     # Sort results by PR ID
     bot_decision_score_sorted = sorted(
         bot_decision_score, key=lambda x: (x[1]), reverse=True)
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
+    _LOGGER.info(get_logger_dashline())
     requested_reviewers = number_reviewer
     while len(bot_decision_score_sorted) < requested_reviewers:
         _LOGGER.warning(f"Too many reviewers requested: {requested_reviewers}")
@@ -770,9 +751,7 @@ def evaluate_reviewers(
         _LOGGER.info(
             f"Reviewers: {[reviewer[0] for reviewer in bot_decision_score_sorted[:requested_reviewers]]}")
 
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
+    _LOGGER.info(get_logger_dashline())
     _LOGGER.info("{:20} --> {:^5.3f}% |".format(
         "Human % Tot commits",
         human_percentage)
