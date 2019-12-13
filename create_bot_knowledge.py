@@ -21,14 +21,10 @@ import logging
 import os
 import json
 
-from typing import List, Tuple, Dict, Optional, Union, Set
+from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-
-from ogr.services.github import GithubService
-from ogr.abstract import PRComment, PRStatus, CommitComment, GitProject
-
-from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview
+from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,106 +32,106 @@ logging.basicConfig(level=logging.INFO)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
-PROJECTS = os.getenv("PROJECTS") #[
-    # AiCoE Team
-    # ("log-anomaly-detector", "aicoe"),
 
-    # # Thoth Team
-    # ("amun-api", "thoth-station"),
-    # ("common", "thoth-station"),
-    # ("core", "thoth-station"),
-    # ("cve-update-job", "thoth-station"),
-    # ("graph-refresh-job", "thoth-station"),
-    # ("graph-sync-job", "thoth-station"),
-    # ("init-job", "thoth-station"),
-    # ("kebechet", "thoth-station"),
-    # ("management-api", "thoth-station"),
-    # ("metrics-exporter", "thoth-station"),
-    # ("notebooks", "thoth-station"),
-    # ("package-analyzer", "thoth-station"),
-    # ("package-releases-job", "thoth-station"),
-    # ("performance", "thoth-station"),
-    # ("python", "thoth-station"),
-    # ("solver", "thoth-station"),
-    # ("storages", "thoth-station"),
-    # ("thamos", "thoth-station"),
-    # ("thoth-ops", "thoth-station"),
-    # ("user-api", "thoth-station"),
-#]
-
-
-def connect_to_source(project: Tuple[str, str]) -> Tuple[GithubService, Repository]:
+def connect_to_source(project: Tuple[str, str]) -> Repository:
     """Connect to GitHub.
 
     :param project: Tuple source repo and repo name.
     """
     # TODO: It should use only one library for source.
 
-    # Connect using ogr
-    service = GithubService(token=_GITHUB_ACCESS_TOKEN)
-
     # Connect using PyGitHub
     g = Github(_GITHUB_ACCESS_TOKEN)
     repo_name = project[1] + "/" + project[0]
     repo = g.get_repo(repo_name)
 
-    return service, repo
+    return repo
 
 
 def check_directory(knowledge_dir: Path):
     """Check if directory for bot knowledge exists. If not, create one."""
     if not knowledge_dir.exists():
-        _LOGGER.info("No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
+        _LOGGER.info(
+            "No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
 
 
-issue_keywords = {'close',
+ISSUE_KEYWORDS = {'close',
                   'closes',
                   'closed',
                   'fix',
-                  'fixes', 
+                  'fixes',
                   'fixed',
-                  'resolve', 
-                  'resolves', 
+                  'resolve',
+                  'resolves',
                   'resolved'}
 
 
-standalone_labels = {'size'}
+STANDALONE_LABELS = {'size'}
+
 
 def get_labeled_size(labels: List[str]) -> str:
+    """Extract size label from list of labels
+
+    Size label is in form 'size/<SIZE>', where <SIZE> can be
+    XS, S, L, etc...
+    """
+
     for label in labels:
         if label.startswith('size'):
             return label.split('/')[1]
 
+
 def get_non_standalone_labels(labels: List[str]):
-    return [label for label in labels if label not in standalone_labels]
+    """Get non standalone labels by filtering them from all of the labels."""
+    return [label for label in labels if label not in STANDALONE_LABELS]
 
-def analyse_issues(pull_request: PullRequest) -> Set[int]:
-    #left for later if we want to further process the issues or not
-    return get_referenced_issues(pull_request)
 
-def get_referenced_issues(pull_request : PullRequest) -> Set[int]:
+def get_referenced_issues(pull_request: PullRequest) -> List[int]:
+    """Scan all of the Pull Request comments and get referenced issues.
+
+    Arguments:
+        pull_request {PullRequest} -- Pull request for which the referenced
+                                      issues are extracted
+
+    Returns:
+        List[int] -- IDs of referenced issues within the Pull Request.
+    """
     issues_referenced = []
     for comment in pull_request.get_issue_comments():
         message = comment.body.split(' ')
         for idx, word in enumerate(message):
-            if word in issue_keywords:
+            if word.replace(':', '') in ISSUE_KEYWORDS:
                 try:
                     _LOGGER.info('      ...found keyword referencing issue')
                     referenced_issue_number = message[idx+1]
                     assert(referenced_issue_number).startswith('https')
                     # last element of url is always the issue number
-                    issues_referenced.append(referenced_issue_number.split('/')[-1])
+                    issues_referenced.append(
+                        referenced_issue_number.split('/')[-1])
                     _LOGGER.info('      ...referenced issue number present')
                     # we assure that this was really referenced issue
                     # and not just a keyword without number
                 except:
                     _LOGGER.info('      ...referenced issue number absent')
-
+    _LOGGER.debug('      referenced issues: %s' % issues_referenced)
     return issues_referenced
 
 
-def get_only_new_entities(old_data: json, new_data) -> List:
+def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> PaginatedList:
+    """Get new entities (whether PRs or other Issues).
+
+    The comparisson is made on IDs between previously collected
+    entities and all currently present entities on GitHub.
+
+    Arguments:PaginatedList
+        old_data {Dict[str, Any]} -- previously collected knowledge
+        new_data {PaginatedList} -- current entities present on GitHub
+                          (acquired by GitHub API)
+
+    Returns:
+        List[PaginatedList] -- filtered new data without the old ones
+    """
     old_knowledge_ids = [int(id) for id in old_data.keys()]
     _LOGGER.debug("Currently gathered ids %s" % old_knowledge_ids)
 
@@ -150,34 +146,65 @@ def get_only_new_entities(old_data: json, new_data) -> List:
     return [x for x in new_data if x.number in only_new_ids]
 
 
-def load_previous_knowledge(file_path: Path):
-    if not file_path.exists() or os.path.getsize(file_path) == 0:
-        _LOGGER.info('No previous knowledge found for %s' % os.path.basename(file_path))
+def load_previous_knowledge(repo_path: Path) -> Dict[str, Any]:
+    """Load previously collected repo knowledge.
+    If a repo was not inspected before, create its directory
+
+    Arguments:
+        repo_path {Path} -- path of the inspected github repository
+
+    Returns:
+        Dict[str, Any] -- previusly collected knowledge.
+                          Empty dict if the knowledge does not exist.
+    """
+    if not repo_path.exists() or os.path.getsize(repo_path) == 0:
+        _LOGGER.info('No previous knowledge found for %s' %
+                     os.path.basename(repo_path))
         return {}
 
-    with open(file_path, 'r') as f:
+    with open(repo_path, 'r') as f:
         data = json.load(f)
     results = data['results']
-    _LOGGER.info('Found previous %s knowledge of size %d' % (os.path.basename(file_path), len(results)))
+    _LOGGER.info('Found previous %s knowledge of size %d' %
+                 (os.path.basename(repo_path), len(results)))
     return results
-    
-def save_knowledge(file_path: Path, data):
+
+
+def save_knowledge(file_path: Path, data: Dict[str, Any]):
+    """Save collected knowledge as json which contains one dictionary
+    with single key key 'results' under which the knowledge is stored.
+
+    Arguments:
+        file_path {Path} -- where the knowledge should be saved
+        data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+    """
     results = {'results': data}
 
     with open(file_path, 'w') as f:
         json.dump(results, f)
-    _LOGGER.info('Saved new knowledge file %s of size %d' % (os.path.basename(file_path), len(data)))
+    _LOGGER.info('Saved new knowledge file %s of size %d' %
+                 (os.path.basename(file_path), len(data)))
+
 
 def get_interactions(comments):
-    interactions = {comment.user.login:0 for comment in comments}
+    """Get overall word count for comments per author."""
+    interactions = {comment.user.login: 0 for comment in comments}
     for comment in comments:
-        #we count by the num of words in comment
+        # we count by the num of words in comment
         interactions[comment.user.login] += len(comment.body.split(' '))
     return interactions
 
-def analyze_issue(issue: Issue, data):
+
+def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
+    """Extract required information from issue and store it to the current data.
+    This is targeted only for issues that are not Pull Requests.
+
+    Arguments:
+        issue {Issue} -- Issue (that is not PR).
+        data {Dict[str, Union[str, int]])} -- Dictionary where the issue will be stored.
+    """
     if issue.pull_request is not None:
-        return #we analyze issues and prs differentely
+        return  # we analyze issues and prs differentely
 
     created_at = issue.created_at.timestamp()
     closed_at = issue.closed_at.timestamp()
@@ -199,34 +226,88 @@ def analyze_issue(issue: Issue, data):
     # would it be valuable?
 
 
-def issues_analysis(project: Repository, project_knowledge: Path):
+def analyse_issues(project: Repository, project_knowledge: Path):
     """Analysis of every closed issue in repository
-    
+
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
                                 ogr unfortunatelly did not provide enough to properly analyze issues
-        
+
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
     """
     _LOGGER.info('-------------Issues (that are not PR) Analysis-------------')
     data_path = project_knowledge.joinpath('./issues.json')
 
     data = load_previous_knowledge(data_path)
-    current_issues = [issue for issue in project.get_issues(state='closed') if issue.pull_request is None]
+    current_issues = [issue for issue in project.get_issues(
+        state='closed') if issue.pull_request is None]
     new_issues = get_only_new_entities(data, current_issues)
-    
+
     if len(new_issues) == 0:
         return
 
     for idx, issue in enumerate(new_issues, 1):
         _LOGGER.info("Analysing ISSUE no. %d/%d" % (idx, len(new_issues)))
-        analyze_issue(issue, data)
+        store_issue(issue, data)
 
     save_knowledge(data_path, data)
 
 
-def analyze_pull_request(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional[str], float]]]):
-    """Analyse pull request and save its desired features to results."""
+def extract_pullrequest_review_requests(pullrequest: PullRequest) -> List[str]:
+    """Extract features from requested reviews of the PR
+
+    GitHub understands review requests rather as requested reviewers than actual
+    requests.
+
+    Arguments:
+        pullrequest {PullRequest} -- PR of which we can extract review requests.
+
+    Returns:
+        List[str] -- list of logins of the requested reviewers
+    """
+    requested_users = pullrequest.get_review_requests()[0]
+
+    extracted = []
+    for user in requested_users:
+        extracted.append(user.login)
+    return extracted
+
+
+def extract_pullrequest_reviews(pullrequest: PullRequest) -> Dict[str, Dict[str, Any]]:
+    """Extract required features for each review from PR.
+
+    Arguments:
+        pullrequest {PullRequest} -- Pull Request from which the reviews will be extracted
+
+    Returns:
+        Dict[str, Dict[str, Any]] -- dictionary of extracted reviews. Each review is stored
+                                     by its ID.
+    """
+    reviews = pullrequest.get_reviews()
+    _LOGGER.info("  -num of reviews found: %d" % reviews.totalCount)
+
+    results = {}
+    for idx, review in enumerate(reviews, 1):
+        _LOGGER.info("      -analysing review no. %d/%d" %
+                     (idx, reviews.totalCount))
+        results[review.id] = {
+            "author": review.user.login,
+            "words_count": len(review.body.split(' ')),
+            "submitted_at": review.submitted_at.timestamp(),
+            "state": review.state,
+        }
+    return results
+
+
+def store_pullrequest(pull: PullRequest, results: Dict[str, Dict[str, Any]]):
+    """Analyse pull request and save its desired features to results.
+
+    Arguments:
+        pull {PullRequest} -- PR that is going to be inspected and stored.
+        results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
+                                            PRs are stored and where the given PR
+                                            will be stored.
+    """
     commits = pull.commits
     # TODO: Use commits to extract information.
     # commits = [commit for commit in pull.get_commits()]
@@ -241,7 +322,7 @@ def analyze_pull_request(pull: PullRequest, results: Dict[str, Dict[str, Union[O
     # time_to_approve = pr_approved - created_at if approvation is not None else None
 
     merged_at = pull.merged_at.timestamp() if pull.merged_at is not None else None
-    
+
     labels = [label.name for label in pull.get_labels()]
 
     results[str(pull.number)] = {
@@ -249,34 +330,35 @@ def analyze_pull_request(pull: PullRequest, results: Dict[str, Dict[str, Union[O
         "labels": get_non_standalone_labels(labels),
         "created_by": pull.user.login,
         "created_at": created_at,
-        #"approved_at": pr_approved,
-        #"approved_by": pr_approved_by,
-        #"time_to_approve": time_to_approve,
+        # "approved_at": pr_approved,
+        # "approved_by": pr_approved_by,
+        # "time_to_approve": time_to_approve,
         "closed_at": closed_at,
         "closed_by": pull.as_issue().closed_by.login,
         "time_to_close": closed_at - created_at,
         "merged_at": merged_at,
-        "commits_number": commits, 
+        "commits_number": commits,
         "referenced_issues": get_referenced_issues(pull),
-        "interactions" : get_interactions(pull.get_comments()),
+        "interactions": get_interactions(pull.get_issue_comments()),
+        "reviews": extract_pullrequest_reviews(pull),
+        "requested_reviewers": extract_pullrequest_review_requests(pull),
     }
 
-def pull_request_analysis(project: Repository, project_knowledge: Path):
+
+def analyse_pullrequests(project: Repository, project_knowledge: Path):
     """Analysis of every closed pullrequest in repository
-    
+
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
                                 ogr unfortunatelly did not provide enough to properly analyze issues
-        
+
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
     """
-    _LOGGER.info('-------------Pull Requests Analysis (including its Reviews)-------------')
+    _LOGGER.info(
+        '-------------Pull Requests Analysis (including its Reviews)-------------')
 
     pulls_data_path = project_knowledge.joinpath('./pull_requests.json')
-    pullrevs_data_path = project_knowledge.joinpath('./pull_request_reviews.json')
-
     prev_pulls = load_previous_knowledge(pulls_data_path)
-    prev_pullrevs = load_previous_knowledge(pullrevs_data_path)
 
     current_pulls = project.get_pulls(state='closed')
     new_pulls = get_only_new_entities(prev_pulls, current_pulls)
@@ -285,42 +367,25 @@ def pull_request_analysis(project: Repository, project_knowledge: Path):
         return
 
     for idx, pullrequest in enumerate(new_pulls, 1):
-        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
-        analyze_pull_request(pullrequest, prev_pulls)
-        analyze_pull_request_reviews(pullrequest.get_reviews(), prev_pullrevs)
-
+        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" %
+                     (idx, len(new_pulls)))
+        store_pullrequest(pullrequest, prev_pulls)
+        _LOGGER.info('/n')
     save_knowledge(pulls_data_path, prev_pulls)
-    save_knowledge(pullrevs_data_path, prev_pullrevs)
 
 
-def analyze_pull_request_reviews(reviews: PullRequestReview, results):
-    _LOGGER.info("  -num of reviews found: %d" % reviews.totalCount)
-    
-    for idx, review in enumerate(reviews, 1):
-        _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
-        results[review.id] = {
-            "author": review.user.name,
-            "words_count": len(review.body.split(' ')),
-            "submitted_at": review.submitted_at.timestamp(),
-            "state": review.state,
-        }
+def analyse_projects(projects: List[Tuple[str, str]]) -> None:
+    """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projectws.
 
-
-if __name__ == "__main__":
-    if not PROJECTS:
-        _LOGGER.warning("Please insert one project in PROJECTS variable.")
-
+    Arguments:
+        projects {List[Tuple[str, str]]} -- one tuple should be in format (repository_name, project_name)
+    """
     path = Path.cwd().joinpath('./Bot_Knowledge')
-    for project in PROJECTS:
-        #extract_knowledge_from_repository(project=project)
-        
-        service, pygithub = connect_to_source(project=project)
+    for project in projects:
+        github_repo = connect_to_source(project=project)
 
-        project_path = path.joinpath('./' + pygithub.full_name)
-
-        git_project = service.get_project(repo=project[0], namespace=project[1])
-
+        project_path = path.joinpath('./' + github_repo.full_name)
         check_directory(project_path)
-        
-        issues_analysis(pygithub, project_path)
-        pull_request_analysis(pygithub, project_path)
+
+        analyse_issues(github_repo, project_path)
+        analyse_pullrequests(github_repo, project_path)
