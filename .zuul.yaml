@@ -2,12 +2,10 @@
     check:
       jobs:
         - "thoth-coala"
-        - "thoth-pytest"
     gate:
       queue: "CHANGEME"
       jobs:
         - "thoth-coala"
-        - "thoth-pytest"
     post:
       jobs:
         - "trigger-build":
@@ -20,4 +18,3 @@
       queue: "thoth-station/core"
       jobs:
         - "thoth-coala"
-        - "thoth-pytest"

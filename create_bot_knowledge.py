@@ -21,8 +21,7 @@ import logging
 import os
 import json
 
-from typing import List
-from typing import Tuple
+from typing import List, Tuple, Dict, Optional, Union
 from pathlib import Path
 
 from github import Github
@@ -39,7 +38,7 @@ PROJECTS = [
     # ("log-anomaly-detector", "aicoe"),
 
     # # Thoth Team
-    # ("amun-api", "thoth-station"),
+    ("amun-api", "thoth-station"),
     # ("common", "thoth-station"),
     # ("core", "thoth-station"),
     # ("cve-update-job", "thoth-station"),
@@ -80,134 +79,111 @@ def connect_to_source(project: Tuple[str, str]):
     return service, repo
 
 
-def extract_knowledge_from_repository(project: Tuple[str, str], update_knowledge: bool = False):
+def check_directory(knowledge_dir: Path):
+    """Check if directory for bot knowledge exists. If not, create one."""
+    if not knowledge_dir.exists():
+        _LOGGER.info("No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
+        os.mkdir(knowledge_dir)
 
+
+def is_old_knowledge(project_knowledge: Path) -> bool:
+    """Check if old knowledge exists for repository."""
+    if project_knowledge.exists():
+        _LOGGER.info("Previous collected knowledge of repo %s/%s found" % (project[1], project[0]))
+        return True
+
+    _LOGGER.info("No previous knowledge from repo %s/%s found" % (project[1], project[0]),
+                 "New knowledge file will be created")
+    return False
+
+
+def pull_analysis(pull: PullRequest, results: Dict[str, Dict[str, Union[Optional[str], float]]]):
+    """Analyse pull request and save its desired features to results."""
+    commits = pull.commits
+    # TODO: Use commits to extract information.
+    # commits = [commit for commit in pull.get_commits()]
+
+    reviews = pull.get_reviews()
+    label_names = [label.name for label in pull.get_labels()]
+    author = str(pull.user.login)
+    pr_created = pull.created_at.timestamp()
+
+    # Get the review approvation if it exists
+    approvation = next((review for review in reviews if review.state == 'APPROVED'), None)
+    pr_approved = approvation.submitted_at.timestamp() if approvation is not None else None
+    pr_approved_by = str(approvation.user.login) if approvation is not None else None
+    pr_ttr = pr_approved - pr_created if approvation is not None else None
+
+    results[str(pull.number)] = {
+        "PR_labels": label_names,
+        "PR_created": pr_created,
+        "PR_approved": pr_approved,
+        "PR_approved_by": pr_approved_by,
+        "PR_TTR": pr_ttr,
+        "PR_author": author,
+        "PR_commits_number": commits
+    }
+
+
+def extract_knowledge_from_repository(project: Tuple[str, str]):
+    """
+    For given project extract information about each closed Pull Request.
+
+    Extracted information for all of the closed pull requests are then
+    saved to json file into the ./Bot_Knowledge directory.
+    """
     service, repo = connect_to_source(project=project)
 
     ogr_project = service.get_project(repo=project[0], namespace=project[1])
-    _LOGGER.info(f"------------------------------------------------------------------------------------")
+    _LOGGER.info("------------------------------------------------------------------------------------")
     _LOGGER.info("Considering repo: %r" % (project[1] + "/" + project[0]))
 
-    if not update_knowledge:
-        current_path = Path().cwd()
-        source_knowledge_repo = current_path.joinpath("./Bot_Knowledge")
+    current_path = Path().cwd()
 
-        if not source_knowledge_repo.exists():
-            os.mkdir(source_knowledge_repo)
+    knowledge_dir = current_path.joinpath("./Bot_Knowledge")
+    check_directory(knowledge_dir)
 
-        source_knowledge_file = source_knowledge_repo.joinpath(f'{project[1] + "-" + project[0]}.json')
+    project_knowledge = knowledge_dir.joinpath(f'{project[1] + "-" + project[0]}.json')
 
-        if source_knowledge_file.exists():
-            _LOGGER.info(f"There is already knowledge from repo {project[1] + '/' + project[0]}")
-            _LOGGER.info(f"To update knowledge from a repo, use update_knowledge=True")
-            return 0
+    _LOGGER.info("Gathering ids of all closed PRs from %s/%s ..." % (project[1], project[0]))
+    pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
+    results = {}
 
-        else:
-            _LOGGER.info(f"No previous knowledge from repo {project[1] + '/' + project[0]}")
-            _LOGGER.info(f"Starting to collect knowledge...")
-            # Retrieve list of ids of PULL REQUESTS (CLOSED)
-            pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
+    if is_old_knowledge(project_knowledge):
+        _LOGGER.info("Update operation will be executed")
 
-    if update_knowledge:
-        current_path = Path().cwd()
-        source_knowledge_repo = current_path.joinpath("./Bot_Knowledge")
+        with open(project_knowledge, "r") as fp:
+            data = json.load(fp)
+        results = data['results']
 
-        if not source_knowledge_repo.exists():
-            os.mkdir(source_knowledge_repo)
-        else:
-            _LOGGER.info(f"No knowledge from any repo has ever been created use update_knowledge=False first.")
-            return 0
+        current_prs = [int(pr_id) for pr_id in results.keys()]
+        _LOGGER.debug("Currently gathered PR ids %s" % current_prs)
 
-        source_knowledge_file = source_knowledge_repo.joinpath(f'{project[1] + "-" + project[0]}.json')
+        refreshed_prs = [pr.id for pr in pull_requests]
 
-        if source_knowledge_file.exists():
-            # Retrieve list of ids of PULL REQUESTS (CLOSED)
-            pull_requests = ogr_project.get_pr_list(status=PRStatus.closed)
+        only_new_prs = set(refreshed_prs) - set(current_prs)
+        _LOGGER.debug("New PR ids are %s" % only_new_prs)
 
-            with open(source_knowledge_file, "r") as fp:
-                data = json.load(fp)
+        pull_requests = [pr for pr in pull_requests if pr.id in only_new_prs]
 
-            pr_id_known = [int(pr_id) for pr_id in data["results"].keys()]
-            _LOGGER.debug(f"Known PR ids {pr_id_known}")
+    if not pull_requests:
+        _LOGGER.info("No new knowledge from repo %s/%s" % (project[1], project[0]))
+        return
 
-            pull_requests_ids = [pr.id for pr in pull_requests]
-            _LOGGER.debug(f"PR ids {pr_id_known}")
+    for pr_number, pr in enumerate(pull_requests, start=1):
+        pull = repo.get_pull(pr.id)
 
-            pull_requests_unknown_ids = list(set(pull_requests_ids) - set(pr_id_known))
-            _LOGGER.debug(f"Unknown PR ids {pull_requests_unknown_ids}")
+        _LOGGER.info("Analyzing PR number %d/%d" % (pr_number, len(pull_requests)))
+        _LOGGER.debug("PR ID: %d" % pr.id)
+        _LOGGER.debug("PR commits number: %d" % pull.commits)
 
-            pull_requests = [pr for pr in pull_requests if pr.id in pull_requests_unknown_ids]
-        else:
-            _LOGGER.info(f"No previous knowledge from repo {project[1] + '/' + project[0]}")
-            _LOGGER.info(f"To create knowledge from a new repo, use update_knowledge=False")
-            return 0
+        pull_analysis(pull, results)
 
-    if pull_requests:
+    project_results = {"name": project[1] + "/" + project[0], "results": results}
+    with open(project_knowledge, "w") as fp:
+        json.dump(project_results, fp)
 
-        if update_knowledge:
-            results = data["results"]
-
-        else:
-            results = {}
-
-        pr_n = 1
-        for pr in pull_requests:
-            _LOGGER.info(f"Analyzing PR {pr_n}/{len(pull_requests)}")
-            _LOGGER.debug(f"PR ID: {pr.id}")
-            pull = repo.get_pull(pr.id)
-            _LOGGER.debug(f"PR commits number: {pull.commits}")
-            commits = pull.commits
-            # TODO: Use commits to extract information.
-            # commits = [commit for commit in pull.get_commits()]
-            reviews = pull.get_reviews()
-            labels = pull.get_labels()
-            author = str(pull.user.login)
-
-            # Consider time of approved PR
-            try:
-                step = 0
-                while reviews[step].state != "APPROVED":
-                    step += 1
-                pull_requested_approved = reviews[step].submitted_at
-                results[str(pr.id)] = {
-                    "PR_labels": [label.name for label in labels],
-                    "PR_created": pull.created_at.timestamp(),
-                    "PR_approved": pull_requested_approved.timestamp(),
-                    "PR_approved_by": str(reviews[step].user.login),
-                    "PR_TTR": pull_requested_approved.timestamp() - pull.created_at.timestamp(),
-                    "PR_author": author,
-                    "PR_commits_number": commits
-                }
-            except:
-                # No review has been submitted (e.g. automatically merged)
-                results[str(pr.id)] = {
-                    "PR_labels": [label.name for label in labels],
-                    "PR_created": pull.created_at.timestamp(),
-                    "PR_approved": None,
-                    "PR_approved_by": None,
-                    "PR_TTR": None,
-                    "PR_author": author,
-                    "PR_commits_number": commits
-                }
-                pass
-
-            pr_n += 1
-
-        current_path = Path().cwd()
-        source_knowledge_repo = current_path.joinpath("./Bot_Knowledge")
-        source_knowledge_file = source_knowledge_repo.joinpath(f'{project[1] + "-" + project[0]}.json')
-
-        if update_knowledge:
-            _LOGGER.info(f"Updating knowledge for: {project[1] + '/' + project[0]}")
-
-        project_results = {"name": project[1] + "/" + project[0], "results": results}
-        with open(source_knowledge_file, "w") as fp:
-            json.dump(project_results, fp)
-
-    else:
-        _LOGGER.info(f"No new knowledge from repo {project[1] + '/' + project[0]}")
-
-    return 0
+    _LOGGER.info("New knowledge file for %s/%s created" % (project[1], project[0]))
 
 
 if __name__ == "__main__":
@@ -215,4 +191,4 @@ if __name__ == "__main__":
         _LOGGER.warning("Please insert one project in PROJECTS variable.")
 
     for project in PROJECTS:
-        extract_knowledge_from_repository(project=project, update_knowledge=False)
+        extract_knowledge_from_repository(project=project)
