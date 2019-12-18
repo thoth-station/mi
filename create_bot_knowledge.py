@@ -32,6 +32,19 @@ logging.basicConfig(level=logging.INFO)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
+ISSUE_KEYWORDS = {'close',
+                  'closes',
+                  'closed',
+                  'fix',
+                  'fixes',
+                  'fixed',
+                  'resolve',
+                  'resolves',
+                  'resolved'}
+
+
+STANDALONE_LABELS = {'size'}
+
 
 def connect_to_source(project: Tuple[str, str]) -> Repository:
     """Connect to GitHub.
@@ -54,20 +67,6 @@ def check_directory(knowledge_dir: Path):
         _LOGGER.info(
             "No knowledge from any repo has ever been created, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
-
-
-ISSUE_KEYWORDS = {'close',
-                  'closes',
-                  'closed',
-                  'fix',
-                  'fixes',
-                  'fixed',
-                  'resolve',
-                  'resolves',
-                  'resolved'}
-
-
-STANDALONE_LABELS = {'size'}
 
 
 def get_labeled_size(labels: List[str]) -> str:
