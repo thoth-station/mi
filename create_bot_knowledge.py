@@ -233,7 +233,7 @@ def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
 
 
 def analyse_issues(project: Repository, project_knowledge: Path):
-    """Analysis of every closed issue in repository.
+    """Analyse of every closed issue in repository.
 
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
@@ -355,7 +355,7 @@ def store_pullrequest(pull: PullRequest, results: Dict[str, Dict[str, Any]]):
 
 
 def analyse_pullrequests(project: Repository, project_knowledge: Path):
-    """Analysis of every closed pullrequest in repository.
+    """Analyse every closed pullrequest in repository.
 
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
