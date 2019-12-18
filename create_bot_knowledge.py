@@ -71,12 +71,11 @@ STANDALONE_LABELS = {'size'}
 
 
 def get_labeled_size(labels: List[str]) -> str:
-    """Extract size label from list of labels
+    """Extract size label from list of labels.
 
     Size label is in form 'size/<SIZE>', where <SIZE> can be
     XS, S, L, etc...
     """
-
     for label in labels:
         if label.startswith('size'):
             return label.split('/')[1]
@@ -96,6 +95,7 @@ def get_referenced_issues(pull_request: PullRequest) -> List[int]:
 
     Returns:
         List[int] -- IDs of referenced issues within the Pull Request.
+
     """
     issues_referenced = []
     for comment in pull_request.get_issue_comments():
@@ -112,8 +112,9 @@ def get_referenced_issues(pull_request: PullRequest) -> List[int]:
                     _LOGGER.info('      ...referenced issue number present')
                     # we assure that this was really referenced issue
                     # and not just a keyword without number
-                except:
+                except (IndexError, AssertionError) as e:
                     _LOGGER.info('      ...referenced issue number absent')
+                    _LOGGER.debug(str(e))
     _LOGGER.debug('      referenced issues: %s' % issues_referenced)
     return issues_referenced
 
@@ -131,6 +132,7 @@ def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> 
 
     Returns:
         List[PaginatedList] -- filtered new data without the old ones
+
     """
     old_knowledge_ids = [int(id) for id in old_data.keys()]
     _LOGGER.debug("Currently gathered ids %s" % old_knowledge_ids)
@@ -147,8 +149,7 @@ def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> 
 
 
 def load_previous_knowledge(repo_path: Path) -> Dict[str, Any]:
-    """Load previously collected repo knowledge.
-    If a repo was not inspected before, create its directory
+    """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
     Arguments:
         repo_path {Path} -- path of the inspected github repository
@@ -156,6 +157,7 @@ def load_previous_knowledge(repo_path: Path) -> Dict[str, Any]:
     Returns:
         Dict[str, Any] -- previusly collected knowledge.
                           Empty dict if the knowledge does not exist.
+
     """
     if not repo_path.exists() or os.path.getsize(repo_path) == 0:
         _LOGGER.info('No previous knowledge found for %s' %
@@ -171,8 +173,10 @@ def load_previous_knowledge(repo_path: Path) -> Dict[str, Any]:
 
 
 def save_knowledge(file_path: Path, data: Dict[str, Any]):
-    """Save collected knowledge as json which contains one dictionary
-    with single key key 'results' under which the knowledge is stored.
+    """Save collected knowledge as json.
+
+    The saved json contains one dictionary with single key 'results'
+    under which the knowledge is stored.
 
     Arguments:
         file_path {Path} -- where the knowledge should be saved
@@ -197,11 +201,13 @@ def get_interactions(comments):
 
 def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
     """Extract required information from issue and store it to the current data.
+
     This is targeted only for issues that are not Pull Requests.
 
     Arguments:
         issue {Issue} -- Issue (that is not PR).
         data {Dict[str, Union[str, int]])} -- Dictionary where the issue will be stored.
+
     """
     if issue.pull_request is not None:
         return  # we analyze issues and prs differentely
@@ -227,13 +233,14 @@ def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
 
 
 def analyse_issues(project: Repository, project_knowledge: Path):
-    """Analysis of every closed issue in repository
+    """Analysis of every closed issue in repository.
 
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
                                 ogr unfortunatelly did not provide enough to properly analyze issues
 
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
+
     """
     _LOGGER.info('-------------Issues (that are not PR) Analysis-------------')
     data_path = project_knowledge.joinpath('./issues.json')
@@ -254,7 +261,7 @@ def analyse_issues(project: Repository, project_knowledge: Path):
 
 
 def extract_pullrequest_review_requests(pullrequest: PullRequest) -> List[str]:
-    """Extract features from requested reviews of the PR
+    """Extract features from requested reviews of the PR.
 
     GitHub understands review requests rather as requested reviewers than actual
     requests.
@@ -264,6 +271,7 @@ def extract_pullrequest_review_requests(pullrequest: PullRequest) -> List[str]:
 
     Returns:
         List[str] -- list of logins of the requested reviewers
+
     """
     requested_users = pullrequest.get_review_requests()[0]
 
@@ -282,6 +290,7 @@ def extract_pullrequest_reviews(pullrequest: PullRequest) -> Dict[str, Dict[str,
     Returns:
         Dict[str, Dict[str, Any]] -- dictionary of extracted reviews. Each review is stored
                                      by its ID.
+
     """
     reviews = pullrequest.get_reviews()
     _LOGGER.info("  -num of reviews found: %d" % reviews.totalCount)
@@ -346,7 +355,7 @@ def store_pullrequest(pull: PullRequest, results: Dict[str, Dict[str, Any]]):
 
 
 def analyse_pullrequests(project: Repository, project_knowledge: Path):
-    """Analysis of every closed pullrequest in repository
+    """Analysis of every closed pullrequest in repository.
 
     Arguments:
         project {Repository} -- currently the PyGithub lib is used because of its functionality
