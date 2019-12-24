@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ogr = "*"
-gitpython = "*"
 numpy = "*"
 pygithub = "*"
 matplotlib = "*"
