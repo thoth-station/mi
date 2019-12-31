@@ -29,6 +29,7 @@ from reviewer_recommender import evaluate_reviewers
 
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
+logging.basicConfig(level=logging.INFO)
 
 @click.command()
 @click.option(

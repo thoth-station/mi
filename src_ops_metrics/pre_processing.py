@@ -41,6 +41,124 @@ def retrieve_knowledge(knowledge_path: Path, project: str) -> Dict[str, Any]:
     return load_previous_knowledge(project, pulls_data_path, "PullRequest")
 
 
+def pre_process_project_data(data: Dict[str, Any]):
+    """Pre process of data for a given project repository.
+
+    Data example with 1 PR:
+
+    {
+        "37": {
+            "size": null,
+            "labels": [],
+            "created_by": "pacospace",
+            "created_at": 1576170840.0,
+            "closed_at": 1576171248.0,
+            "closed_by": "fridex",
+            "time_to_close": 408.0,
+            "merged_at": 1576171248.0,
+            "commits_number": 1,
+            "referenced_issues": [],
+            "interactions": {}, 
+            "reviews": {
+                "331430111": {"author": "fridex", "words_count": 2, "submitted_at": 1576171243.0, "state": "APPROVED"}
+                },
+                "requested_reviewers": []
+                }
+            }
+    """
+
+    pr_ids = sorted([int(k) for k in data.keys()])
+
+    tfr_per_pr = []                     # Time to First Review (TTFR) [hr]
+    ttr_per_pr = []                     # Time to Review (TTR) [hr]
+
+    mtfr_in_time = []                   # Median TTFR [hr]
+    mttr_in_time = []                   # Mean TTR [hr]
+
+    tfr_in_time = []                    # TTFR in time [hr]
+    ttr_in_time = []                    # TTR in time [hr]
+
+    contributors = []
+
+    project_prs_size_encoded = []       # Pull Request length
+
+    for pr_id in pr_ids:
+        pr = data[str(pr_id)]
+
+        if pr["reviews"] and pr["size"]:
+            dt_created = datetime.fromtimestamp(pr["created_at"])
+
+            dt_first_review = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]['submitted_at'])
+
+            tfr_per_pr.append((dt_first_review - dt_created).total_seconds() / 3600)
+
+            # Consider all approved reviews
+            pr_approved_dt = [
+                datetime.fromtimestamp(review["submitted_at"])
+                for review in pr["reviews"].values()
+                if review["state"] == "APPROVED"
+            ]
+
+            if pr_approved_dt:
+                # Take maximum to consider last approved if more than one contributor has to approve
+                dt_approved = max(pr_approved_dt)
+
+                ttr_per_pr.append((dt_approved - dt_created).total_seconds() / 3600)
+
+                ttr_in_time.append(
+                    (
+                        dt_created,
+                        pr_id,
+                        (dt_approved - dt_created).total_seconds() / 3600,
+                        pr["size"])
+                )
+                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
+
+            else:
+                dt_merged = datetime.fromtimestamp(pr["merged_at"])
+                ttr_per_pr.append((dt_merged - dt_created).total_seconds() / 3600)
+
+                ttr_in_time.append(
+                    (
+                        dt_created,
+                        pr_id,
+                        (dt_merged - dt_created).total_seconds() / 3600,
+                        pr["size"])
+                )
+                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
+
+            tfr_in_time.append(
+                (
+                    dt_created,
+                    pr_id,
+                    (dt_first_review - dt_created).total_seconds() / 3600,
+                    pr["size"])
+            )
+
+            mtfr_in_time.append((dt_created, pr_id, np.median(tfr_per_pr)))
+
+            project_prs_size_encoded.append(convert_score2num(label=pr["size"]))
+
+        if pr["created_by"] not in contributors:
+            contributors.append(pr["created_by"])
+
+    project_reviews_data = {}
+    project_reviews_data["TFR_in_time"] = tfr_in_time
+    project_reviews_data["TTR_in_time"] = ttr_in_time
+    project_reviews_data["MTFR_in_time"] = mtfr_in_time
+    project_reviews_data["MTTR_in_time"] = mttr_in_time
+    project_reviews_data["contributors"] = contributors
+
+    # Encode Pull Request sizes for the contributor
+    project_pr_median_size, project_length_score = convert_num2label(
+        score=np.median(project_prs_size_encoded)
+        )
+    project_reviews_data["median_pr_length"] = project_pr_median_size
+    project_reviews_data["median_pr_length_score"] = project_length_score
+
+    return project_reviews_data
+
+
 def pre_process_contributors_data(data: Dict[str, Any]):
     """Pre process of data for contributors in a project repository."""
     pr_ids = sorted([int(k) for k in data.keys()])
@@ -193,124 +311,8 @@ def pre_process_contributors_data(data: Dict[str, Any]):
             )
         contributors_reviews_data[reviewer]["median_pr_length"] = contributor_pr_median_size
         contributors_reviews_data[reviewer]["median_pr_length_score"] = contributor_relative_score
+
         contributors_reviews_data[reviewer]["MTFR_in_time"] = mtfr_in_time[reviewer]
         contributors_reviews_data[reviewer]["MTTR_in_time"] = mttr_in_time[reviewer]
 
     return contributors_reviews_data
-
-
-def pre_process_project_data(data: Dict[str, Any]):
-    """Pre process of data for a given project repository.
-
-    Data example with 1 PR:
-
-    {
-        "37": {
-            "size": null,
-            "labels": [],
-            "created_by": "pacospace",
-            "created_at": 1576170840.0,
-            "closed_at": 1576171248.0,
-            "closed_by": "fridex",
-            "time_to_close": 408.0,
-            "merged_at": 1576171248.0,
-            "commits_number": 1,
-            "referenced_issues": [],
-            "interactions": {}, 
-            "reviews": {
-                "331430111": {"author": "fridex", "words_count": 2, "submitted_at": 1576171243.0, "state": "APPROVED"}
-                },
-                "requested_reviewers": []
-                }
-            }
-    """
-
-    pr_ids = sorted([int(k) for k in data.keys()])
-
-    tfr_per_pr = []                     # Time to First Review (TTFR) [hr]
-    ttr_per_pr = []                     # Time to Review (TTR) [hr]
-
-    mtfr_in_time = []                   # Median TTFR [hr]
-    mttr_in_time = []                   # Mean TTR [hr]
-
-    tfr_in_time = []                    # TTFR in time [hr]
-    ttr_in_time = []                    # TTR in time [hr]
-
-    contributors = []
-
-    project_prs_size_encoded = []       # Pull Request length
-
-    for pr_id in pr_ids:
-        pr = data[str(pr_id)]
-
-        if pr["reviews"] and pr["size"]:
-            dt_created = datetime.fromtimestamp(pr["created_at"])
-
-            dt_first_review = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]['submitted_at'])
-
-            tfr_per_pr.append((dt_first_review - dt_created).total_seconds() / 3600)
-
-            # Consider all approved reviews
-            pr_approved_dt = [
-                datetime.fromtimestamp(review["submitted_at"])
-                for review in pr["reviews"].values()
-                if review["state"] == "APPROVED"
-            ]
-
-            if pr_approved_dt:
-                # Take maximum to consider last approved if more than one contributor has to approve
-                dt_approved = max(pr_approved_dt)
-
-                ttr_per_pr.append((dt_approved - dt_created).total_seconds() / 3600)
-
-                ttr_in_time.append(
-                    (
-                        dt_created,
-                        pr_id,
-                        (dt_approved - dt_created).total_seconds() / 3600,
-                        pr["size"])
-                )
-                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
-
-            else:
-                dt_merged = datetime.fromtimestamp(pr["merged_at"])
-                ttr_per_pr.append((dt_merged - dt_created).total_seconds() / 3600)
-
-                ttr_in_time.append(
-                    (
-                        dt_created,
-                        pr_id,
-                        (dt_merged - dt_created).total_seconds() / 3600,
-                        pr["size"])
-                )
-                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
-
-            tfr_in_time.append(
-                (
-                    dt_created,
-                    pr_id,
-                    (dt_first_review - dt_created).total_seconds() / 3600,
-                    pr["size"])
-            )
-
-            mtfr_in_time.append((dt_created, pr_id, np.median(tfr_per_pr)))
-
-            project_prs_size_encoded.append(convert_score2num(label=pr["size"]))
-
-        if pr["created_by"] not in contributors:
-            contributors.append(pr["created_by"])
-
-    project_reviews_data = {}
-    project_reviews_data["MTFR_in_time"] = mtfr_in_time
-    project_reviews_data["MTTR_in_time"] = mttr_in_time
-    project_reviews_data["contributors"] = contributors
-
-    # Encode Pull Request sizes for the contributor
-    project_pr_median_size, project_length_score = convert_num2label(
-        score=np.median(project_prs_size_encoded)
-        )
-    project_reviews_data["median_pr_length"] = project_pr_median_size
-    project_reviews_data["median_pr_length_score"] = project_length_score
-
-    return project_reviews_data
-

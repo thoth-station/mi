@@ -22,7 +22,7 @@ import os
 
 import numpy as np
 
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,72 +36,60 @@ def check_directory(knowledge_dir: Path):
         os.makedirs(knowledge_dir)
 
 
-def convert_score2num(label: str) -> int:
+def convert_score2num(label: str) -> float:
     """Convert label string to numerical value."""
     if label == "XXL":
         return 1
     # lines_changes > 1000:
-    #     return "size/XXL"
     elif label == "XL":
         return 0.7
-    # elif lines_changes >= 500 and lines_changes <= 999:
-    #     return "size/XL"
+    # lines_changes >= 500 and lines_changes <= 999:
     elif label == "L":
         return 0.4
-    # elif lines_changes >= 100 and lines_changes <= 499:
-    #     return "size/L"
+    # lines_changes >= 100 and lines_changes <= 499:
     elif label == "M":
         return 0.09
-    # elif lines_changes >= 30 and lines_changes <= 99:
-    #     return "size/M"
+    # lines_changes >= 30 and lines_changes <= 99:
     elif label == "S":
         return 0.02
-    # elif lines_changes >= 10 and lines_changes <= 29:
-    #     return "size/S"
+    # lines_changes >= 10 and lines_changes <= 29:
     elif label == "XS":
         return 0.01
-    # elif lines_changes >= 0 and lines_changes <= 9:
-    #     return "size/XS"
+    # lines_changes >= 0 and lines_changes <= 9:
     else:
         _LOGGER.error("%s is not a recognized size" % label)
 
 
-def convert_num2label(score: float) -> str:
+def convert_num2label(score: float) -> Tuple[str, float]:
     """Convert PR length to string label."""
     if score > 0.9:
         pull_request_size = "XXL"
         # lines_changes > 1000:
-        #     return "size/XXL"
         assigned_score = 0.9
 
     elif score > 0.7 and score < 0.9:
         pull_request_size = "XL"
-        # elif lines_changes >= 500 and lines_changes <= 999:
-        #     return "size/XL"
+        # lines_changes >= 500 and lines_changes <= 999:
         assigned_score = np.mean([0.7, 0.9])
 
     elif score >= 0.4 and score < 0.7:
         pull_request_size = "L"
-        # elif lines_changes >= 100 and lines_changes <= 499:
-        #     return "size/L"
+        # lines_changes >= 100 and lines_changes <= 499:
         assigned_score = np.mean([0.4, 0.7])
 
     elif score >= 0.09 and score < 0.4:
         pull_request_size = "M"
-        # elif lines_changes >= 30 and lines_changes <= 99:
-        #     return "size/M"
+        # lines_changes >= 30 and lines_changes <= 99:
         assigned_score = np.mean([0.09, 0.4])
 
     elif score >= 0.02 and score < 0.09:
         pull_request_size = "S"
-        # elif lines_changes >= 10 and lines_changes <= 29:
-        #     return "size/S"
+        # lines_changes >= 10 and lines_changes <= 29:
         assigned_score = np.mean([0.02, 0.09])
 
     elif score >= 0.01 and score < 0.02:
         pull_request_size = "XS"
-        # elif lines_changes >= 0 and lines_changes <= 9:
-        #     return "size/XS"
+        # lines_changes >= 0 and lines_changes <= 9:
         assigned_score = np.mean([0.01, 0.02])
 
     else:

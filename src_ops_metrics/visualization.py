@@ -29,6 +29,7 @@ import pandas as pd
 from utils import check_directory
 from utils import convert_num2label, convert_score2num
 from pre_processing import retrieve_knowledge
+from pre_processing import pre_process_project_data
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,7 +123,11 @@ def visualize_results(project: str):
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
 
     if data:
-        tfr_in_time, ttr_in_time, mtfr_in_time, mttr_in_time, _ = pre_process_project_data(data=data)
+        projects_reviews_data = pre_process_project_data(data=data)
+        tfr_in_time = projects_reviews_data["TFR_in_time"]
+        ttr_in_time = projects_reviews_data["TTR_in_time"]
+        mtfr_in_time = projects_reviews_data["MTFR_in_time"]
+        mttr_in_time = projects_reviews_data["MTFR_in_time"]
 
     # TFR
         mtfr_in_time_processed = remove_outliers(

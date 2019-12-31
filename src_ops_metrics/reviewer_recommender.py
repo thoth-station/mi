@@ -35,6 +35,7 @@ from pre_processing import retrieve_knowledge
 from pre_processing import pre_process_project_data, pre_process_contributors_data
 from utils import convert_num2label, convert_score2num
 
+
 _LOGGER = logging.getLogger(__name__)
 
 BOTS_NAMES = [
@@ -43,13 +44,14 @@ BOTS_NAMES = [
     "dependabot[bot]",
     ]
 
+
 def evaluate_contributor_score(
     contribution_1: float,
     contribution_2: float,
     contribution_3: float,
     contribution_4: float,
     contribution_5: float
-):
+) -> float:
     """Evaluate contributor score.
 
     Contributions:
@@ -88,7 +90,6 @@ def evaluate_reviewers(
     detailed_statistics: bool = False,
     analyze_single_scores: bool = False,
     filter_contributors: bool = True,
-    use_median: bool = False
     ):
     """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
@@ -148,7 +149,7 @@ def evaluate_reviewers(
     for contributor in contributors:
 
         _LOGGER.debug(f"Analyzing contributor: {contributor}")
-        if contributor in contributors_reviews_data.keys():
+        if contributor in contributors_reviews_data.keys() and contributor not in BOTS_NAMES:
 
             contributor_commits_number = sum([
                 pr["commits_number"]
@@ -190,7 +191,8 @@ def evaluate_reviewers(
                         str(timedelta(hours=contributor_mttr)),
                         contributor_time_last_review,
                         contributor_commits_number,
-                        contributor_commits_number/project_commits_number
+                        contributor_commits_number/project_commits_number,
+                        False
                     )
                 )
 
@@ -201,6 +203,8 @@ def evaluate_reviewers(
                 contribution_4=contributor_commits_number/project_commits_number,
                 contribution_5=1
             )
+
+    #     * k5 *(((last_review_author_time - first_PR_approved_time).total_seconds())/((now_time - first_PR_approved_time).total_seconds()))
 
             scores_data.append(
                 (
@@ -213,6 +217,37 @@ def evaluate_reviewers(
                     final_score
                 )
             )
+
+        elif contributor in BOTS_NAMES:
+
+            bot_contributor_commits_number = sum([
+                pr["commits_number"]
+                for pr in data.values()
+                if pr["created_by"] == contributor])
+
+            bot_contributor_prs_number = 0
+            for pr in data.values():
+                if pr["created_by"] == contributor:
+                    bot_contributor_prs_number += 1
+
+            contributor_data.append(
+                    (
+                        contributor,
+                        bot_contributor_prs_number,
+                        bot_contributor_prs_number/project_prs_number,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        bot_contributor_commits_number,
+                        contributor_commits_number/project_commits_number,
+                        True
+                    )
+                )
 
         else:
 
@@ -240,11 +275,10 @@ def evaluate_reviewers(
                         None,
                         None,
                         contributor_commits_number,
-                        contributor_commits_number/project_commits_number
+                        contributor_commits_number/project_commits_number,
+                        False
                     )
                 )
-
-    #     * k5 *(((last_review_author_time - first_PR_approved_time).total_seconds())/((now_time - first_PR_approved_time).total_seconds()))
 
     contributors_data = pd.DataFrame(
         contributor_data, columns=[
@@ -259,8 +293,9 @@ def evaluate_reviewers(
             "MTTFR",        # Median Time to First Review 
             "MTTR",         # Median Time to Review
             "TLR",          # Time Last Review [hr]
-            "Commits n.",
-            "Commits %"
+            "Comm n.",      # Commits number
+            "Comm %",       # Commits percentage
+            "Bot"           # Is a bot?
             ])
     print()
     print(contributors_data)
@@ -268,13 +303,20 @@ def evaluate_reviewers(
     contributors_score_data = pd.DataFrame(
         scores_data, columns=[
             "Contributor",
-            "C1",        # Contribution 1
-            "C2",        # Contribution 2
-            "C3",        # Contribution 3
-            "C4",        # Contribution 4
-            "C5",        # Contribution 5
-            "Score"      # Contributor Final Score
+            "C1",           # Contribution 1
+            "C2",           # Contribution 2
+            "C3",           # Contribution 3
+            "C4",           # Contribution 4
+            "C5",           # Contribution 5
+            "Score"         # Contributor Final Score
             ])
 
     print()
-    print(contributors_score_data.sort_values(by=['Score'], ascending=False))
+    sorted_reviewers = contributors_score_data.sort_values(by=['Score'], ascending=False)
+    print(sorted_reviewers)
+
+    print()
+    _LOGGER.info(f"Number of reviewers requested: {number_reviewer}")
+    if 
+    _LOGGER.info(
+            f"Reviewers: {sorted_reviewers['Contributor'].head(number_reviewer).values}")
