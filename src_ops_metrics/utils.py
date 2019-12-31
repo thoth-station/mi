@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""General functions that can be reused."""
+"""General functions that can be reused for SrcOpsMetrics analysis."""
 
 import logging
 import os
@@ -31,3 +31,82 @@ def check_directory(knowledge_dir: Path):
         _LOGGER.info(
             "No repo identified, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
+
+
+def convert_score2num(label: str) -> int:
+    """Convert label string to numerical value."""
+    if label == "XXL":
+        return 1
+    # lines_changes > 1000:
+    #     return "size/XXL"
+    elif label == "XL":
+        return 0.7
+    # elif lines_changes >= 500 and lines_changes <= 999:
+    #     return "size/XL"
+    elif label == "L":
+        return 0.4
+    # elif lines_changes >= 100 and lines_changes <= 499:
+    #     return "size/L"
+    elif label == "M":
+        return 0.09
+    # elif lines_changes >= 30 and lines_changes <= 99:
+    #     return "size/M"
+    elif label == "S":
+        return 0.02
+    # elif lines_changes >= 10 and lines_changes <= 29:
+    #     return "size/S"
+    elif label == "XS":
+        return 0.01
+    # elif lines_changes >= 0 and lines_changes <= 9:
+    #     return "size/XS"
+    else:
+        _LOGGER.error("%s is not a recognized size" % label)
+
+
+def convert_num2label(score: float) -> str:
+    """Convert PR length to string label."""
+    if score > 0.9:
+        pull_request_size = "size/XXL"
+        # lines_changes > 1000:
+        #     return "size/XXL"
+        assigned_score = 0.9
+
+    elif score > 0.7 and score < 0.9:
+        pull_request_size = "size/XL"
+        # elif lines_changes >= 500 and lines_changes <= 999:
+        #     return "size/XL"
+        assigned_score = np.mean([0.7, 0.9])
+
+    elif score >= 0.4 and score < 0.7:
+        pull_request_size = "size/L"
+        # elif lines_changes >= 100 and lines_changes <= 499:
+        #     return "size/L"
+        assigned_score = np.mean([0.4, 0.7])
+
+    elif score >= 0.09 and score < 0.4:
+        pull_request_size = "size/M"
+        # elif lines_changes >= 30 and lines_changes <= 99:
+        #     return "size/M"
+        assigned_score = np.mean([0.09, 0.4])
+
+    elif score >= 0.02 and score < 0.09:
+        pull_request_size = "size/S"
+        # elif lines_changes >= 10 and lines_changes <= 29:
+        #     return "size/S"
+        assigned_score = np.mean([0.02, 0.09])
+
+    elif score >= 0.01 and score < 0.02:
+        pull_request_size = "size/XS"
+        # elif lines_changes >= 0 and lines_changes <= 9:
+        #     return "size/XS"
+        assigned_score = np.mean([0.01, 0.02])
+
+    else:
+        _LOGGER.error("%s cannot be mapped, it's out of range [%f, %f]" % (
+            score,
+            0.01,
+            0.9
+            )
+            )
+
+    return pull_request_size, assigned_score

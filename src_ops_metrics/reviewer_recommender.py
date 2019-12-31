@@ -26,12 +26,14 @@ from datetime import datetime
 
 from typing import Tuple
 import numpy as np
+import pandas as pd
 
 from pathlib import Path
 from collections import Counter
 
 from visualization import retrieve_knowledge
 from visualization import post_process_project_data, post_process_contributors_data
+from utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,85 +42,6 @@ BOTS_NAMES = [
     "dependencies[bot]",
     "dependabot[bot]",
     ]
-
-
-def convert_score2num(label: str) -> int:
-    """Convert label string to numerical value."""
-    if label == "XXL":
-        return 1
-    # lines_changes > 1000:
-    #     return "size/XXL"
-    elif label == "XL":
-        return 0.7
-    # elif lines_changes >= 500 and lines_changes <= 999:
-    #     return "size/XL"
-    elif label == "L":
-        return 0.4
-    # elif lines_changes >= 100 and lines_changes <= 499:
-    #     return "size/L"
-    elif label == "M":
-        return 0.09
-    # elif lines_changes >= 30 and lines_changes <= 99:
-    #     return "size/M"
-    elif label == "S":
-        return 0.02
-    # elif lines_changes >= 10 and lines_changes <= 29:
-    #     return "size/S"
-    elif label == "XS":
-        return 0.01
-    # elif lines_changes >= 0 and lines_changes <= 9:
-    #     return "size/XS"
-    else:
-        _LOGGER.error("%s is not a recognized size" % label)
-
-
-def convert_num2label(score: float) -> str:
-    """Convert PR length to string label."""
-    if score > 0.9:
-        pull_request_size = "size/XXL"
-        # lines_changes > 1000:
-        #     return "size/XXL"
-        assigned_score = 0.9
-
-    elif score > 0.7 and score < 0.9:
-        pull_request_size = "size/XL"
-        # elif lines_changes >= 500 and lines_changes <= 999:
-        #     return "size/XL"
-        assigned_score = np.mean([0.7, 0.9])
-
-    elif score >= 0.4 and score < 0.7:
-        pull_request_size = "size/L"
-        # elif lines_changes >= 100 and lines_changes <= 499:
-        #     return "size/L"
-        assigned_score = np.mean([0.4, 0.7])
-
-    elif score >= 0.09 and score < 0.4:
-        pull_request_size = "size/M"
-        # elif lines_changes >= 30 and lines_changes <= 99:
-        #     return "size/M"
-        assigned_score = np.mean([0.09, 0.4])
-
-    elif score >= 0.02 and score < 0.09:
-        pull_request_size = "size/S"
-        # elif lines_changes >= 10 and lines_changes <= 29:
-        #     return "size/S"
-        assigned_score = np.mean([0.02, 0.09])
-
-    elif score >= 0.01 and score < 0.02:
-        pull_request_size = "size/XS"
-        # elif lines_changes >= 0 and lines_changes <= 9:
-        #     return "size/XS"
-        assigned_score = np.mean([0.01, 0.02])
-
-    else:
-        _LOGGER.error("%s cannot be mapped, it's out of range [%f, %f]" % (
-            score,
-            0.01,
-            0.9
-            )
-            )
-
-    return pull_request_size, assigned_score
 
 
 def evaluate_reviewers(
@@ -139,194 +62,134 @@ def evaluate_reviewers(
     knowledge_path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
 
-    ttr_in_time , mttr_in_time, contributors = post_process_project_data(data=data)
+    _, _, mtfr_in_time, mttr_in_time, contributors = post_process_project_data(data=data)
 
     # Project statistics
-    project_total_commits_number = sum([pr["commits_number"] for pr in data.values()])
+    project_commits_number = sum([pr["commits_number"] for pr in data.values()])
     project_prs_number = len(data)
     project_prs_reviewed_number = len(mttr_in_time)
+    project_mtfr = mtfr_in_time[-1][2]
     project_mttr = mttr_in_time[-1][2]
 
+    project_data = pd.DataFrame(
+        [
+            (
+                project,
+                project_prs_number,
+                project_commits_number,
+                project_prs_reviewed_number,
+                str(timedelta(hours=project_mtfr)),
+                str(timedelta(hours=project_mttr))
+            )
+        ], columns=[
+            "Repository",
+            "PullRequest n.",
+            "Commits n.",
+            "PullRequestRev n.",
+            "MTTFR", # Median Time to First Review 
+            "MTTR" # Median Time to Review
+            ])
     _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
+        "-------------------------------------------------------------------------------"
     )
+    print(project_data)
     _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
-    _LOGGER.info("{:40} --> {:^12} |{:^18} | {:^9} | {:^26} |".format(
-        "Project",
-        "N.PR Created",
-        "N. Commits created",
-        "N. PR rev",
-        "Median Time to Review (MTTR)"))
-
-    _LOGGER.info(
-        "{:40} --> {:^12} |{:^18} | {:^9} | {:^26} |".format(
-            project,
-            project_prs_number,
-            project_total_commits_number,
-            project_prs_reviewed_number,
-            str(timedelta(seconds=project_mttr))
-        )
-    )
-    _LOGGER.info(
-        "-----------------------------------------------------------------------------------------------------------------------------------------------"
-    )
-
-    authors = sorted(contributors)
-
-    _LOGGER.info("")
-    _LOGGER.info(
-        "{:^20} --> {:^9} | {:^25} | {:^9} | {:^12} | {:^15} | {:^20} | {:^8} |".format(
-            "Author reviews", "N. PR rev", "MTTR", "MLenPR", "N. commits c", "% Tot Commits c", "Time last rev", "Score"
-        )
+        "-------------------------------------------------------------------------------"
     )
 
-    #         # Reviewer Analysis
-    #         fig1, ax1 = plt.subplots()
-    #         plt.gcf().autofmt_xdate()
+    contributors = sorted(contributors)
+    contributor_data = []
 
-    #         # Reviewer Analysis
-    #         fig2, ax2 = plt.subplots()
-    #         plt.gcf().autofmt_xdate()
-
-    #         first_PR_approved_time = inputs_plots[0][3]
-    #         now_time = datetime.now()
-
-    #         bot_decision_score = []
-    #         contributor_reviewer = []
-    #         bot_contributor = []
-    #         author_contribution_scores = {}
-    #         author_reviewer_statistics = {}
-    #         contributor_never_reviewed = []
-    #         human_percentage = 0
-    #         bot_percentage = 0
-
-    # Authors (Contributors that reviewed and that didn't reviewed)
+    # Contributors that reviewed and that didn't reviewed
     contributors_reviews_data = post_process_contributors_data(data=data)
 
-    for author in authors:
-        _LOGGER.info(f"Analyzing contributor: {author}")
+    for contributor in contributors:
 
-        author_total_commits_number = sum([
-            pr["commits_number"]
-            for pr in data.values()
-            if pr["created_by"] == author])
+        _LOGGER.debug(f"Analyzing contributor: {contributor}")
+        if contributor in contributors_reviews_data.keys():
 
-        author_total_prs_number = 0
-        for pr in data.values():
-            if pr["created_by"] == author:
-                author_total_prs_number += 1
 
-        author_ttr_per_pr = [
-            ttr_result[2]
-            for ttr_result in ttr_in_time
-            if ttr_result[3] == author
-        ]
+            contributor_commits_number = sum([
+                pr["commits_number"]
+                for pr in data.values()
+                if pr["created_by"] == contributor])
 
-        # Check if the author reviewed any PR from another team member
-        if author_ttr_per_pr:
-            author_mttr = np.median(author_ttr_per_pr)
-            author_prs_reviewed_number = len(author_ttr_per_pr)
+            contributor_prs_number = 0
+            for pr in data.values():
+                if pr["created_by"] == contributor:
+                    contributor_prs_number += 1
 
-            author_prs_size = [
-                ttr_result[4]
-                for ttr_result in ttr_in_time
-                if ttr_result[3] == author
-            ]
+            contributor_prs_reviewed_number = len(contributors_reviews_data[contributor]["reviews"])
+            contributor_reviews_number = contributors_reviews_data[contributor]["number_reviews"]
+            contributor_reviews_length = contributors_reviews_data[contributor]["median_review_length"]
+            contributor_mtfr = contributors_reviews_data[contributor]["MTFR_in_time"][-1][2]
+            contributor_mttr = contributors_reviews_data[contributor]["MTTR_in_time"][-1][2]
 
-            # Encode Pull Request Size
-            author_prs_size_encoded = [convert_score2num(label=pr_size) for pr_size in author_prs_size]
-            author_pr_median_size, assigned_score = convert_num2label(
-                score=np.median(author_prs_size_encoded)
+
+            contributor_data.append(
+                    (
+                        contributor,
+                        contributor_prs_number,
+                        contributor_prs_number/project_prs_number,
+                        contributor_prs_reviewed_number,
+                        contributor_prs_reviewed_number/project_prs_reviewed_number,
+                        0,
+                        contributor_reviews_number,
+                        contributor_reviews_length,
+                        str(timedelta(hours=contributor_mtfr)),
+                        str(timedelta(hours=contributor_mttr)),
+                        0,
+                        contributor_commits_number,
+                        contributor_commits_number/project_commits_number
+                    )
                 )
-            print(author_pr_median_size, assigned_score)
+        else:
 
-    #                 PR_scores = []
-    #                 for PR_labels in PRs_labels:
-    #                     if PR_labels:
-    #                         scores = []
-    #                         for label in PR_labels:
-    #                             scores.append(convert_label2num(label=label))
-    #                         PR_scores.append(max(scores))
-    #                     else:
-    #                         pass
+            contributor_commits_number = sum([
+                pr["commits_number"]
+                for pr in data.values()
+                if pr["created_by"] == contributor])
 
-    #                 # Evaluate map of number of PR reviewer by reviewer per author of PR.
-    #                 Number_PR_reviewed_for_author = {}
-    #                 for reviewed in authors:
-    #                     Number_PR_reviewed_for_author[reviewed] = (
-    #                         len(
-    #                             [
-    #                                 pr
-    #                                 for pr in data["results"].values()
-    #                                 if pr["PR_approved"]
-    #                                 and pr["PR_author"] == reviewed
-    #                                 and pr["PR_approved_by"] == author
-    #                             ]
-    #                         )
-    #                         / Number_PR_reviewed_author
-    #                         * 100
-    #                     )
+            contributor_prs_number = 0
+            for pr in data.values():
+                if pr["created_by"] == contributor:
+                    contributor_prs_number += 1
 
-    #                 if PR_scores:
-    #                     if use_median:
-    #                         mean_PR_length, relative_score = convert_score2label(mean_score=np.mean(PR_scores))
-    #                     else:
-    #                         mean_PR_length, relative_score = convert_score2label(mean_score=np.mean(PR_scores))
-    #                 else:
-    #                     mean_PR_length = "size/XS"
-    #                     relative_score = 0.01
-    #                     PR_scores = 0.01
+            contributor_data.append(
+                    (
+                        contributor,
+                        contributor_prs_number,
+                        contributor_prs_number/project_prs_number,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        contributor_commits_number,
+                        contributor_commits_number/project_commits_number
+                    )
+                )
 
-    #                 ##############################################################################
-    #                 ###################### MTTR in Time per Project ##############################
-    #                 ##############################################################################
-    #                 MTTR_author_time = []
-    #                 pr_list_ttr = []
-    #                 keys_list = sorted([int(k) for k in data["results"].keys()])
-    #                 for key in keys_list:
-    #                     pr = data["results"][str(key)]
-    #                     if pr["PR_approved"] and pr["PR_approved_by"] == author:
-    #                         dt_created = datetime.fromtimestamp(pr["PR_created"])
-    #                         dt_approved = datetime.fromtimestamp(pr["PR_approved"])
-    #                         pr_list_ttr.append((dt_approved - dt_created).total_seconds() / 3600)
-    #                         if use_median:
-    #                             MTTR_author_time.append(
-    #                                 (
-    #                                     datetime.fromtimestamp(pr["PR_created"]),
-    #                                     np.median(pr_list_ttr),
-    #                                     str(key),
-    #                                 )
-    #                             )
-    #                         else:
-    #                             MTTR_author_time.append(
-    #                                 (
-    #                                     datetime.fromtimestamp(pr["PR_created"]),
-    #                                     np.mean(pr_list_ttr),
-    #                                     str(key),
-    #                                 )
-    #                             )
-
-    #                 # Sort results by PR ID
-    #                 MTTR_author_time = sorted(MTTR_author_time, key=lambda x: int(x[2]))
-
-    #                 PR_created_time_per_id = [el[0] for el in MTTR_author_time]
-    #                 MTTR_time_per_id = [el[1] for el in MTTR_author_time]
-
-    #                 if len(PR_created_time_per_id) != len(MTTR_author_time):
-    #                     _LOGGER.warning(
-    #                         f"PR_created_time_per_id {len(PR_created_time_per_id)}"
-    #                         f"and MTTR_time_per_id {len(MTTR_time_per_id)} do not have the same length!"
-    #                     )
-    #                     raise Exception(
-    #                         f"PR_created_time_per_id {len(PR_created_time_per_id)}"
-    #                         f"and MTTR_time_per_id {len(MTTR_time_per_id)} do not have the same length!"
-    #                     )
-
-    #                 ax1.plot(PR_created_time_per_id, MTTR_time_per_id, "-o", label=author)
-
-    #                 ##############################################################################
+    contributors_data = pd.DataFrame(
+        contributor_data, columns=[
+            "Contributor",
+            "PR n.",        # Pull Request number
+            "PR %",         # Pull Request percentage respect to total
+            "PRRev n.",     # Pull Request Reviewed number
+            "PRRev %",      # Pull Request Reviewed percentage respect to total
+            "MPRLen",       # Median Pull Request Reviewed Length
+            "Rev n.",       # Reviews number
+            "MRL",          # Median Review Length (Word count based)
+            "MTTFR",        # Median Time to First Review 
+            "MTTR",         # Median Time to Review
+            "TLR",          # Time Last Review [hr]
+            "Commits n.",
+            "Commits %"
+            ])
+    print(contributors_data)
 
     #                 ##############################################################################
     #                 ################ TTR in Time per Author in Project ###########################

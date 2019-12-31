@@ -25,9 +25,11 @@ from datetime import datetime
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from create_bot_knowledge import load_previous_knowledge
 from utils import check_directory
+from utils import convert_num2label, convert_score2num
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,10 +49,23 @@ def post_process_contributors_data(data: Dict[str, Any]):
 
     contributors_reviews_data = {}
 
+    tfr_per_pr = {}  # Time to First Review (TTFR) [hr]
+    ttr_per_pr = {}   # Time to Review (TTR) [hr]
+
+    mtfr_in_time = {}  # Median TTFR [hr]
+    mttr_in_time = {}  # Mean TTR [hr]
+
+    tfr_in_time = {}  # TTFR in time [hr]
+    ttr_in_time = {}  # TTR in time [hr]
+
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
-        initial_number_review = 1
         if pr["reviews"] and pr["size"]:
+
+            dt_created = datetime.fromtimestamp(pr["created_at"])
+
+            review_info_per_reviewer = {}
+
             for review in pr["reviews"].values():
                 # Check reviews and discard comment of the author of the PR
                 if review["author"] != pr["created_by"]:
@@ -87,16 +102,123 @@ def post_process_contributors_data(data: Dict[str, Any]):
                             }
                             )
 
+                    if review["author"] not in review_info_per_reviewer.keys():
+                        review_info_per_reviewer[review["author"]] = []
+                        review_info_per_reviewer[review["author"]].append(review["submitted_at"])
+                    else:
+                        review_info_per_reviewer[review["author"]].append(review["submitted_at"])
+
+            for reviewer, reviewer_info in review_info_per_reviewer.items():
+                dt_first_review = datetime.fromtimestamp(reviewer_info[0])
+
+                if reviewer not in tfr_per_pr.keys():
+                    tfr_per_pr[reviewer] = []
+                    tfr_per_pr[reviewer].append((dt_first_review - dt_created).total_seconds() / 3600)
+                    tfr_in_time[reviewer] = []
+                    tfr_in_time[reviewer].append(
+                        (
+                            dt_created,
+                            pr_id,
+                            (dt_first_review - dt_created).total_seconds() / 3600,
+                            pr["size"])
+                    )
+                else:
+                    tfr_per_pr[reviewer].append((dt_first_review - dt_created).total_seconds() / 3600)
+                    tfr_in_time[reviewer].append(
+                        (
+                            dt_created,
+                            pr_id,
+                            (dt_first_review - dt_created).total_seconds() / 3600,
+                            pr["size"])
+                    )
+
+                dt_approved = [
+                    datetime.fromtimestamp(review["submitted_at"])
+                    for review in pr["reviews"].values()
+                    if review["state"] == "APPROVED" and review["author"] == reviewer
+                ]
+
+                if dt_approved:
+                    if reviewer not in ttr_per_pr.keys():
+                        ttr_per_pr[reviewer] = []
+                        ttr_per_pr[reviewer].append((dt_approved[0] - dt_created).total_seconds() / 3600)
+                        ttr_in_time[reviewer] = []
+                        ttr_in_time[reviewer].append(
+                            (
+                                dt_created,
+                                pr_id,
+                                (dt_approved[0] - dt_created).total_seconds() / 3600,
+                                pr["size"])
+                        )
+                    else:
+                        ttr_per_pr[reviewer].append((dt_approved[0] - dt_created).total_seconds() / 3600)
+                        ttr_in_time[reviewer].append(
+                            (
+                                dt_created,
+                                pr_id,
+                                (dt_approved[0] - dt_created).total_seconds() / 3600,
+                                pr["size"])
+                        )
+
+            for reviewer in tfr_per_pr.keys():
+                if reviewer not in mtfr_in_time.keys():
+                    mtfr_in_time[reviewer] = []
+                    mtfr_in_time[reviewer].append((dt_created, pr_id, np.median(tfr_per_pr[reviewer])))
+                    mttr_in_time[reviewer] = []
+                    mttr_in_time[reviewer].append((dt_created, pr_id, np.median(ttr_per_pr[reviewer])))
+                else:
+                    mtfr_in_time[reviewer].append((dt_created, pr_id, np.median(tfr_per_pr[reviewer])))
+                    mttr_in_time[reviewer].append((dt_created, pr_id, np.median(ttr_per_pr[reviewer])))
+
+
+            # else:
+            #     dt_merged = datetime.fromtimestamp(pr["merged_at"])
+            #     ttr_per_pr.append((dt_merged - dt_created).total_seconds() / 3600)
+
+            #     ttr_in_time.append(
+            #         (
+            #             dt_created,
+            #             pr_id,
+            #             (dt_merged - dt_created).total_seconds() / 3600,
+            #             pr["size"])
+            #     )
+            #     mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
+
     for reviewer in contributors_reviews_data.keys():
         number_reviews = 0
+        reviews_length = []
         for reviews in contributors_reviews_data[reviewer]["reviews"].values():
             number_reviews += len(reviews)
+            review_words = 0
+            for review in reviews:
+                review_words += review["words_count"]
+
+            reviews_length.append(review_words)
 
         contributors_reviews_data[reviewer]["number_reviews"] = number_reviews
+        contributors_reviews_data[reviewer]["median_review_length"] = np.median(reviews_length)
+        contributors_reviews_data[reviewer]["MTFR_in_time"] = mtfr_in_time[reviewer]
+        contributors_reviews_data[reviewer]["MTTR_in_time"] = mttr_in_time[reviewer]
 
+    # # Check if the author reviewed any PR from another team member
+    # if author_ttr_per_pr:
+    #     author_mttr = np.median(author_ttr_per_pr)
+    #     author_prs_reviewed_number = len(author_ttr_per_pr)
+
+    #     author_prs_size = [
+    #         ttr_result[4]
+    #         for ttr_result in ttr_in_time
+    #         if ttr_result[3] == contributor
+    #     ]
+
+    #     # Encode Pull Request Size
+    #     author_prs_size_encoded = [convert_score2num(label=pr_size) for pr_size in author_prs_size]
+    #     author_pr_median_size, assigned_score = convert_num2label(
+    #         score=np.median(author_prs_size_encoded)
+    #         )
+    #     # print(author_pr_median_size, assigned_score)
 
     return contributors_reviews_data
-
 
 
 def post_process_project_data(data: Dict[str, Any]):
@@ -127,9 +249,14 @@ def post_process_project_data(data: Dict[str, Any]):
 
     pr_ids = sorted([int(k) for k in data.keys()])
 
-    ttr_per_pr = []  # [hr]
-    mttr_in_time = []  # [hr]
-    ttr_in_time = []  # [hr]
+    tfr_per_pr = []  # Time to First Review (TTFR) [hr]
+    ttr_per_pr = []  # Time to Review (TTR) [hr]
+
+    mtfr_in_time = []  # Median TTFR [hr]
+    mttr_in_time = []  # Mean TTR [hr]
+
+    tfr_in_time = []  # TTFR in time [hr]
+    ttr_in_time = []  # TTR in time [hr]
 
     contributors = [] 
 
@@ -139,49 +266,127 @@ def post_process_project_data(data: Dict[str, Any]):
         if pr["reviews"] and pr["size"]:
             dt_created = datetime.fromtimestamp(pr["created_at"])
 
-            pr_reviewed_dt = [
+            dt_first_review = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]['submitted_at'])
+
+            tfr_per_pr.append((dt_first_review - dt_created).total_seconds() / 3600)
+
+            # Consider all approved reviews
+            pr_approved_dt = [
                 datetime.fromtimestamp(review["submitted_at"])
                 for review in pr["reviews"].values()
                 if review["state"] == "APPROVED"
             ]
 
-            if pr_reviewed_dt:
-                dt_approved = max(pr_reviewed_dt)
+            if pr_approved_dt:
+                # Take maximum to consider approved by more than one person
+                dt_approved = max(pr_approved_dt)
+
                 ttr_per_pr.append((dt_approved - dt_created).total_seconds() / 3600)
 
-            ttr_in_time.append(
+                ttr_in_time.append(
+                    (
+                        dt_created,
+                        pr_id,
+                        (dt_approved - dt_created).total_seconds() / 3600,
+                        pr["size"])
+                )
+                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
+
+            else:
+                dt_merged = datetime.fromtimestamp(pr["merged_at"])
+                ttr_per_pr.append((dt_merged - dt_created).total_seconds() / 3600)
+
+                ttr_in_time.append(
+                    (
+                        dt_created,
+                        pr_id,
+                        (dt_merged - dt_created).total_seconds() / 3600,
+                        pr["size"])
+                )
+                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
+
+            tfr_in_time.append(
                 (
                     dt_created,
-                    str(pr_id),
-                    (dt_approved - dt_created).total_seconds() / 3600,)
+                    pr_id,
+                    (dt_first_review - dt_created).total_seconds() / 3600,
+                    pr["size"])
             )
 
-            mttr_in_time.append((dt_created, str(pr_id), np.median(ttr_per_pr)))
+            mtfr_in_time.append((dt_created, pr_id, np.median(tfr_per_pr)))
 
         if pr["created_by"] not in contributors:
             contributors.append(pr["created_by"])
 
-    return ttr_in_time, mttr_in_time, contributors
+    return tfr_in_time, ttr_in_time, mtfr_in_time, mttr_in_time, contributors
 
 
-def create_in_time_per_project_plot(
+def remove_outliers(extracted_data: List[Any], columns: List[str], quantity: str):
+    """Remove outliers."""
+    range_value = 1.5
+
+    processed_data = []
+
+    # Consider PR length
+    if len(extracted_data[0]) > 3:
+        for pull_request_length in ["XS", "S", "M", "L", "XL", "XXL"]:
+            subset_data = [pr for pr in extracted_data if pr[3] == pull_request_length]
+            df = pd.DataFrame(subset_data, columns=columns)
+            q = df[f'{quantity}'].quantile([0.25, 0.75])
+            Q1 = q[0.25]
+            Q3 = q[0.75]
+            IQR = Q3 - Q1
+            outliers = df[
+                (df[f'{quantity}'] < (Q1 - range_value * IQR)) | (df[f'{quantity}'] > (Q3 + range_value * IQR))
+                ]
+            print()
+            print("Outliers for", f'{quantity}', f"{pull_request_length}")
+            print(outliers)
+            filtered_df = df[
+                (df[f'{quantity}'] > (Q1 - range_value * IQR)) & (df[f'{quantity}'] < (Q3 + range_value * IQR))
+                ]
+
+            processed_data = processed_data + filtered_df.values.tolist()
+
+    else:
+        df = pd.DataFrame(extracted_data, columns=columns)
+        q = df[f'{quantity}'].quantile([0.25, 0.75])
+        Q1 = q[0.25]
+        Q3 = q[0.75]
+        IQR = Q3 - Q1
+        outliers = df[
+            (df[f'{quantity}'] < (Q1 - range_value * IQR)) | (df[f'{quantity}'] > (Q3 + range_value * IQR))
+            ]
+        print()
+        print("Outliers for", f'{quantity}')
+        print(outliers)
+        filtered_df = df[
+            (df[f'{quantity}'] > (Q1 - range_value * IQR)) & (df[f'{quantity}'] < (Q3 + range_value * IQR))
+            ]
+        
+        processed_data = processed_data + filtered_df.values.tolist()
+
+    return processed_data
+
+
+def create_per_pr_plot(
     *,
     result_path: Path,
     project: str,
-    processed_data=List[Tuple[datetime, str, float]],
+    x_array: List[Any],
+    y_array: List[Any],
     x_label: str,
     y_label: str,
     title: str,
     output_name: str
 ):
     """Create processed data in time per project plot."""
-    # Plot results
     fig, ax = plt.subplots()
 
-    pr_created_time_per_id = [el[0] for el in processed_data]
-    data_in_time_per_id = [el[2] for el in processed_data]
+    x = x_array
+    y = y_array
 
-    ax.plot(pr_created_time_per_id, data_in_time_per_id, "-ro")
+    ax.plot(x, y, "ro")
     plt.gcf().autofmt_xdate()
     ax.set(
         xlabel=x_label,
@@ -204,22 +409,114 @@ def visualize_results(project: str):
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
 
     if data:
-        ttr_in_time, mttr_in_time = post_process_project_data(data=data)
+        tfr_in_time, ttr_in_time, mtfr_in_time, mttr_in_time, _ = post_process_project_data(data=data)
 
-        create_in_time_per_project_plot(
+    # TFR
+        mtfr_in_time_processed = remove_outliers(
+                quantity="MTFR",
+                extracted_data=mtfr_in_time,
+                columns=['Datetime', 'PR ID', "MTFR"]
+                )
+
+        create_per_pr_plot(
             result_path=result_path,
             project=project,
-            processed_data=mttr_in_time,
+            x_array=[el[0] for el in mtfr_in_time_processed],
+            y_array=[el[2] for el in mtfr_in_time_processed],
             x_label="PR created date",
-            y_label="Median Time to Review (h)",
+            y_label="Median Time to First Review (h)",
+            title=f"MTTFR in Time per project: {project}",
+            output_name="MTTFR-in-time")
+
+
+        tfr_in_time_processed = remove_outliers(
+                quantity="TTFR",
+                extracted_data=tfr_in_time,
+                columns=['Datetime', 'PR ID', "TTFR", "PR Length"]
+                )
+
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[0] for el in tfr_in_time_processed],
+            y_array=[el[2] for el in tfr_in_time_processed],
+            x_label="PR created date",
+            y_label="Time to First Review (h)",
+            title=f"TTFR in Time per project: {project}",
+            output_name="TTFR-in-time")
+
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[1] for el in tfr_in_time_processed],
+            y_array=[el[2] for el in tfr_in_time_processed],
+            x_label="PR id",
+            y_label="Time to First Review (h)",
+            title=f"TTFR per PR id per project: {project}",
+            output_name="TTFR-per-PR")
+
+        tfr_in_time_processed_sorted = sorted(tfr_in_time_processed, key = lambda x: convert_score2num(x[3]), reverse=False)
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[3] for el in tfr_in_time_processed_sorted],
+            y_array=[el[2] for el in tfr_in_time_processed_sorted],
+            x_label="PR length",
+            y_label="Time to First Review (h)",
+            title=f"TTFR in Time per PR length: {project}",
+            output_name="TTFR-per-PR-length")
+
+    # TTR
+        mttr_in_time_processed = remove_outliers(
+                quantity="MTTR",
+                extracted_data=mttr_in_time,
+                columns=['Datetime', 'PR ID', "MTTR"]
+                )
+
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[0] for el in mttr_in_time_processed],
+            y_array=[el[2] for el in mttr_in_time_processed],
+            x_label="PR created date",
+            y_label="Mean Time to Review (h)",
             title=f"MTTR in Time per project: {project}",
             output_name="MTTR-in-time")
 
-        create_in_time_per_project_plot(
+        ttr_in_time_processed = remove_outliers(
+                        quantity="TTR",
+                        extracted_data=ttr_in_time,
+                        columns=['Datetime', 'PR ID', "TTR", "PR Length"]
+                        )
+
+        create_per_pr_plot(
             result_path=result_path,
             project=project,
-            processed_data=ttr_in_time,
+            x_array=[el[0] for el in ttr_in_time_processed],
+            y_array=[el[2] for el in ttr_in_time_processed],
             x_label="PR created date",
             y_label="Time to Review (h)",
             title=f"TTR in Time per project: {project}",
             output_name="TTR-in-time")
+
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[1] for el in ttr_in_time_processed],
+            y_array=[el[2] for el in ttr_in_time_processed],
+            x_label="PR id",
+            y_label="Time to Review (h)",
+            title=f"TTR per PR id per project: {project}",
+            output_name="TTR-per-PR")
+
+        ttr_in_time_processed_sorted = sorted(ttr_in_time_processed, key = lambda x: convert_score2num(x[3]), reverse=False)
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[3] for el in ttr_in_time_processed_sorted],
+            y_array=[el[2] for el in ttr_in_time_processed_sorted],
+            x_label="PR length",
+            y_label="Time to Review (h)",
+            title=f"TTR in Time per PR length: {project}",
+            output_name="TTR-per-PR-length")
+
