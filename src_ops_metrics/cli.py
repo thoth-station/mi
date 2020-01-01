@@ -21,8 +21,6 @@ import logging
 
 import click
 
-from pathlib import Path
-
 from create_bot_knowledge import analyse_projects
 from visualization import visualize_results
 from reviewer_recommender import evaluate_reviewers
@@ -71,9 +69,8 @@ def cli(
     create_knowledge: bool,
     visualize_statistics: bool,
     reviewer_reccomender: bool
-
 ):
-    """CLI for the Reviewer Reccomender."""
+    """Command Line Interface for SrcOpsMetrics."""
     if create_knowledge:
         analyse_projects(
             projects=[project.split("/")],

@@ -317,6 +317,5 @@ def evaluate_reviewers(
 
     print()
     _LOGGER.info(f"Number of reviewers requested: {number_reviewer}")
-    if 
     _LOGGER.info(
             f"Reviewers: {sorted_reviewers['Contributor'].head(number_reviewer).values}")
