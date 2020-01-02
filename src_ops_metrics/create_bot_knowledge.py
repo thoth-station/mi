@@ -33,18 +33,10 @@ _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
-ISSUE_KEYWORDS = {'close',
-                  'closes',
-                  'closed',
-                  'fix',
-                  'fixes',
-                  'fixed',
-                  'resolve',
-                  'resolves',
-                  'resolved'}
+ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 
-STANDALONE_LABELS = {'size'}
+STANDALONE_LABELS = {"size"}
 
 
 def connect_to_source(project: Tuple[str, str]) -> Repository:
@@ -67,8 +59,8 @@ def get_labeled_size(labels: List[str]) -> str:
     XS, S, L, etc...
     """
     for label in labels:
-        if label.startswith('size'):
-            return label.split('/')[1]
+        if label.startswith("size"):
+            return label.split("/")[1]
 
 
 def get_non_standalone_labels(labels: List[str]):
@@ -89,23 +81,22 @@ def get_referenced_issues(pull_request: PullRequest) -> List[int]:
     """
     issues_referenced = []
     for comment in pull_request.get_issue_comments():
-        message = comment.body.split(' ')
+        message = comment.body.split(" ")
         for idx, word in enumerate(message):
-            if word.replace(':', '') in ISSUE_KEYWORDS:
+            if word.replace(":", "") in ISSUE_KEYWORDS:
                 try:
-                    _LOGGER.info('      ...found keyword referencing issue')
-                    referenced_issue_number = message[idx+1]
-                    assert(referenced_issue_number).startswith('https')
+                    _LOGGER.info("      ...found keyword referencing issue")
+                    referenced_issue_number = message[idx + 1]
+                    assert (referenced_issue_number).startswith("https")
                     # last element of url is always the issue number
-                    issues_referenced.append(
-                        referenced_issue_number.split('/')[-1])
-                    _LOGGER.info('      ...referenced issue number present')
+                    issues_referenced.append(referenced_issue_number.split("/")[-1])
+                    _LOGGER.info("      ...referenced issue number present")
                     # we assure that this was really referenced issue
                     # and not just a keyword without number
                 except (IndexError, AssertionError) as e:
-                    _LOGGER.info('      ...referenced issue number absent')
+                    _LOGGER.info("      ...referenced issue number absent")
                     _LOGGER.debug(str(e))
-    _LOGGER.debug('      referenced issues: %s' % issues_referenced)
+    _LOGGER.debug("      referenced issues: %s" % issues_referenced)
     return issues_referenced
 
 
@@ -150,26 +141,22 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
 
     """
     if not repo_path.exists() or os.path.getsize(repo_path) == 0:
-        _LOGGER.info('No previous knowledge found for %s' %
-                     project_name)
+        _LOGGER.info("No previous knowledge found for %s" % project_name)
         return {}
 
     if knowledge_type == "PullRequest":
-        with open(repo_path, 'r') as f:
+        with open(repo_path, "r") as f:
             data = json.load(f)
-            results = data['results']
-        _LOGGER.info('Found previous knowledge for %s with %d PRs' %
-                    (project_name, len(results)))
+            results = data["results"]
+        _LOGGER.info("Found previous knowledge for %s with %d PRs" % (project_name, len(results)))
 
     elif knowledge_type == "Issue":
-        with open(repo_path, 'r') as f:
+        with open(repo_path, "r") as f:
             data = json.load(f)
-            results = data['results']
-        _LOGGER.info('Found previous knowledge for %s with %d Issues' %
-            (project_name, len(results)))
+            results = data["results"]
+        _LOGGER.info("Found previous knowledge for %s with %d Issues" % (project_name, len(results)))
     else:
-        _LOGGER.error("Type %s is not recognized as knowledge." %
-            (knowledge_type))
+        _LOGGER.error("Type %s is not recognized as knowledge." % (knowledge_type))
 
     return results
 
@@ -184,12 +171,11 @@ def save_knowledge(file_path: Path, data: Dict[str, Any]):
         file_path {Path} -- where the knowledge should be saved
         data {Dict[str, Any]} -- collected knowledge. Should be json compatible
     """
-    results = {'results': data}
+    results = {"results": data}
 
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         json.dump(results, f)
-    _LOGGER.info('Saved new knowledge file %s of size %d' %
-                 (os.path.basename(file_path), len(data)))
+    _LOGGER.info("Saved new knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
 
 
 def get_interactions(comments):
@@ -197,7 +183,7 @@ def get_interactions(comments):
     interactions = {comment.user.login: 0 for comment in comments}
     for comment in comments:
         # we count by the num of words in comment
-        interactions[comment.user.login] += len(comment.body.split(' '))
+        interactions[comment.user.login] += len(comment.body.split(" "))
     return interactions
 
 
@@ -244,16 +230,14 @@ def analyse_issues(project: Repository, project_knowledge: Path):
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
 
     """
-    _LOGGER.info('-------------Issues (that are not PR) Analysis-------------')
-    issue_data_path = project_knowledge.joinpath('./issues.json')
+    _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
+    issue_data_path = project_knowledge.joinpath("./issues.json")
 
     prev_issue = load_previous_knowledge(
-        project_name=project.full_name,
-        repo_path=issue_data_path,
-        knowledge_type="Issue")
+        project_name=project.full_name, repo_path=issue_data_path, knowledge_type="Issue"
+    )
 
-    current_issues = [issue for issue in project.get_issues(
-        state='closed') if issue.pull_request is None]
+    current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
     new_issues = get_only_new_entities(prev_issue, current_issues)
 
     if len(new_issues) == 0:
@@ -303,11 +287,10 @@ def extract_pull_request_reviews(pull_request: PullRequest) -> Dict[str, Dict[st
 
     results = {}
     for idx, review in enumerate(reviews, 1):
-        _LOGGER.info("      -analysing review no. %d/%d" %
-                     (idx, reviews.totalCount))
+        _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
         results[review.id] = {
             "author": review.user.login,
-            "words_count": len(review.body.split(' ')),
+            "words_count": len(review.body.split(" ")),
             "submitted_at": review.submitted_at.timestamp(),
             "state": review.state,
         }
@@ -369,26 +352,23 @@ def analyse_pull_requests(project: Repository, project_knowledge: Path):
 
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
     """
-    _LOGGER.info(
-        '-------------Pull Requests Analysis (including its Reviews)-------------')
+    _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-    pulls_data_path = project_knowledge.joinpath('./pull_requests.json')
+    pulls_data_path = project_knowledge.joinpath("./pull_requests.json")
     prev_pulls = load_previous_knowledge(
-        project_name=project.full_name,
-        repo_path=pulls_data_path,
-        knowledge_type="PullRequest")
+        project_name=project.full_name, repo_path=pulls_data_path, knowledge_type="PullRequest"
+    )
 
-    current_pulls = project.get_pulls(state='closed')
+    current_pulls = project.get_pulls(state="closed")
     new_pulls = get_only_new_entities(prev_pulls, current_pulls)
 
     if len(new_pulls) == 0:
         return
 
     for idx, pull_request in enumerate(new_pulls, 1):
-        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" %
-                     (idx, len(new_pulls)))
+        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
         store_pull_request(pull_request, prev_pulls)
-        _LOGGER.info('/n')
+        _LOGGER.info("/n")
     save_knowledge(pulls_data_path, prev_pulls)
 
 
@@ -398,11 +378,11 @@ def analyse_projects(projects: List[Tuple[str, str]]) -> None:
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
     """
-    path = Path.cwd().joinpath('./src_ops_metrics/Bot_Knowledge')
+    path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
     for project in projects:
         github_repo = connect_to_source(project=project)
 
-        project_path = path.joinpath('./' + github_repo.full_name)
+        project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
         analyse_issues(github_repo, project_path)

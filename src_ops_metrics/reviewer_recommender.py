@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Reviewer Reccomendation."""
+"""Reviewer Reccomender."""
 
 import logging
 import os
@@ -50,7 +50,8 @@ def evaluate_contributor_score(
     contribution_2: float,
     contribution_3: float,
     contribution_4: float,
-    contribution_5: float
+    contribution_5: float,
+    contribution_6: float
 ) -> float:
     """Evaluate contributor score.
 
@@ -63,15 +64,16 @@ def evaluate_contributor_score(
 
     4: Number of commits respect to the total number of commits in the repository.
 
-    5: Time since last review.
+    TODO 5: Time since last review.
 
     TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
     """
-    k1 = 1.1    # Weight factor of contribution 1
+    k1 = 1      # Weight factor of contribution 1
     k2 = 1      # Weight factor of contribution 2
-    k3 = 1.2    # Weight factor of contribution 3
-    k4 = 1.4    # Weight factor of contribution 4
+    k3 = 1      # Weight factor of contribution 3
+    k4 = 1      # Weight factor of contribution 4
     k5 = 1      # Weight factor of contribution 5
+    k6 = 1      # Weight factor of contribution 6
 
     final_score = (
         k1 * contribution_1
@@ -79,6 +81,7 @@ def evaluate_contributor_score(
         * k3 * contribution_3
         * k4 * contribution_4
         * k5 * contribution_5
+        * k6 * contribution_6
     )
 
     return final_score
@@ -90,7 +93,7 @@ def evaluate_reviewers(
     detailed_statistics: bool = False,
     analyze_single_scores: bool = False,
     filter_contributors: bool = True,
-    ):
+):
     """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
     :param number_reviewer: number of reviewers to select
@@ -104,7 +107,7 @@ def evaluate_reviewers(
     now_time = datetime.now()
 
     projects_reviews_data = pre_process_project_data(data=data)
-    
+
     # Project statistics
     project_commits_number = sum([pr["commits_number"] for pr in data.values()])
     project_prs_number = len(data)
@@ -128,8 +131,8 @@ def evaluate_reviewers(
             "PullRequest n.",
             "Commits n.",
             "PullRequestRev n.",
-            "MTTFR", # Median Time to First Review 
-            "MTTR" # Median Time to Review
+            "MTTFR",                # Median Time to First Review
+            "MTTR"                  # Median Time to Review
             ])
     _LOGGER.info(
         "-------------------------------------------------------------------------------"
@@ -169,21 +172,17 @@ def evaluate_reviewers(
             contributor_mtfr = contributors_reviews_data[contributor]["MTFR_in_time"][-1][2]
             contributor_mttr = contributors_reviews_data[contributor]["MTTR_in_time"][-1][2]
 
-            contributor_time_reviews = []
-            for reviews in contributors_reviews_data[contributor]["reviews"].values():
-                for review in reviews:
-                    contributor_time_reviews.append(review["submitted_at"])
-            last_review_dt = max(contributor_time_reviews)
+            contributor_last_review = contributors_reviews_data[contributor]["last_review_time"]
 
-            contributor_time_last_review = now_time - datetime.fromtimestamp(last_review_dt)
+            contributor_time_last_review = now_time - datetime.fromtimestamp(contributor_last_review)
 
             contributor_data.append(
                     (
                         contributor,
                         contributor_prs_number,
-                        contributor_prs_number/project_prs_number,
+                        contributor_prs_number/project_prs_number*100,
                         contributor_prs_reviewed_number,
-                        contributor_prs_reviewed_number/project_prs_reviewed_number,
+                        contributor_prs_reviewed_number/project_prs_reviewed_number*100,
                         contributor_median_pr_length,
                         contributor_reviews_number,
                         contributor_reviews_length,
@@ -191,8 +190,8 @@ def evaluate_reviewers(
                         str(timedelta(hours=contributor_mttr)),
                         contributor_time_last_review,
                         contributor_commits_number,
-                        contributor_commits_number/project_commits_number,
-                        False
+                        contributor_commits_number/project_commits_number*100,
+                        "Y"
                     )
                 )
 
@@ -201,10 +200,9 @@ def evaluate_reviewers(
                 contribution_2=timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr),
                 contribution_3=contributor_reviews_length_score/project_reviews_length_score,
                 contribution_4=contributor_commits_number/project_commits_number,
-                contribution_5=1
+                contribution_5=1,
+                contribution_6=1
             )
-
-    #     * k5 *(((last_review_author_time - first_PR_approved_time).total_seconds())/((now_time - first_PR_approved_time).total_seconds()))
 
             scores_data.append(
                 (
@@ -213,6 +211,7 @@ def evaluate_reviewers(
                     timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr),
                     contributor_reviews_length_score/project_reviews_length_score,
                     contributor_commits_number/project_commits_number,
+                    1,
                     1,
                     final_score
                 )
@@ -234,7 +233,7 @@ def evaluate_reviewers(
                     (
                         contributor,
                         bot_contributor_prs_number,
-                        bot_contributor_prs_number/project_prs_number,
+                        bot_contributor_prs_number/project_prs_number*100,
                         None,
                         None,
                         None,
@@ -244,8 +243,8 @@ def evaluate_reviewers(
                         None,
                         None,
                         bot_contributor_commits_number,
-                        contributor_commits_number/project_commits_number,
-                        True
+                        contributor_commits_number/project_commits_number*100,
+                        "Y"
                     )
                 )
 
@@ -265,7 +264,7 @@ def evaluate_reviewers(
                     (
                         contributor,
                         contributor_prs_number,
-                        contributor_prs_number/project_prs_number,
+                        contributor_prs_number/project_prs_number*100,
                         None,
                         None,
                         None,
@@ -275,8 +274,8 @@ def evaluate_reviewers(
                         None,
                         None,
                         contributor_commits_number,
-                        contributor_commits_number/project_commits_number,
-                        False
+                        contributor_commits_number/project_commits_number*100,
+                        "N"
                     )
                 )
 
@@ -290,7 +289,7 @@ def evaluate_reviewers(
             "MPRLen",       # Median Pull Request Reviewed Length
             "Rev n.",       # Reviews number
             "MRL",          # Median Review Length (Word count based)
-            "MTTFR",        # Median Time to First Review 
+            "MTTFR",        # Median Time to First Review
             "MTTR",         # Median Time to Review
             "TLR",          # Time Last Review [hr]
             "Comm n.",      # Commits number
@@ -308,6 +307,7 @@ def evaluate_reviewers(
             "C3",           # Contribution 3
             "C4",           # Contribution 4
             "C5",           # Contribution 5
+            "C6",           # Contribution 6
             "Score"         # Contributor Final Score
             ])
 

@@ -46,38 +46,36 @@ def remove_outliers(extracted_data: List[Any], columns: List[str], quantity: str
         for pull_request_length in ["XS", "S", "M", "L", "XL", "XXL"]:
             subset_data = [pr for pr in extracted_data if pr[3] == pull_request_length]
             df = pd.DataFrame(subset_data, columns=columns)
-            q = df[f'{quantity}'].quantile([0.25, 0.75])
+            q = df[f"{quantity}"].quantile([0.25, 0.75])
             Q1 = q[0.25]
             Q3 = q[0.75]
             IQR = Q3 - Q1
             outliers = df[
-                (df[f'{quantity}'] < (Q1 - range_value * IQR)) | (df[f'{quantity}'] > (Q3 + range_value * IQR))
-                ]
+                (df[f"{quantity}"] < (Q1 - range_value * IQR)) | (df[f"{quantity}"] > (Q3 + range_value * IQR))
+            ]
             print()
-            print("Outliers for", f'{quantity}', f"{pull_request_length}")
+            print("Outliers for", f"{quantity}", f"{pull_request_length}")
             print(outliers)
             filtered_df = df[
-                (df[f'{quantity}'] > (Q1 - range_value * IQR)) & (df[f'{quantity}'] < (Q3 + range_value * IQR))
-                ]
+                (df[f"{quantity}"] > (Q1 - range_value * IQR)) & (df[f"{quantity}"] < (Q3 + range_value * IQR))
+            ]
 
             processed_data = processed_data + filtered_df.values.tolist()
 
     else:
         df = pd.DataFrame(extracted_data, columns=columns)
-        q = df[f'{quantity}'].quantile([0.25, 0.75])
+        q = df[f"{quantity}"].quantile([0.25, 0.75])
         Q1 = q[0.25]
         Q3 = q[0.75]
         IQR = Q3 - Q1
-        outliers = df[
-            (df[f'{quantity}'] < (Q1 - range_value * IQR)) | (df[f'{quantity}'] > (Q3 + range_value * IQR))
-            ]
+        outliers = df[(df[f"{quantity}"] < (Q1 - range_value * IQR)) | (df[f"{quantity}"] > (Q3 + range_value * IQR))]
         print()
-        print("Outliers for", f'{quantity}')
+        print("Outliers for", f"{quantity}")
         print(outliers)
         filtered_df = df[
-            (df[f'{quantity}'] > (Q1 - range_value * IQR)) & (df[f'{quantity}'] < (Q3 + range_value * IQR))
-            ]
-        
+            (df[f"{quantity}"] > (Q1 - range_value * IQR)) & (df[f"{quantity}"] < (Q3 + range_value * IQR))
+        ]
+
         processed_data = processed_data + filtered_df.values.tolist()
 
     return processed_data
@@ -92,7 +90,7 @@ def create_per_pr_plot(
     x_label: str,
     y_label: str,
     title: str,
-    output_name: str
+    output_name: str,
 ):
     """Create processed data in time per project plot."""
     fig, ax = plt.subplots()
@@ -102,11 +100,7 @@ def create_per_pr_plot(
 
     ax.plot(x, y, "ro")
     plt.gcf().autofmt_xdate()
-    ax.set(
-        xlabel=x_label,
-        ylabel=y_label,
-        title=title,
-    )
+    ax.set(xlabel=x_label, ylabel=y_label, title=title)
     ax.grid()
 
     check_directory(result_path.joinpath(project))
@@ -129,12 +123,10 @@ def visualize_results(project: str):
         mtfr_in_time = projects_reviews_data["MTFR_in_time"]
         mttr_in_time = projects_reviews_data["MTFR_in_time"]
 
-    # TFR
+        # TFR
         mtfr_in_time_processed = remove_outliers(
-                quantity="MTFR",
-                extracted_data=mtfr_in_time,
-                columns=['Datetime', 'PR ID', "MTFR"]
-                )
+            quantity="MTFR", extracted_data=mtfr_in_time, columns=["Datetime", "PR ID", "MTFR"]
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -144,14 +136,12 @@ def visualize_results(project: str):
             x_label="PR created date",
             y_label="Median Time to First Review (h)",
             title=f"MTTFR in Time per project: {project}",
-            output_name="MTTFR-in-time")
-
+            output_name="MTTFR-in-time",
+        )
 
         tfr_in_time_processed = remove_outliers(
-                quantity="TTFR",
-                extracted_data=tfr_in_time,
-                columns=['Datetime', 'PR ID', "TTFR", "PR Length"]
-                )
+            quantity="TTFR", extracted_data=tfr_in_time, columns=["Datetime", "PR ID", "TTFR", "PR Length"]
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -161,7 +151,8 @@ def visualize_results(project: str):
             x_label="PR created date",
             y_label="Time to First Review (h)",
             title=f"TTFR in Time per project: {project}",
-            output_name="TTFR-in-time")
+            output_name="TTFR-in-time",
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -171,9 +162,12 @@ def visualize_results(project: str):
             x_label="PR id",
             y_label="Time to First Review (h)",
             title=f"TTFR per PR id per project: {project}",
-            output_name="TTFR-per-PR")
+            output_name="TTFR-per-PR",
+        )
 
-        tfr_in_time_processed_sorted = sorted(tfr_in_time_processed, key = lambda x: convert_score2num(x[3]), reverse=False)
+        tfr_in_time_processed_sorted = sorted(
+            tfr_in_time_processed, key=lambda x: convert_score2num(x[3]), reverse=False
+        )
         create_per_pr_plot(
             result_path=result_path,
             project=project,
@@ -182,14 +176,13 @@ def visualize_results(project: str):
             x_label="PR length",
             y_label="Time to First Review (h)",
             title=f"TTFR in Time per PR length: {project}",
-            output_name="TTFR-per-PR-length")
+            output_name="TTFR-per-PR-length",
+        )
 
-    # TTR
+        # TTR
         mttr_in_time_processed = remove_outliers(
-                quantity="MTTR",
-                extracted_data=mttr_in_time,
-                columns=['Datetime', 'PR ID', "MTTR"]
-                )
+            quantity="MTTR", extracted_data=mttr_in_time, columns=["Datetime", "PR ID", "MTTR"]
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -199,13 +192,12 @@ def visualize_results(project: str):
             x_label="PR created date",
             y_label="Mean Time to Review (h)",
             title=f"MTTR in Time per project: {project}",
-            output_name="MTTR-in-time")
+            output_name="MTTR-in-time",
+        )
 
         ttr_in_time_processed = remove_outliers(
-                        quantity="TTR",
-                        extracted_data=ttr_in_time,
-                        columns=['Datetime', 'PR ID', "TTR", "PR Length"]
-                        )
+            quantity="TTR", extracted_data=ttr_in_time, columns=["Datetime", "PR ID", "TTR", "PR Length"]
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -215,7 +207,8 @@ def visualize_results(project: str):
             x_label="PR created date",
             y_label="Time to Review (h)",
             title=f"TTR in Time per project: {project}",
-            output_name="TTR-in-time")
+            output_name="TTR-in-time",
+        )
 
         create_per_pr_plot(
             result_path=result_path,
@@ -225,9 +218,12 @@ def visualize_results(project: str):
             x_label="PR id",
             y_label="Time to Review (h)",
             title=f"TTR per PR id per project: {project}",
-            output_name="TTR-per-PR")
+            output_name="TTR-per-PR",
+        )
 
-        ttr_in_time_processed_sorted = sorted(ttr_in_time_processed, key = lambda x: convert_score2num(x[3]), reverse=False)
+        ttr_in_time_processed_sorted = sorted(
+            ttr_in_time_processed, key=lambda x: convert_score2num(x[3]), reverse=False
+        )
         create_per_pr_plot(
             result_path=result_path,
             project=project,
@@ -236,5 +232,5 @@ def visualize_results(project: str):
             x_label="PR length",
             y_label="Time to Review (h)",
             title=f"TTR in Time per PR length: {project}",
-            output_name="TTR-per-PR-length")
-
+            output_name="TTR-per-PR-length",
+        )

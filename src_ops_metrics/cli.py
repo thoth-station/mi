@@ -29,6 +29,7 @@ from reviewer_recommender import evaluate_reviewers
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
 
+
 @click.command()
 @click.option(
     "--project",
@@ -63,7 +64,6 @@ logging.basicConfig(level=logging.INFO)
     required=False,
     help="Assign reviewers based on previous knowledge collected.",
 )
-
 def cli(
     project: str,
     create_knowledge: bool,
@@ -86,6 +86,7 @@ def cli(
             project=project
 
         )
+
 
 if __name__ == "__main__":
     cli()
