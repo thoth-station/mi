@@ -76,16 +76,11 @@ def evaluate_contributor_score(
 def evaluate_reviewers(
     project: Tuple[str, str],
     number_reviewer: int = 2,
-    detailed_statistics: bool = False,
-    analyze_single_scores: bool = False,
-    filter_contributors: bool = True,
 ):
     """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
+    :project: repository to be analyzed (e.g. (thoth-station, performance))
     :param number_reviewer: number of reviewers to select
-    :param detailed_statistics: show detailed statistics
-    :param analyze_single_scores: show each contribution that goes to the final score
-    :param filter_contributors: filter contributor that never reviewed
     """
     knowledge_path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)

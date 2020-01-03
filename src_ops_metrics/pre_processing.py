@@ -28,6 +28,7 @@ from datetime import datetime
 
 from create_bot_knowledge import load_previous_knowledge
 from utils import convert_num2label, convert_score2num
+from exceptions import MissingPreviousKnowledge
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,8 +43,9 @@ def retrieve_knowledge(knowledge_path: Path, project: str) -> Union[Dict[str, An
     if data:
         return data
     else:
-        _LOGGER.error("You need to collect knowledge about this repository first!")
-        return {}
+        raise MissingPreviousKnowledge(
+                        "No previous knowledge found for %s" % project
+                    )
 
 
 def pre_process_project_data(data: Dict[str, Any]):

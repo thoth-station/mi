@@ -25,7 +25,6 @@ from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
 from utils import check_directory, assign_pull_request_size
-from exceptions import MissingPreviousKnowledge
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
@@ -142,9 +141,8 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
 
     """
     if not repo_path.exists() or os.path.getsize(repo_path) == 0:
-        raise MissingPreviousKnowledge(
-                        "No previous knowledge found for %s" % project_name
-                    )
+        _LOGGER.info("No previous knowledge found for %s" % project_name)
+        return {}
 
     if knowledge_type == "PullRequest":
         with open(repo_path, "r") as f:
