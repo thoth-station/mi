@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2019 Francesco Murdaca
+# Copyright (C) 2019, 2020 Francesco Murdaca
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,22 @@ def check_directory(knowledge_dir: Path):
         _LOGGER.info(
             "No repo identified, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
+
+
+def assign_pull_request_size(lines_changes: int) -> str:
+    """Assign size of PR is label is not provided."""
+    if lines_changes > 1000:
+        return "XXL"
+    elif lines_changes >= 500 and lines_changes <= 999:
+        return "XL"
+    elif lines_changes >= 100 and lines_changes <= 499:
+        return "L"
+    elif lines_changes >= 30 and lines_changes <= 99:
+        return "M"
+    elif lines_changes >= 10 and lines_changes <= 29:
+        return "S"
+    elif lines_changes >= 0 and lines_changes <= 9:
+        return "XS"
 
 
 def convert_score2num(label: str) -> float:

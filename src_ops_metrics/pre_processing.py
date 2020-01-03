@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2019 Francesco Murdaca
+# Copyright (C) 2019, 2020 Francesco Murdaca
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import logging
 
 import numpy as np
 
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Union
 from pathlib import Path
 from datetime import timedelta
 from datetime import datetime
@@ -33,12 +33,17 @@ from utils import convert_num2label, convert_score2num
 _LOGGER = logging.getLogger(__name__)
 
 
-def retrieve_knowledge(knowledge_path: Path, project: str) -> Dict[str, Any]:
-    """Retrieve knowledge collected for a project."""
+def retrieve_knowledge(knowledge_path: Path, project: str) -> Union[Dict[str, Any], None]:
+    """Retrieve knowledge (PRs) collected for a project."""
     project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
-    pulls_data_path = project_knowledge_path.joinpath("./pull_requests.json")
+    pull_requests_data_path = project_knowledge_path.joinpath("./pull_requests.json")
 
-    return load_previous_knowledge(project, pulls_data_path, "PullRequest")
+    data = load_previous_knowledge(project, pull_requests_data_path, "PullRequest")
+    if data:
+        return data
+    else:
+        _LOGGER.error("You need to collect knowledge about this repository first!")
+        return {}
 
 
 def pre_process_project_data(data: Dict[str, Any]):
@@ -55,16 +60,19 @@ def pre_process_project_data(data: Dict[str, Any]):
     ttr_in_time = []  # TTR in time [hr]
 
     contributors = []
+    time_reviews = []
 
     project_prs_size_encoded = []  # Pull Request length
 
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
 
-        if pr["reviews"] and pr["size"]:
+        if pr["reviews"]:
             dt_created = datetime.fromtimestamp(pr["created_at"])
 
             dt_first_review = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
+
+            dt_all_reviews = [r["submitted_at"] for r in pr["reviews"].values()]
 
             tfr_per_pr.append((dt_first_review - dt_created).total_seconds() / 3600)
 
@@ -97,6 +105,8 @@ def pre_process_project_data(data: Dict[str, Any]):
 
             project_prs_size_encoded.append(convert_score2num(label=pr["size"]))
 
+            time_reviews += dt_all_reviews
+
         if pr["created_by"] not in contributors:
             contributors.append(pr["created_by"])
 
@@ -106,6 +116,7 @@ def pre_process_project_data(data: Dict[str, Any]):
     project_reviews_data["MTFR_in_time"] = mtfr_in_time
     project_reviews_data["MTTR_in_time"] = mttr_in_time
     project_reviews_data["contributors"] = contributors
+    project_reviews_data["last_review_time"] = max(time_reviews)
 
     # Encode Pull Request sizes for the contributor
     project_pr_median_size, project_length_score = convert_num2label(score=np.median(project_prs_size_encoded))
@@ -134,8 +145,7 @@ def pre_process_contributors_data(data: Dict[str, Any]):
 
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
-        if pr["reviews"] and pr["size"]:
-
+        if pr["reviews"]:
             dt_created = datetime.fromtimestamp(pr["created_at"])
 
             review_info_per_reviewer = {}
@@ -237,6 +247,7 @@ def pre_process_contributors_data(data: Dict[str, Any]):
         number_reviews = 0
         reviews_length = []
         time_reviews = []
+
         for reviews in contributors_reviews_data[reviewer]["reviews"].values():
             number_reviews += len(reviews)
             review_words = 0

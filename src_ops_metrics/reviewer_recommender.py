@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2019 Francesco Murdaca
+# Copyright (C) 2019, 2020 Francesco Murdaca
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,21 +53,7 @@ def evaluate_contributor_score(
     contribution_5: float,
     contribution_6: float
 ) -> float:
-    """Evaluate contributor score.
-
-    Contributions:
-    1: Number of PR reviewed respect to total number of PR reviewed by the team.
-
-    2: Mean time to review a PR by reviewer respect to team repostiory MTTR.
-
-    3: Mean length of PR respect to minimum value of PR length for a specific label.
-
-    4: Number of commits respect to the total number of commits in the repository.
-
-    TODO 5: Time since last review.
-
-    TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
-    """
+    """Evaluate contributor final score."""
     k1 = 1      # Weight factor of contribution 1
     k2 = 1      # Weight factor of contribution 2
     k3 = 1      # Weight factor of contribution 3
@@ -116,6 +102,10 @@ def evaluate_reviewers(
     project_mttr = projects_reviews_data["MTTR_in_time"][-1][2]
     project_reviews_length_score = projects_reviews_data["median_pr_length_score"]
 
+    project_last_review = projects_reviews_data["last_review_time"]
+
+    project_time_last_review = now_time - datetime.fromtimestamp(project_last_review)
+
     project_data = pd.DataFrame(
         [
             (
@@ -130,7 +120,7 @@ def evaluate_reviewers(
             "Repository",
             "PullRequest n.",
             "Commits n.",
-            "PullRequestRev n.",
+            "PullRequestRev n.",    # Pull requests reviewed
             "MTTFR",                # Median Time to First Review
             "MTTR"                  # Median Time to Review
             ])
@@ -195,24 +185,44 @@ def evaluate_reviewers(
                     )
                 )
 
+            # Contributions to final score:
+
+            # 1: Number of PR reviewed respect to total number of PR reviewed by the team.
+            contribution_1 = contributor_prs_number/project_prs_number
+
+            # 2: Median time to review a PR by reviewer respect to team repostiory MTTR.
+            contribution_2 = timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr)
+
+            # 3: Median length of PR reviewed respect to the median length of PR in project.
+            contribution_3 = contributor_reviews_length_score/project_reviews_length_score
+
+            # 4: Number of commits respect to the total number of commits in the repository.
+            contribution_4 = contributor_commits_number/project_commits_number
+
+            # 5: Time since last review respect to project last review.
+            contribution_5 = (project_time_last_review.total_seconds() / contributor_time_last_review.total_seconds())
+
+            # TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
+            contribution_6 = 1
+
             final_score = evaluate_contributor_score(
-                contribution_1=contributor_prs_number/project_prs_number,
-                contribution_2=timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr),
-                contribution_3=contributor_reviews_length_score/project_reviews_length_score,
-                contribution_4=contributor_commits_number/project_commits_number,
-                contribution_5=1,
-                contribution_6=1
+                contribution_1=contribution_1,
+                contribution_2=contribution_2,
+                contribution_3=contribution_3,
+                contribution_4=contribution_4,
+                contribution_5=contribution_5,
+                contribution_6=contribution_6
             )
 
             scores_data.append(
                 (
                     contributor,
-                    contributor_prs_number/project_prs_number,
-                    timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr),
-                    contributor_reviews_length_score/project_reviews_length_score,
-                    contributor_commits_number/project_commits_number,
-                    1,
-                    1,
+                    contribution_1,
+                    contribution_2,
+                    contribution_3,
+                    contribution_4,
+                    contribution_5,
+                    contribution_6,
                     final_score
                 )
             )
