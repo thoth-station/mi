@@ -24,7 +24,8 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from utils import check_directory
+from utils import check_directory, assign_pull_request_size
+from exceptions import MissingPreviousKnowledge
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
@@ -52,7 +53,7 @@ def connect_to_source(project: Tuple[str, str]) -> Repository:
     return repo
 
 
-def get_labeled_size(labels: List[str]) -> str:
+def get_labeled_size(labels: List[str]) -> Union[str, None]:
     """Extract size label from list of labels.
 
     Size label is in form 'size/<SIZE>', where <SIZE> can be
@@ -141,8 +142,9 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
 
     """
     if not repo_path.exists() or os.path.getsize(repo_path) == 0:
-        _LOGGER.info("No previous knowledge found for %s" % project_name)
-        return {}
+        raise MissingPreviousKnowledge(
+                        "No previous knowledge found for %s" % project_name
+                    )
 
     if knowledge_type == "PullRequest":
         with open(repo_path, "r") as f:
@@ -323,8 +325,15 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
 
     labels = [label.name for label in pull_request.get_labels()]
 
+    # Evaluate size of PR
+    if labels:
+        pull_request_size = get_labeled_size(labels)
+    else:
+        lines_changes = pull_request.additions + pull_request.deletions
+        pull_request_size = assign_pull_request_size(lines_changes=lines_changes)
+
     results[str(pull_request.number)] = {
-        "size": get_labeled_size(labels),
+        "size": pull_request_size,
         "labels": get_non_standalone_labels(labels),
         "created_by": pull_request.user.login,
         "created_at": created_at,
