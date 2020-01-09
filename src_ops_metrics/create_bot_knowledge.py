@@ -144,17 +144,16 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
         _LOGGER.info("No previous knowledge found for %s" % project_name)
         return {}
 
+    with open(repo_path, "r") as f:
+        data = json.load(f)
+        results = data["results"]
+
     if knowledge_type == "PullRequest":
-        with open(repo_path, "r") as f:
-            data = json.load(f)
-            results = data["results"]
         _LOGGER.info("Found previous knowledge for %s with %d PRs" % (project_name, len(results)))
 
     elif knowledge_type == "Issue":
-        with open(repo_path, "r") as f:
-            data = json.load(f)
-            results = data["results"]
         _LOGGER.info("Found previous knowledge for %s with %d Issues" % (project_name, len(results)))
+
     else:
         _LOGGER.error("Type %s is not recognized as knowledge." % (knowledge_type))
 
@@ -324,9 +323,12 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
     labels = [label.name for label in pull_request.get_labels()]
 
     # Evaluate size of PR
+    pull_request_size = None
+
     if labels:
         pull_request_size = get_labeled_size(labels)
-    else:
+
+    if not pull_request_size:
         lines_changes = pull_request.additions + pull_request.deletions
         pull_request_size = assign_pull_request_size(lines_changes=lines_changes)
 

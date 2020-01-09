@@ -28,7 +28,6 @@ from datetime import datetime
 
 from create_bot_knowledge import load_previous_knowledge
 from utils import convert_num2label, convert_score2num
-from exceptions import MissingPreviousKnowledge
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,208 +42,241 @@ def retrieve_knowledge(knowledge_path: Path, project: str) -> Union[Dict[str, An
     if data:
         return data
     else:
-        raise MissingPreviousKnowledge(
-                        "No previous knowledge found for %s" % project
-                    )
+        _LOGGER.exception("No previous knowledge found for %s" % project)
+        return {}
+
+
+def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: Dict[str, Any]):
+    """Extract project data from Pull Request."""
+    if not pr["reviews"]:
+        return extracted_data
+
+    # Consider all approved reviews
+    pr_approved_dt = [
+        datetime.fromtimestamp(review["submitted_at"])
+        for review in pr["reviews"].values()
+        if review["state"] == "APPROVED"
+    ]
+
+    if not pr_approved_dt:
+        return extracted_data
+
+    extracted_data["ids"].append(pr_id)
+
+    # PR created timestamp
+    pr_created_dt = datetime.fromtimestamp(pr["created_at"])
+    extracted_data["created_dts"].append(pr_created_dt)
+
+    # PR first review timestamp (no matter the contributor)
+    pr_first_review_dt = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
+
+    ttfr = (pr_first_review_dt - pr_created_dt).total_seconds() / 3600
+    extracted_data["TTFR"].append(ttfr)
+
+    mttfr = np.median(extracted_data["TTFR"])
+    extracted_data["MTTFR"].append(mttfr)
+
+    project_prs_size = pr["size"]
+    extracted_data["PRs_size"].append(project_prs_size)
+    extracted_data["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+
+    # Take maximum to consider last approved if more than one contributor has to approve
+    pr_approved_dt = max(pr_approved_dt)
+
+    ttr = (pr_approved_dt - pr_created_dt).total_seconds() / 3600
+    extracted_data["TTR"].append(ttr)
+
+    mttr = np.median(extracted_data["TTR"])
+    extracted_data["MTTR"].append(mttr)
+
+    # PR reviews timestamps
+    extracted_data["reviews_dts"] += [r["submitted_at"] for r in pr["reviews"].values()]
+
+    return extracted_data
 
 
 def pre_process_project_data(data: Dict[str, Any]):
     """Pre process of data for a given project repository."""
+    if not data:
+        return {}
     pr_ids = sorted([int(k) for k in data.keys()])
 
-    tfr_per_pr = []  # Time to First Review (TTFR) [hr]
-    ttr_per_pr = []  # Time to Review (TTR) [hr]
+    project_reviews_data = {}
 
-    mtfr_in_time = []  # Median TTFR [hr]
-    mttr_in_time = []  # Mean TTR [hr]
+    project_reviews_data["contributors"] = []
+    project_reviews_data["ids"] = []
+    project_reviews_data["created_dts"] = []
+    project_reviews_data["reviews_dts"] = []
 
-    tfr_in_time = []  # TTFR in time [hr]
-    ttr_in_time = []  # TTR in time [hr]
+    project_reviews_data["TTFR"] = []  # Time to First Review (TTFR) [hr]
+    project_reviews_data["MTTFR"] = []  # Median TTFR [hr]
 
-    contributors = []
-    time_reviews = []
+    project_reviews_data["TTR"] = []  # Time to Review (TTR) [hr]
+    project_reviews_data["MTTR"] = []  # Median TTR [hr]
 
-    project_prs_size_encoded = []  # Pull Request length
+    project_reviews_data["PRs_size"] = []  # Pull Request length
+    project_reviews_data["encoded_PRs_size"] = []  # Pull Request length encoded
 
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
 
-        if pr["reviews"]:
-            dt_created = datetime.fromtimestamp(pr["created_at"])
+        if pr["created_by"] not in project_reviews_data["contributors"]:
+            project_reviews_data["contributors"].append(pr["created_by"])
 
-            dt_first_review = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
+        analyze_pr_for_project_data(pr_id=pr_id, pr=pr, extracted_data=project_reviews_data)
 
-            dt_all_reviews = [r["submitted_at"] for r in pr["reviews"].values()]
-
-            tfr_per_pr.append((dt_first_review - dt_created).total_seconds() / 3600)
-
-            # Consider all approved reviews
-            pr_approved_dt = [
-                datetime.fromtimestamp(review["submitted_at"])
-                for review in pr["reviews"].values()
-                if review["state"] == "APPROVED"
-            ]
-
-            if pr_approved_dt:
-                # Take maximum to consider last approved if more than one contributor has to approve
-                dt_approved = max(pr_approved_dt)
-
-                ttr_per_pr.append((dt_approved - dt_created).total_seconds() / 3600)
-
-                ttr_in_time.append((dt_created, pr_id, (dt_approved - dt_created).total_seconds() / 3600, pr["size"]))
-                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
-
-            else:
-                dt_merged = datetime.fromtimestamp(pr["merged_at"])
-                ttr_per_pr.append((dt_merged - dt_created).total_seconds() / 3600)
-
-                ttr_in_time.append((dt_created, pr_id, (dt_merged - dt_created).total_seconds() / 3600, pr["size"]))
-                mttr_in_time.append((dt_created, pr_id, np.median(ttr_per_pr)))
-
-            tfr_in_time.append((dt_created, pr_id, (dt_first_review - dt_created).total_seconds() / 3600, pr["size"]))
-
-            mtfr_in_time.append((dt_created, pr_id, np.median(tfr_per_pr)))
-
-            project_prs_size_encoded.append(convert_score2num(label=pr["size"]))
-
-            time_reviews += dt_all_reviews
-
-        if pr["created_by"] not in contributors:
-            contributors.append(pr["created_by"])
-
-    project_reviews_data = {}
-    project_reviews_data["TFR_in_time"] = tfr_in_time
-    project_reviews_data["TTR_in_time"] = ttr_in_time
-    project_reviews_data["MTFR_in_time"] = mtfr_in_time
-    project_reviews_data["MTTR_in_time"] = mttr_in_time
-    project_reviews_data["contributors"] = contributors
-    project_reviews_data["last_review_time"] = max(time_reviews)
+    project_reviews_data["last_review_time"] = max(project_reviews_data["reviews_dts"])
 
     # Encode Pull Request sizes for the contributor
-    project_pr_median_size, project_length_score = convert_num2label(score=np.median(project_prs_size_encoded))
+    project_pr_median_size, project_length_score = convert_num2label(
+        score=np.median(project_reviews_data["encoded_PRs_size"])
+    )
     project_reviews_data["median_pr_length"] = project_pr_median_size
     project_reviews_data["median_pr_length_score"] = project_length_score
 
     return project_reviews_data
 
 
-def pre_process_contributors_data(data: Dict[str, Any]):
+def evaluate_reviewer_data(
+    pr: Dict[str, Any],
+    reviewer: str,
+    review_submission_dt: datetime.timestamp,
+    extracted_data: Dict[str, Any]
+):
+    """Evaluate reviewer data from reviews."""
+    if not pr["reviews"]:
+        return extracted_data
+
+    dt_approved = [
+            datetime.fromtimestamp(review["submitted_at"])
+            for review in pr["reviews"].values()
+            if review["state"] == "APPROVED" and review["author"] == reviewer
+        ]
+
+    if not dt_approved:
+        return extracted_data
+
+    # PR created timestamp
+    pr_created_dt = datetime.fromtimestamp(pr["created_at"])
+    extracted_data["created_dts"].append(pr_created_dt)
+
+    pr_first_review_dt = datetime.fromtimestamp(review_submission_dt[0])
+    ttfr = (pr_first_review_dt - pr_created_dt).total_seconds() / 3600
+    extracted_data[reviewer]["TTFR"] = ttfr
+
+    mttfr = np.median(extracted_data[reviewer]["TTFR"])
+    extracted_data[reviewer]["MTTFR"].append(mttfr)
+
+    project_prs_size = pr["size"]
+    extracted_data[reviewer]["PRs_size"].append(project_prs_size)
+    extracted_data[reviewer]["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+
+    # Take maximum to consider last approved if more than one contributor has to approve
+    pr_approved_dt = max(dt_approved)
+
+    ttr = (pr_approved_dt - pr_created_dt).total_seconds() / 3600
+    extracted_data[reviewer]["TTR"].append(ttr)
+
+    mttr = np.median(extracted_data[reviewer]["TTR"])
+    extracted_data[reviewer]["MTTR"].append(mttr)
+
+
+def extract_review_data(
+    pr_id: int,
+    pr_author: str,
+    contributor_review: Dict[str, Any],
+    extracted_data: Dict[str, Any],
+    reviews_submitted_dts_per_reviewer: Dict[str, Any]
+):
+    """Extract contributor data from Pull Request reviews."""
+    # Check reviews and discard comment of the author of the PR
+    if contributor_review["author"] == pr_author:
+        return extracted_data
+
+    if contributor_review["author"] not in extracted_data["reviewers"]:
+        extracted_data["reviewers"].append(contributor_review["author"])
+        extracted_data[contributor_review["author"]] = {}
+        extracted_data[contributor_review["author"]]["reviews"] = {}
+        extracted_data[contributor_review["author"]]["ids"] = []
+        extracted_data[contributor_review["author"]]["TTFR"] = []  # Time to First Review (TTFR) [hr]
+        extracted_data[contributor_review["author"]]["MTTFR"] = []  # Median TTFR [hr]
+        extracted_data[contributor_review["author"]]["TTR"] = []  # Time to Review (TTR) [hr]
+        extracted_data[contributor_review["author"]]["MTTR"] = []  # Median TTR [hr]
+        extracted_data[contributor_review["author"]]["PRs_size"] = []  # Pull Request length
+        extracted_data[contributor_review["author"]]["encoded_PRs_size"] = []  # Pull Request length encoded
+
+    if pr_id not in extracted_data[contributor_review["author"]]["reviews"].keys():
+        extracted_data[contributor_review["author"]]["reviews"][pr_id] = [
+            {
+                "words_count": contributor_review["words_count"],
+                "submitted_at": contributor_review["submitted_at"],
+                "state": contributor_review["state"],
+            }
+        ]
+    else:
+        extracted_data[contributor_review["author"]]["reviews"][pr_id].append(
+            {
+                "words_count": contributor_review["words_count"],
+                "submitted_at": contributor_review["submitted_at"],
+                "state": contributor_review["state"],
+            }
+        )
+
+    if contributor_review["author"] not in reviews_submitted_dts_per_reviewer.keys():
+        reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [contributor_review["submitted_at"]]
+    else:
+        reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(contributor_review["submitted_at"])
+
+    return extracted_data
+
+
+def analyze_pr_for_contributor_data(pr_id: int, pr: Dict[str, Any], extracted_data: Dict[str, Any]):
+    """Extract project data from Pull Request."""
+    if not pr["reviews"]:
+        return extracted_data
+
+    pr_author = pr["created_by"]
+
+    reviews_submitted_dts_per_reviewer = {}
+
+    for review in pr["reviews"].values():
+        extract_review_data(
+            pr_id=pr_id,
+            pr_author=pr_author,
+            contributor_review=review,
+            extracted_data=extracted_data,
+            reviews_submitted_dts_per_reviewer=reviews_submitted_dts_per_reviewer
+        )
+
+    for reviewer, review_submission_dt in reviews_submitted_dts_per_reviewer.items():
+
+        evaluate_reviewer_data(
+            pr=pr,
+            reviewer=reviewer,
+            review_submission_dt=review_submission_dt,
+            extracted_data=extracted_data,
+        )
+
+
+def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str]):
     """Pre process of data for contributors in a project repository."""
     pr_ids = sorted([int(k) for k in data.keys()])
 
     contributors_reviews_data = {}
+    contributors_reviews_data["reviewers"] = []
+    contributors_reviews_data["created_dts"] = []
 
-    tfr_per_pr = {}  # Time to First Review (TTFR) [hr]
-    ttr_per_pr = {}  # Time to Review (TTR) [hr]
-
-    pr_length = {}  # Pull Request length per Reviewer
-
-    mtfr_in_time = {}  # Median TTFR [hr]
-    mttr_in_time = {}  # Mean TTR [hr]
-
-    tfr_in_time = {}  # TTFR in time [hr]
-    ttr_in_time = {}  # TTR in time [hr]
+    interactions = {}
+    for contributor in contributors:
+        contributor_interaction = dict.fromkeys(contributors, 0)
+        interactions[contributor] = contributor_interaction
 
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
-        if pr["reviews"]:
-            dt_created = datetime.fromtimestamp(pr["created_at"])
 
-            review_info_per_reviewer = {}
+        analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
 
-            for review in pr["reviews"].values():
-                # Check reviews and discard comment of the author of the PR
-                if review["author"] != pr["created_by"]:
-                    if review["author"] not in contributors_reviews_data.keys():
-                        contributors_reviews_data[review["author"]] = {}
-                        contributors_reviews_data[review["author"]]["reviews"] = {}
-                        if pr_id not in contributors_reviews_data[review["author"]]["reviews"].keys():
-                            contributors_reviews_data[review["author"]]["reviews"][pr_id] = [
-                                {
-                                    "words_count": review["words_count"],
-                                    "submitted_at": review["submitted_at"],
-                                    "state": review["state"],
-                                }
-                            ]
-                        else:
-                            contributors_reviews_data[review["author"]]["reviews"][pr_id].append(
-                                {
-                                    "words_count": review["words_count"],
-                                    "submitted_at": review["submitted_at"],
-                                    "state": review["state"],
-                                }
-                            )
-                    else:
-                        if pr_id not in contributors_reviews_data[review["author"]]["reviews"].keys():
-                            contributors_reviews_data[review["author"]]["reviews"][pr_id] = [
-                                {
-                                    "words_count": review["words_count"],
-                                    "submitted_at": review["submitted_at"],
-                                    "state": review["state"],
-                                }
-                            ]
-                        else:
-                            contributors_reviews_data[review["author"]]["reviews"][pr_id].append(
-                                {
-                                    "words_count": review["words_count"],
-                                    "submitted_at": review["submitted_at"],
-                                    "state": review["state"],
-                                }
-                            )
-
-                    if review["author"] not in review_info_per_reviewer.keys():
-                        review_info_per_reviewer[review["author"]] = [review["submitted_at"]]
-                    else:
-                        review_info_per_reviewer[review["author"]].append(review["submitted_at"])
-
-            for reviewer, reviewer_info in review_info_per_reviewer.items():
-                dt_first_review = datetime.fromtimestamp(reviewer_info[0])
-
-                if reviewer not in tfr_per_pr.keys():
-                    tfr_per_pr[reviewer] = [(dt_first_review - dt_created).total_seconds() / 3600]
-                    tfr_in_time[reviewer] = [
-                        (dt_created, pr_id, (dt_first_review - dt_created).total_seconds() / 3600, pr["size"])
-                    ]
-                else:
-                    tfr_per_pr[reviewer].append((dt_first_review - dt_created).total_seconds() / 3600)
-                    tfr_in_time[reviewer].append(
-                        (dt_created, pr_id, (dt_first_review - dt_created).total_seconds() / 3600, pr["size"])
-                    )
-
-                dt_approved = [
-                    datetime.fromtimestamp(review["submitted_at"])
-                    for review in pr["reviews"].values()
-                    if review["state"] == "APPROVED" and review["author"] == reviewer
-                ]
-
-                # if not dt_approved:
-                #     dt_approved = datetime.fromtimestamp(pr["merged_at"])
-
-                if dt_approved:
-                    if reviewer not in ttr_per_pr.keys():
-                        ttr_per_pr[reviewer] = [(dt_approved[0] - dt_created).total_seconds() / 3600]
-                        ttr_in_time[reviewer] = [
-                            (dt_created, pr_id, (dt_approved[0] - dt_created).total_seconds() / 3600, pr["size"])
-                        ]
-                    else:
-                        ttr_per_pr[reviewer].append((dt_approved[0] - dt_created).total_seconds() / 3600)
-                        ttr_in_time[reviewer].append(
-                            (dt_created, pr_id, (dt_approved[0] - dt_created).total_seconds() / 3600, pr["size"])
-                        )
-
-                if reviewer not in mtfr_in_time.keys():
-                    mtfr_in_time[reviewer] = [(dt_created, pr_id, np.median(tfr_per_pr[reviewer]))]
-                    mttr_in_time[reviewer] = [(dt_created, pr_id, np.median(ttr_per_pr[reviewer]))]
-                else:
-                    mtfr_in_time[reviewer].append((dt_created, pr_id, np.median(tfr_per_pr[reviewer])))
-                    mttr_in_time[reviewer].append((dt_created, pr_id, np.median(ttr_per_pr[reviewer])))
-
-                if reviewer not in pr_length.keys():
-                    pr_length[reviewer] = [pr["size"]]
-                else:
-                    pr_length[reviewer] = pr["size"]
-
-    for reviewer in contributors_reviews_data.keys():
+    for reviewer in contributors_reviews_data["reviewers"]:
 
         number_reviews = 0
         reviews_length = []
@@ -266,14 +298,17 @@ def pre_process_contributors_data(data: Dict[str, Any]):
         contributors_reviews_data[reviewer]["last_review_time"] = last_review_dt
 
         # Encode Pull Request sizes for the contributor
-        contributor_prs_size_encoded = [convert_score2num(label=pr_size) for pr_size in pr_length[reviewer]]
+        if len(contributors_reviews_data[reviewer]["PRs_size"]) > 1:
+            contributor_prs_size_encoded = [
+                convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
+                ]
+        else:
+            contributor_prs_size_encoded = convert_score2num(label=contributors_reviews_data[reviewer]["PRs_size"])
+
         contributor_pr_median_size, contributor_relative_score = convert_num2label(
             score=np.median(contributor_prs_size_encoded)
         )
         contributors_reviews_data[reviewer]["median_pr_length"] = contributor_pr_median_size
         contributors_reviews_data[reviewer]["median_pr_length_score"] = contributor_relative_score
-
-        contributors_reviews_data[reviewer]["MTFR_in_time"] = mtfr_in_time[reviewer]
-        contributors_reviews_data[reviewer]["MTTR_in_time"] = mttr_in_time[reviewer]
 
     return contributors_reviews_data

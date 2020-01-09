@@ -38,11 +38,9 @@ from utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
 
-BOTS_NAMES = [
-    "sesheta",
-    "dependencies[bot]",
-    "dependabot[bot]",
-    ]
+BOTS_NAMES = ["sesheta", "dependencies[bot]", "dependabot[bot]", "review-notebook-app[bot]"]
+
+pd.set_option("display.max_columns", 500)
 
 
 def evaluate_contributor_score(
@@ -51,32 +49,35 @@ def evaluate_contributor_score(
     contribution_3: float,
     contribution_4: float,
     contribution_5: float,
-    contribution_6: float
+    contribution_6: float,
 ) -> float:
     """Evaluate contributor final score."""
-    k1 = 1      # Weight factor of contribution 1
-    k2 = 1      # Weight factor of contribution 2
-    k3 = 1      # Weight factor of contribution 3
-    k4 = 1      # Weight factor of contribution 4
-    k5 = 1      # Weight factor of contribution 5
-    k6 = 1      # Weight factor of contribution 6
+    k1 = 1  # Weight factor of contribution 1
+    k2 = 1  # Weight factor of contribution 2
+    k3 = 1  # Weight factor of contribution 3
+    k4 = 1  # Weight factor of contribution 4
+    k5 = 1  # Weight factor of contribution 5
+    k6 = 1  # Weight factor of contribution 6
 
     final_score = (
-        k1 * contribution_1
-        * k2 * contribution_2
-        * k3 * contribution_3
-        * k4 * contribution_4
-        * k5 * contribution_5
-        * k6 * contribution_6
+        k1
+        * contribution_1
+        * k2
+        * contribution_2
+        * k3
+        * contribution_3
+        * k4
+        * contribution_4
+        * k5
+        * contribution_5
+        * k6
+        * contribution_6
     )
 
     return final_score
 
 
-def evaluate_reviewers(
-    project: Tuple[str, str],
-    number_reviewer: int = 2,
-):
+def evaluate_reviewers(project: Tuple[str, str], number_reviewer: int = 2):
     """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
     :project: repository to be analyzed (e.g. (thoth-station, performance))
@@ -84,6 +85,8 @@ def evaluate_reviewers(
     """
     knowledge_path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
+    if not data:
+        return {}
 
     now_time = datetime.now()
 
@@ -92,9 +95,9 @@ def evaluate_reviewers(
     # Project statistics
     project_commits_number = sum([pr["commits_number"] for pr in data.values()])
     project_prs_number = len(data)
-    project_prs_reviewed_number = len(projects_reviews_data["MTTR_in_time"])
-    project_mtfr = projects_reviews_data["MTFR_in_time"][-1][2]
-    project_mttr = projects_reviews_data["MTTR_in_time"][-1][2]
+    project_prs_reviewed_number = len(projects_reviews_data["MTTR"])
+    project_mtfr = projects_reviews_data["MTTFR"][-1]
+    project_mttr = projects_reviews_data["MTTR"][-1]
     project_reviews_length_score = projects_reviews_data["median_pr_length_score"]
 
     project_last_review = projects_reviews_data["last_review_time"]
@@ -109,40 +112,39 @@ def evaluate_reviewers(
                 project_commits_number,
                 project_prs_reviewed_number,
                 str(timedelta(hours=project_mtfr)),
-                str(timedelta(hours=project_mttr))
+                str(timedelta(hours=project_mttr)),
             )
-        ], columns=[
+        ],
+        columns=[
             "Repository",
             "PullRequest n.",
             "Commits n.",
-            "PullRequestRev n.",    # Pull requests reviewed
-            "MTTFR",                # Median Time to First Review
-            "MTTR"                  # Median Time to Review
-            ])
-    _LOGGER.info(
-        "-------------------------------------------------------------------------------"
+            "PullRequestRev n.",  # Pull requests reviewed
+            "MTTFR",  # Median Time to First Review
+            "MTTR",  # Median Time to Review
+        ],
     )
+    _LOGGER.info("-------------------------------------------------------------------------------")
     print(project_data)
-    _LOGGER.info(
-        "-------------------------------------------------------------------------------"
-    )
+    _LOGGER.info("-------------------------------------------------------------------------------")
 
     contributors = sorted(projects_reviews_data["contributors"])
     contributor_data = []
     scores_data = []
 
     # Contributors that reviewed and that didn't reviewed
-    contributors_reviews_data = pre_process_contributors_data(data=data)
+    contributors_reviews_data = pre_process_contributors_data(
+        data=data, contributors=[c for c in contributors if c not in BOTS_NAMES]
+    )
 
     for contributor in contributors:
 
         _LOGGER.debug(f"Analyzing contributor: {contributor}")
         if contributor in contributors_reviews_data.keys() and contributor not in BOTS_NAMES:
 
-            contributor_commits_number = sum([
-                pr["commits_number"]
-                for pr in data.values()
-                if pr["created_by"] == contributor])
+            contributor_commits_number = sum(
+                [pr["commits_number"] for pr in data.values() if pr["created_by"] == contributor]
+            )
 
             contributor_prs_number = 0
             for pr in data.values():
@@ -154,48 +156,48 @@ def evaluate_reviewers(
             contributor_reviews_number = contributors_reviews_data[contributor]["number_reviews"]
             contributor_reviews_length = contributors_reviews_data[contributor]["median_review_length"]
             contributor_reviews_length_score = contributors_reviews_data[contributor]["median_pr_length_score"]
-            contributor_mtfr = contributors_reviews_data[contributor]["MTFR_in_time"][-1][2]
-            contributor_mttr = contributors_reviews_data[contributor]["MTTR_in_time"][-1][2]
+            contributor_mtfr = contributors_reviews_data[contributor]["MTTFR"][-1]
+            contributor_mttr = contributors_reviews_data[contributor]["MTTR"][-1]
 
             contributor_last_review = contributors_reviews_data[contributor]["last_review_time"]
 
             contributor_time_last_review = now_time - datetime.fromtimestamp(contributor_last_review)
 
             contributor_data.append(
-                    (
-                        contributor,
-                        contributor_prs_number,
-                        contributor_prs_number/project_prs_number*100,
-                        contributor_prs_reviewed_number,
-                        contributor_prs_reviewed_number/project_prs_reviewed_number*100,
-                        contributor_median_pr_length,
-                        contributor_reviews_number,
-                        contributor_reviews_length,
-                        str(timedelta(hours=contributor_mtfr)),
-                        str(timedelta(hours=contributor_mttr)),
-                        contributor_time_last_review,
-                        contributor_commits_number,
-                        contributor_commits_number/project_commits_number*100,
-                        "Y"
-                    )
+                (
+                    contributor,
+                    contributor_prs_number,
+                    contributor_prs_number / project_prs_number * 100,
+                    contributor_prs_reviewed_number,
+                    contributor_prs_reviewed_number / project_prs_reviewed_number * 100,
+                    contributor_median_pr_length,
+                    contributor_reviews_number,
+                    contributor_reviews_length,
+                    str(timedelta(hours=contributor_mtfr)),
+                    str(timedelta(hours=contributor_mttr)),
+                    contributor_time_last_review,
+                    contributor_commits_number,
+                    contributor_commits_number / project_commits_number * 100,
+                    "N",
                 )
+            )
 
             # Contributions to final score:
 
             # 1: Number of PR reviewed respect to total number of PR reviewed by the team.
-            contribution_1 = contributor_prs_number/project_prs_number
+            contribution_1 = contributor_prs_number / project_prs_number
 
             # 2: Median time to review a PR by reviewer respect to team repostiory MTTR.
-            contribution_2 = timedelta(hours=project_mttr)/timedelta(hours=contributor_mttr)
+            contribution_2 = timedelta(hours=project_mttr) / timedelta(hours=contributor_mttr)
 
             # 3: Median length of PR reviewed respect to the median length of PR in project.
-            contribution_3 = contributor_reviews_length_score/project_reviews_length_score
+            contribution_3 = contributor_reviews_length_score / project_reviews_length_score
 
             # 4: Number of commits respect to the total number of commits in the repository.
-            contribution_4 = contributor_commits_number/project_commits_number
+            contribution_4 = contributor_commits_number / project_commits_number
 
             # 5: Time since last review respect to project last review.
-            contribution_5 = (project_time_last_review.total_seconds() / contributor_time_last_review.total_seconds())
+            contribution_5 = project_time_last_review.total_seconds() / contributor_time_last_review.total_seconds()
 
             # TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
             contribution_6 = 1
@@ -206,7 +208,7 @@ def evaluate_reviewers(
                 contribution_3=contribution_3,
                 contribution_4=contribution_4,
                 contribution_5=contribution_5,
-                contribution_6=contribution_6
+                contribution_6=contribution_6,
             )
 
             scores_data.append(
@@ -218,16 +220,15 @@ def evaluate_reviewers(
                     contribution_4,
                     contribution_5,
                     contribution_6,
-                    final_score
+                    final_score,
                 )
             )
 
         elif contributor in BOTS_NAMES:
 
-            bot_contributor_commits_number = sum([
-                pr["commits_number"]
-                for pr in data.values()
-                if pr["created_by"] == contributor])
+            bot_contributor_commits_number = sum(
+                [pr["commits_number"] for pr in data.values() if pr["created_by"] == contributor]
+            )
 
             bot_contributor_prs_number = 0
             for pr in data.values():
@@ -235,30 +236,29 @@ def evaluate_reviewers(
                     bot_contributor_prs_number += 1
 
             contributor_data.append(
-                    (
-                        contributor,
-                        bot_contributor_prs_number,
-                        bot_contributor_prs_number/project_prs_number*100,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        bot_contributor_commits_number,
-                        contributor_commits_number/project_commits_number*100,
-                        "Y"
-                    )
+                (
+                    contributor,
+                    bot_contributor_prs_number,
+                    bot_contributor_prs_number / project_prs_number * 100,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    bot_contributor_commits_number,
+                    contributor_commits_number / project_commits_number * 100,
+                    "Y",
                 )
+            )
 
         else:
 
-            contributor_commits_number = sum([
-                pr["commits_number"]
-                for pr in data.values()
-                if pr["created_by"] == contributor])
+            contributor_commits_number = sum(
+                [pr["commits_number"] for pr in data.values() if pr["created_by"] == contributor]
+            )
 
             contributor_prs_number = 0
             for pr in data.values():
@@ -266,26 +266,27 @@ def evaluate_reviewers(
                     contributor_prs_number += 1
 
             contributor_data.append(
-                    (
-                        contributor,
-                        contributor_prs_number,
-                        contributor_prs_number/project_prs_number*100,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        contributor_commits_number,
-                        contributor_commits_number/project_commits_number*100,
-                        "N"
-                    )
+                (
+                    contributor,
+                    contributor_prs_number,
+                    contributor_prs_number / project_prs_number * 100,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    contributor_commits_number,
+                    contributor_commits_number / project_commits_number * 100,
+                    "N",
                 )
+            )
 
     contributors_data = pd.DataFrame(
-        contributor_data, columns=[
+        contributor_data,
+        columns=[
             "Contributor",
             "PR n.",        # Pull Request number
             "PR %",         # Pull Request percentage respect to total
@@ -299,28 +300,30 @@ def evaluate_reviewers(
             "TLR",          # Time Last Review [hr]
             "Comm n.",      # Commits number
             "Comm %",       # Commits percentage
-            "Bot"           # Is a bot?
-            ])
+            "Bot",          # Is a bot?
+        ],
+    )
     print()
     print(contributors_data)
 
     contributors_score_data = pd.DataFrame(
-        scores_data, columns=[
+        scores_data,
+        columns=[
             "Contributor",
-            "C1",           # Contribution 1
-            "C2",           # Contribution 2
-            "C3",           # Contribution 3
-            "C4",           # Contribution 4
-            "C5",           # Contribution 5
-            "C6",           # Contribution 6
-            "Score"         # Contributor Final Score
-            ])
+            "C1",  # Contribution 1
+            "C2",  # Contribution 2
+            "C3",  # Contribution 3
+            "C4",  # Contribution 4
+            "C5",  # Contribution 5
+            "C6",  # Contribution 6
+            "Score",  # Contributor Final Score
+        ],
+    )
 
     print()
-    sorted_reviewers = contributors_score_data.sort_values(by=['Score'], ascending=False)
+    sorted_reviewers = contributors_score_data.sort_values(by=["Score"], ascending=False)
     print(sorted_reviewers)
 
     print()
     _LOGGER.info(f"Number of reviewers requested: {number_reviewer}")
-    _LOGGER.info(
-            f"Reviewers: {sorted_reviewers['Contributor'].head(number_reviewer).values}")
+    _LOGGER.info(f"Reviewers: {sorted_reviewers['Contributor'].head(number_reviewer).values}")

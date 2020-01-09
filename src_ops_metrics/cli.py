@@ -40,28 +40,19 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--create-knowledge",
     "-c",
-    type=bool,
-    default=False,
-    show_default=True,
-    required=False,
+    is_flag=True,
     help="Create knowledge from a project repository.",
 )
 @click.option(
     "--visualize-statistics",
     "-v",
-    type=bool,
-    default=False,
-    show_default=True,
-    required=False,
+    is_flag=True,
     help="Visualize statistics on the project repository knowledge collected.",
 )
 @click.option(
     "--reviewer-reccomender",
     "-r",
-    type=bool,
-    default=False,
-    show_default=True,
-    required=False,
+    is_flag=True,
     help="Assign reviewers based on previous knowledge collected.",
 )
 def cli(

@@ -20,11 +20,12 @@
 import logging
 
 from pathlib import Path
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import itertools
 
 from utils import check_directory
 from utils import convert_num2label, convert_score2num
@@ -35,48 +36,32 @@ from pre_processing import pre_process_project_data
 _LOGGER = logging.getLogger(__name__)
 
 
-def remove_outliers(extracted_data: List[Any], columns: List[str], quantity: str):
-    """Remove outliers."""
-    range_value = 1.5
+def evaluate_and_remove_outliers(data: Dict[str, Any], quantity: str):
+    """Evaluate and remove outliers."""
+    RANGE_VALUES = 1.5
 
+    df = pd.DataFrame.from_dict(data)
+    q = df[f"{quantity}"].quantile([0.25, 0.75])
+    Q1 = q[0.25]
+    Q3 = q[0.75]
+    IQR = Q3 - Q1
+    outliers = df[
+        (df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR)) | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))
+    ]
+    _LOGGER.info("Outliers for %r" % quantity)
+    _LOGGER.info("Outliers: %r" % outliers)
+    filtered_df = df[
+        (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
+    ]
+
+    return filtered_df
+
+
+def analyze_outliers(data: Dict[str, Any], quantity: str, columns: Optional[List[str]] = None):
+    """Analyze outliers."""
     processed_data = []
-
-    # Consider PR length
-    if len(extracted_data[0]) > 3:
-        for pull_request_length in ["XS", "S", "M", "L", "XL", "XXL"]:
-            subset_data = [pr for pr in extracted_data if pr[3] == pull_request_length]
-            df = pd.DataFrame(subset_data, columns=columns)
-            q = df[f"{quantity}"].quantile([0.25, 0.75])
-            Q1 = q[0.25]
-            Q3 = q[0.75]
-            IQR = Q3 - Q1
-            outliers = df[
-                (df[f"{quantity}"] < (Q1 - range_value * IQR)) | (df[f"{quantity}"] > (Q3 + range_value * IQR))
-            ]
-            print()
-            print("Outliers for", f"{quantity}", f"{pull_request_length}")
-            print(outliers)
-            filtered_df = df[
-                (df[f"{quantity}"] > (Q1 - range_value * IQR)) & (df[f"{quantity}"] < (Q3 + range_value * IQR))
-            ]
-
-            processed_data = processed_data + filtered_df.values.tolist()
-
-    else:
-        df = pd.DataFrame(extracted_data, columns=columns)
-        q = df[f"{quantity}"].quantile([0.25, 0.75])
-        Q1 = q[0.25]
-        Q3 = q[0.75]
-        IQR = Q3 - Q1
-        outliers = df[(df[f"{quantity}"] < (Q1 - range_value * IQR)) | (df[f"{quantity}"] > (Q3 + range_value * IQR))]
-        print()
-        print("Outliers for", f"{quantity}")
-        print(outliers)
-        filtered_df = df[
-            (df[f"{quantity}"] > (Q1 - range_value * IQR)) & (df[f"{quantity}"] < (Q3 + range_value * IQR))
-        ]
-
-        processed_data = processed_data + filtered_df.values.tolist()
+    filtered_df = evaluate_and_remove_outliers(data=data, quantity=quantity)
+    processed_data += filtered_df.values.tolist()
 
     return processed_data
 
@@ -118,35 +103,48 @@ def visualize_results(project: str):
 
     if data:
         projects_reviews_data = pre_process_project_data(data=data)
-        tfr_in_time = projects_reviews_data["TFR_in_time"]
-        ttr_in_time = projects_reviews_data["TTR_in_time"]
-        mtfr_in_time = projects_reviews_data["MTFR_in_time"]
-        mttr_in_time = projects_reviews_data["MTFR_in_time"]
+        prs_ids = projects_reviews_data["ids"]
+        prs_created_dts = projects_reviews_data["created_dts"]
+        prs_lengths = projects_reviews_data["PRs_size"]
 
-        # TFR
-        mtfr_in_time_processed = remove_outliers(
-            quantity="MTFR", extracted_data=mtfr_in_time, columns=["Datetime", "PR ID", "MTFR"]
+        ttfr = projects_reviews_data["TTFR"]
+        mttfr = projects_reviews_data["MTTFR"]
+        # MTTFR
+        data = {
+            "ids": prs_ids,
+            "MTTFR": mttfr
+        }
+        mttfr_per_pr_processed = analyze_outliers(
+            quantity="MTTFR", data=data
         )
 
         create_per_pr_plot(
             result_path=result_path,
             project=project,
-            x_array=[el[0] for el in mtfr_in_time_processed],
-            y_array=[el[2] for el in mtfr_in_time_processed],
+            x_array=[el[0] for el in mttfr_per_pr_processed],
+            y_array=[el[1] for el in mttfr_per_pr_processed],
             x_label="PR created date",
             y_label="Median Time to First Review (h)",
             title=f"MTTFR in Time per project: {project}",
             output_name="MTTFR-in-time",
         )
 
-        tfr_in_time_processed = remove_outliers(
-            quantity="TTFR", extracted_data=tfr_in_time, columns=["Datetime", "PR ID", "TTFR", "PR Length"]
+        # TTFR
+        data = {
+            "ids": prs_ids,
+            "created_dts": prs_created_dts,
+            "TTFR": ttfr,
+            "lengths": prs_lengths
+        }
+
+        tfr_in_time_processed = analyze_outliers(
+            quantity="TTFR", data=data
         )
 
         create_per_pr_plot(
             result_path=result_path,
             project=project,
-            x_array=[el[0] for el in tfr_in_time_processed],
+            x_array=[el[1] for el in tfr_in_time_processed],
             y_array=[el[2] for el in tfr_in_time_processed],
             x_label="PR created date",
             y_label="Time to First Review (h)",
@@ -157,7 +155,7 @@ def visualize_results(project: str):
         create_per_pr_plot(
             result_path=result_path,
             project=project,
-            x_array=[el[1] for el in tfr_in_time_processed],
+            x_array=[el[0] for el in tfr_in_time_processed],
             y_array=[el[2] for el in tfr_in_time_processed],
             x_label="PR id",
             y_label="Time to First Review (h)",
@@ -179,30 +177,43 @@ def visualize_results(project: str):
             output_name="TTFR-per-PR-length",
         )
 
-        # TTR
-        mttr_in_time_processed = remove_outliers(
-            quantity="MTTR", extracted_data=mttr_in_time, columns=["Datetime", "PR ID", "MTTR"]
+        ttr = projects_reviews_data["TTR"]
+        mttr = projects_reviews_data["MTTR"]
+        # MTTR
+        data = {
+            "created_dts": prs_created_dts,
+            "MTTR": mttr,
+        }
+        mttr_in_time_processed = analyze_outliers(
+            quantity="MTTR", data=data
         )
 
         create_per_pr_plot(
             result_path=result_path,
             project=project,
             x_array=[el[0] for el in mttr_in_time_processed],
-            y_array=[el[2] for el in mttr_in_time_processed],
+            y_array=[el[1] for el in mttr_in_time_processed],
             x_label="PR created date",
             y_label="Mean Time to Review (h)",
             title=f"MTTR in Time per project: {project}",
             output_name="MTTR-in-time",
         )
 
-        ttr_in_time_processed = remove_outliers(
-            quantity="TTR", extracted_data=ttr_in_time, columns=["Datetime", "PR ID", "TTR", "PR Length"]
+        # TTR
+        data = {
+            "ids": prs_ids,
+            "created_dts": prs_created_dts,
+            "TTR": ttr,
+            "lengths": prs_lengths
+        }
+        ttr_in_time_processed = analyze_outliers(
+            quantity="TTR", data=data
         )
 
         create_per_pr_plot(
             result_path=result_path,
             project=project,
-            x_array=[el[0] for el in ttr_in_time_processed],
+            x_array=[el[1] for el in ttr_in_time_processed],
             y_array=[el[2] for el in ttr_in_time_processed],
             x_label="PR created date",
             y_label="Time to Review (h)",
@@ -213,7 +224,7 @@ def visualize_results(project: str):
         create_per_pr_plot(
             result_path=result_path,
             project=project,
-            x_array=[el[1] for el in ttr_in_time_processed],
+            x_array=[el[0] for el in ttr_in_time_processed],
             y_array=[el[2] for el in ttr_in_time_processed],
             x_label="PR id",
             y_label="Time to Review (h)",
