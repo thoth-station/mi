@@ -23,7 +23,7 @@ import click
 
 from create_bot_knowledge import analyse_projects
 from visualization import visualize_results
-from reviewer_recommender import evaluate_reviewers
+from evaluate_scores import evaluate_reviewers_scores
 
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
@@ -73,7 +73,7 @@ def cli(
         )
 
     if reviewer_reccomender:
-        evaluate_reviewers(
+        evaluate_reviewers_scores(
             project=project
 
         )

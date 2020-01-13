@@ -60,6 +60,26 @@ def evaluate_and_remove_outliers(data: Dict[str, Any], quantity: str):
 def analyze_outliers(data: Dict[str, Any], quantity: str, columns: Optional[List[str]] = None):
     """Analyze outliers."""
     processed_data = []
+    # # Consider PR length
+    # if "lengths" in data.keys():
+    #     subset_data = dict.fromkeys(data.keys(), [])
+    #     for size in ["XS", "S", "M", "L", "XL", "XXL"]:
+    #         for pr_id, created_dt, quantity_value, pr_length in itertools.zip_longest(
+    #             data["ids"],
+    #             data["created_dts"],
+    #             data[quantity],
+    #             data["lengths"]):
+    #             if pr_length==size:
+    #                 subset_data["ids"] += [pr_id]
+    #                 subset_data["created_dts"].append(created_dt)
+    #                 subset_data[quantity].append(quantity_value)
+    #                 subset_data["lengths"].append(pr_length)
+
+    #         filtered_df = evaluate_and_remove_outliers(data=subset_data, quantity=quantity)
+    #         processed_data += filtered_df.values.tolist()
+
+    #     return processed_data
+
     filtered_df = evaluate_and_remove_outliers(data=data, quantity=quantity)
     processed_data += filtered_df.values.tolist()
 

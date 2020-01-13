@@ -15,16 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Reviewer Reccomender."""
+"""Reviewer Technical and Social Score."""
 
 import logging
 import os
 import json
 import time
+import itertools
 from datetime import timedelta
 from datetime import datetime
 
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 import pandas as pd
 
@@ -43,41 +44,18 @@ BOTS_NAMES = ["sesheta", "dependencies[bot]", "dependabot[bot]", "review-noteboo
 pd.set_option("display.max_columns", 500)
 
 
-def evaluate_contributor_score(
-    contribution_1: float,
-    contribution_2: float,
-    contribution_3: float,
-    contribution_4: float,
-    contribution_5: float,
-    contribution_6: float,
+def evaluate_contributor_technical_score(
+    contributions: List[float],
+    weighting_factors: List[float]
 ) -> float:
     """Evaluate contributor final score."""
-    k1 = 1  # Weight factor of contribution 1
-    k2 = 1  # Weight factor of contribution 2
-    k3 = 1  # Weight factor of contribution 3
-    k4 = 1  # Weight factor of contribution 4
-    k5 = 1  # Weight factor of contribution 5
-    k6 = 1  # Weight factor of contribution 6
-
-    final_score = (
-        k1
-        * contribution_1
-        * k2
-        * contribution_2
-        * k3
-        * contribution_3
-        * k4
-        * contribution_4
-        * k5
-        * contribution_5
-        * k6
-        * contribution_6
-    )
-
+    final_score = 1
+    for contribution, w_factor in zip(contributions, weighting_factors):
+        final_score += contribution * w_factor
     return final_score
 
 
-def evaluate_reviewers(project: Tuple[str, str], number_reviewer: int = 2):
+def evaluate_reviewers_scores(project: Tuple[str, str], number_reviewer: int = 2):
     """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
     :project: repository to be analyzed (e.g. (thoth-station, performance))
@@ -101,8 +79,7 @@ def evaluate_reviewers(project: Tuple[str, str], number_reviewer: int = 2):
     project_reviews_length_score = projects_reviews_data["median_pr_length_score"]
 
     project_last_review = projects_reviews_data["last_review_time"]
-
-    project_time_last_review = now_time - datetime.fromtimestamp(project_last_review)
+    project_time_since_last_review = now_time - datetime.fromtimestamp(project_last_review)
 
     project_data = pd.DataFrame(
         [
@@ -183,43 +160,42 @@ def evaluate_reviewers(project: Tuple[str, str], number_reviewer: int = 2):
             )
 
             # Contributions to final score:
+            contributions = []
 
             # 1: Number of PR reviewed respect to total number of PR reviewed by the team.
-            contribution_1 = contributor_prs_number / project_prs_number
+            contributions.append(contributor_prs_number / project_prs_number)
 
             # 2: Median time to review a PR by reviewer respect to team repostiory MTTR.
-            contribution_2 = timedelta(hours=project_mttr) / timedelta(hours=contributor_mttr)
+            contributions.append(timedelta(hours=project_mttr) / timedelta(hours=contributor_mttr))
 
             # 3: Median length of PR reviewed respect to the median length of PR in project.
-            contribution_3 = contributor_reviews_length_score / project_reviews_length_score
+            contributions.append(contributor_reviews_length_score / project_reviews_length_score)
 
             # 4: Number of commits respect to the total number of commits in the repository.
-            contribution_4 = contributor_commits_number / project_commits_number
+            contributions.append(contributor_commits_number / project_commits_number)
 
             # 5: Time since last review respect to project last review.
-            contribution_5 = project_time_last_review.total_seconds() / contributor_time_last_review.total_seconds()
+            contributions.append(
+                project_time_since_last_review.total_seconds() / contributor_time_last_review.total_seconds()
+            )
 
             # TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
-            contribution_6 = 1
+            contributions.append(1)
 
-            final_score = evaluate_contributor_score(
-                contribution_1=contribution_1,
-                contribution_2=contribution_2,
-                contribution_3=contribution_3,
-                contribution_4=contribution_4,
-                contribution_5=contribution_5,
-                contribution_6=contribution_6,
+            final_score = evaluate_contributor_technical_score(
+                contributions=contributions,
+                weighting_factors=[1, 1, 1, 1, 1, 1]
             )
 
             scores_data.append(
                 (
                     contributor,
-                    contribution_1,
-                    contribution_2,
-                    contribution_3,
-                    contribution_4,
-                    contribution_5,
-                    contribution_6,
+                    contributions[0],
+                    contributions[1],
+                    contributions[2],
+                    contributions[3],
+                    contributions[4],
+                    contributions[5],
                     final_score,
                 )
             )
@@ -310,18 +286,18 @@ def evaluate_reviewers(project: Tuple[str, str], number_reviewer: int = 2):
         scores_data,
         columns=[
             "Contributor",
-            "C1",  # Contribution 1
-            "C2",  # Contribution 2
-            "C3",  # Contribution 3
-            "C4",  # Contribution 4
-            "C5",  # Contribution 5
-            "C6",  # Contribution 6
-            "Score",  # Contributor Final Score
+            "PRs reviewed score",
+            "MTTR score",
+            "PR length score",
+            "Commits score",
+            "Time Last review score",
+            "TTCI score",
+            "Technical score",  # Contributor Final TechnicalScore
         ],
     )
 
     print()
-    sorted_reviewers = contributors_score_data.sort_values(by=["Score"], ascending=False)
+    sorted_reviewers = contributors_score_data.sort_values(by=["Technical score"], ascending=False)
     print(sorted_reviewers)
 
     print()

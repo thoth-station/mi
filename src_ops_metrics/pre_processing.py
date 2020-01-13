@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Pre-processing functions."""
+"""Pre-processing GitHub data."""
 
 import logging
 
@@ -258,6 +258,26 @@ def analyze_pr_for_contributor_data(pr_id: int, pr: Dict[str, Any], extracted_da
         )
 
 
+def analyze_contributors_interaction(
+    pr_interactions: Dict[str, int],
+    pr_author: str,
+    interactions_data: Dict[str, Dict[str, int]]
+):
+    """Analyze project contributors interactions."""
+    if not pr_interactions:
+        return interactions_data
+
+    for contributor, interaction_info in pr_interactions.items():
+        if contributor != pr_author:
+            # Check if it is a bot.
+            if contributor not in interactions_data[pr_author].keys():
+                pass
+            else:
+                interactions_data[pr_author][contributor] += interaction_info
+
+    return interactions_data
+
+
 def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str]):
     """Pre process of data for contributors in a project repository."""
     pr_ids = sorted([int(k) for k in data.keys()])
@@ -275,6 +295,11 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
         pr = data[str(pr_id)]
 
         analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
+
+        analyze_contributors_interaction(
+            pr_interactions=pr["interactions"],
+            pr_author=pr["created_by"],
+            interactions_data=interactions)
 
     for reviewer in contributors_reviews_data["reviewers"]:
 
@@ -310,5 +335,6 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
         )
         contributors_reviews_data[reviewer]["median_pr_length"] = contributor_pr_median_size
         contributors_reviews_data[reviewer]["median_pr_length_score"] = contributor_relative_score
+        contributors_reviews_data[reviewer]["interactions"] = interactions[reviewer]
 
     return contributors_reviews_data
