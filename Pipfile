@@ -8,6 +8,7 @@ numpy = "*"
 pygithub = "*"
 matplotlib = "*"
 pandas = "*"
+thoth-storages = "*"
 
 [dev-packages]
 pytest = "*"
