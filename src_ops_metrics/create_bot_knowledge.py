@@ -35,8 +35,22 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
-
 STANDALONE_LABELS = {"size"}
+
+from thoth.storages.ceph import CephStore
+
+USE_CEPH_STORAGE = False
+PREFIX = 'data/thoth/dtuchyna/'
+HOST = 'https://s3.upshift.redhat.com/'
+# env variables needed for ceph connection
+# THOTH_CEPH_KEY_ID =
+# THOTH_SECRET_KEY = 
+BUCKET = 'DH-DEV-DATA'
+
+def get_ceph_store() -> CephStore:
+    s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
+    s3.connect()
+    return s3
 
 
 def connect_to_source(project: Tuple[str, str]) -> Repository:
@@ -172,10 +186,17 @@ def save_knowledge(file_path: Path, data: Dict[str, Any]):
     """
     results = {"results": data}
 
-    with open(file_path, "w") as f:
-        json.dump(results, f)
-    _LOGGER.info("Saved new knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
-
+    _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+    
+    if USE_CEPH_STORAGE:
+        ceph_filename = os.path.relpath(file_path).replace('./', '')
+        s3 = get_ceph_store()
+        s3.store_document(results, ceph_filename)
+        _LOGGER.info("Saved on CEPH at %s%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+    else:
+        with open(file_path, "w") as f:
+            json.dump(results, f)
+        _LOGGER.info("Saved locally at %s" % file_path)
 
 def get_interactions(comments):
     """Get overall word count for comments per author."""
