@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+src_ops_metrics/Knowledge_Statistics/
+src_ops_metrics/Bot_Knowledge/
