@@ -49,6 +49,7 @@ BUCKET = "DH-DEV-DATA"
 
 
 def get_ceph_store() -> CephStore:
+    """Establish a connection to the CEPH."""
     s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
     s3.connect()
     return s3
@@ -413,8 +414,8 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
 
 
 def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool):
-    """Load old knowledge and update it with the newly analysed one and save it. 
-    
+    """Load old knowledge and update it with the newly analysed one and save it.
+
     Arguments:
         github_repo {str} -- Github repo that will be analysed
         project_path {str} -- The main directory where the knowledge will be stored
