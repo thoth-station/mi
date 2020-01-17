@@ -44,6 +44,12 @@ logging.basicConfig(level=logging.INFO)
     help="Create knowledge from a project repository.",
 )
 @click.option(
+    "--use-ceph",
+    "-C",
+    is_flag=True,
+    help="Use ceph for knowledge loading and storing.",
+)
+@click.option(
     "--visualize-statistics",
     "-v",
     is_flag=True,
@@ -58,6 +64,7 @@ logging.basicConfig(level=logging.INFO)
 def cli(
     project: str,
     create_knowledge: bool,
+    use_ceph: bool,
     visualize_statistics: bool,
     reviewer_reccomender: bool
 ):
@@ -65,6 +72,7 @@ def cli(
     if create_knowledge:
         analyse_projects(
             projects=[project.split("/")],
+            use_ceph=use_ceph,
         )
 
     if visualize_statistics:
