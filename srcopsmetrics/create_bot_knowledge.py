@@ -29,6 +29,9 @@ from utils import check_directory, assign_pull_request_size
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
 
+from thoth.storages.exceptions import NotFoundError
+from thoth.storages.ceph import CephStore
+
 _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -36,8 +39,6 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 STANDALONE_LABELS = {"size"}
-
-from thoth.storages.ceph import CephStore
 
 PREFIX = "data/thoth/dtuchyna/"
 HOST = "https://s3.upshift.redhat.com/"
@@ -144,6 +145,7 @@ def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> 
 
 
 def load_locally(file_path: Path) -> json:
+    """Load knowledge file from local storage."""
     _LOGGER.info("Loading knowledge locally...")
     if not file_path.exists() or os.path.getsize(file_path) == 0:
         return None
@@ -154,11 +156,12 @@ def load_locally(file_path: Path) -> json:
 
 
 def load_remotely(file_path: Path) -> json:
+    """Load knowledge file from CEPH storage."""
     _LOGGER.info("Loading knowledge from CEPH...")
     ceph_filename = os.path.relpath(file_path).replace("./", "")
     try:
         return get_ceph_store().retrieve_document(ceph_filename)["results"]
-    except:
+    except NotFoundError:
         _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
 
 
@@ -410,7 +413,14 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
 
 
 def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool):
-
+    """Load old knowledge and update it with the newly analysed one and save it. 
+    
+    Arguments:
+        github_repo {str} -- Github repo that will be analysed
+        project_path {str} -- The main directory where the knowledge will be stored
+        github_type {str} -- Currently can be only "Issue" or "PullRequest"
+        use_ceph {bool} -- If true, the CEPH will be used for knowledge loading and storing.
+    """
     if github_type == "Issue":
         filename = "issues"
         analyse = analyse_issues
