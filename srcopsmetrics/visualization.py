@@ -27,10 +27,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
 
-from utils import check_directory
-from utils import convert_num2label, convert_score2num
-from pre_processing import retrieve_knowledge
-from pre_processing import pre_process_project_data
+from srcopsmetrics.utils import check_directory
+from srcopsmetrics.utils import convert_num2label, convert_score2num
+from srcopsmetrics.pre_processing import retrieve_knowledge
+from srcopsmetrics.pre_processing import pre_process_project_data
 
 
 _LOGGER = logging.getLogger(__name__)

@@ -26,8 +26,8 @@ from pathlib import Path
 from datetime import timedelta
 from datetime import datetime
 
-from create_bot_knowledge import load_previous_knowledge
-from utils import convert_num2label, convert_score2num
+from srcopsmetrics.create_bot_knowledge import load_previous_knowledge
+from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 
 _LOGGER = logging.getLogger(__name__)

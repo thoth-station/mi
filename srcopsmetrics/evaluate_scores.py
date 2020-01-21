@@ -32,9 +32,9 @@ import pandas as pd
 from pathlib import Path
 from collections import Counter
 
-from pre_processing import retrieve_knowledge
-from pre_processing import pre_process_project_data, pre_process_contributors_data
-from utils import convert_num2label, convert_score2num
+from srcopsmetrics.pre_processing import retrieve_knowledge
+from srcopsmetrics.pre_processing import pre_process_project_data, pre_process_contributors_data
+from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 
 _LOGGER = logging.getLogger(__name__)
