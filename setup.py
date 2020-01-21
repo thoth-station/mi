@@ -15,12 +15,16 @@ def get_version():
 
 VERSION = get_version()
 
+HERE = Path(__file__).parent
+README: str = Path(HERE, "README.md").read_text(encoding="utf-8")
+
 setup(
     name='srcopsmetrics',
     version=VERSION,
-    description='Source code metrics functionality for analysing python GitHub repositories',
+    twidescription='Source code metrics functionalities for analysing Python GitHub repositories',
     packages=find_packages(),
-    long_description=Path('README.md').read_text(),
+    long_description="README",
+    long_description_content_type='text/markdown',
     author='Francesco Murdaca, Dominik Tuchyna',
     author_email='fmurdaca@redhat.com, xtuchyna@redhat.com',
     license='GPLv3+',

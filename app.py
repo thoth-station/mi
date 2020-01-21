@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""This is the main script of the template project."""
+"""This is the main script of the project."""
 
-from template.version import __version__
+from srcopsmetrics.__init__ import __version__
 
 if __name__ == "__main__":
     print(f"A template project with Thoth integration, v{__version__}.")
