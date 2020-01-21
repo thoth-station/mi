@@ -40,12 +40,14 @@ ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve
 
 STANDALONE_LABELS = {"size"}
 
-PREFIX = "data/thoth/dtuchyna/"
-HOST = "https://s3.upshift.redhat.com/"
+PREFIX = os.getenv("PREFIX")
+HOST = os.getenv("HOST")
+BUCKET = os.getenv("BUCKET")
+
 # env variables needed for ceph connection
+# which should be setup for aws
 # THOTH_CEPH_KEY_ID =
 # THOTH_SECRET_KEY =
-BUCKET = "DH-DEV-DATA"
 
 
 def get_ceph_store() -> CephStore:
@@ -166,7 +168,9 @@ def load_remotely(file_path: Path) -> json:
         _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
 
 
-def load_previous_knowledge(project_name: str, file_path: Path, knowledge_type: str, use_ceph: bool) -> Dict[str, Any]:
+def load_previous_knowledge(
+    project_name: str, file_path: Path, knowledge_type: str, use_ceph: bool = False
+) -> Dict[str, Any]:
     """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
     Arguments:
@@ -413,7 +417,7 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
     return prev_pulls
 
 
-def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool):
+def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool = False):
     """Load old knowledge and update it with the newly analysed one and save it.
 
     Arguments:
