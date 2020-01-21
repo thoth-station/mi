@@ -1,4 +1,7 @@
 - project:
+    release:
+      jobs:
+        - upload-pypi-sesheta
     check:
       jobs:
         - "thoth-coala"
