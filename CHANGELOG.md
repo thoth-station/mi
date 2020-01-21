@@ -65,3 +65,9 @@ all the things that you see...
 * Remove loggers in the guards
 * Refactor gathering pull request code to be more readable
 * Collect and analyze stastistics on Project repositories from GitHub
+
+## Release 0.2.0 (2020-01-21T20:55:55)
+* Rename dirs to match snake_case, gitignore additions
+* Fix README in setup.py
+* Edit README in setup.py for PyPI long_description compatibility
+* Fix local module imports
