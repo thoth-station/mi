@@ -44,11 +44,6 @@ PREFIX = os.getenv("PREFIX")
 HOST = os.getenv("HOST")
 BUCKET = os.getenv("BUCKET")
 
-# env variables needed for ceph connection
-# which should be setup for aws
-# THOTH_CEPH_KEY_ID =
-# THOTH_SECRET_KEY =
-
 
 def get_ceph_store() -> CephStore:
     """Establish a connection to the CEPH."""
