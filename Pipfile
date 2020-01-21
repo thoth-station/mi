@@ -15,6 +15,7 @@ pytest = "*"
 pytest-timeout = "*"
 pytest-cov = "*"
 coala-bears = "*"
+twine = "*"
 
 [requires]
 python_version = "3.6"

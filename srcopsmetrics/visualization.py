@@ -27,10 +27,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
 
-from utils import check_directory
-from utils import convert_num2label, convert_score2num
-from pre_processing import retrieve_knowledge
-from pre_processing import pre_process_project_data
+from srcopsmetrics.utils import check_directory
+from srcopsmetrics.utils import convert_num2label, convert_score2num
+from srcopsmetrics.pre_processing import retrieve_knowledge
+from srcopsmetrics.pre_processing import pre_process_project_data
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -116,8 +116,8 @@ def create_per_pr_plot(
 
 def visualize_results(project: str):
     """Visualize results for a project."""
-    knowledge_path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
-    result_path = Path.cwd().joinpath("./src_ops_metrics/Knowledge_Statistics")
+    knowledge_path = Path.cwd().joinpath("./src_ops_metrics/bot_knowledge")
+    result_path = Path.cwd().joinpath("./src_ops_metrics/knowledge_statistics")
 
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
 

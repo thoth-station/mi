@@ -24,7 +24,7 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from utils import check_directory, assign_pull_request_size
+from srcopsmetrics.utils import check_directory, assign_pull_request_size
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository

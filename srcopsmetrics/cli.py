@@ -21,9 +21,9 @@ import logging
 
 import click
 
-from create_bot_knowledge import analyse_projects
-from visualization import visualize_results
-from evaluate_scores import evaluate_reviewers_scores
+from srcopsmetrics.create_bot_knowledge import analyse_projects
+from srcopsmetrics.visualization import visualize_results
+from srcopsmetrics.evaluate_scores import evaluate_reviewers_scores
 
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
