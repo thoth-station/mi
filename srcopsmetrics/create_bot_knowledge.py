@@ -29,14 +29,27 @@ from utils import check_directory, assign_pull_request_size
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
 
+from thoth.storages.exceptions import NotFoundError
+from thoth.storages.ceph import CephStore
+
 _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
-
 STANDALONE_LABELS = {"size"}
+
+PREFIX = os.getenv("PREFIX")
+HOST = os.getenv("HOST")
+BUCKET = os.getenv("BUCKET")
+
+
+def get_ceph_store() -> CephStore:
+    """Establish a connection to the CEPH."""
+    s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
+    s3.connect()
+    return s3
 
 
 def connect_to_source(project: Tuple[str, str]) -> Repository:
@@ -129,7 +142,30 @@ def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> 
     return [x for x in new_data if x.number in only_new_ids]
 
 
-def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: str) -> Dict[str, Any]:
+def load_locally(file_path: Path) -> json:
+    """Load knowledge file from local storage."""
+    _LOGGER.info("Loading knowledge locally...")
+    if not file_path.exists() or os.path.getsize(file_path) == 0:
+        return None
+    with open(file_path, "r") as f:
+        data = json.load(f)
+        results = data["results"]
+    return results
+
+
+def load_remotely(file_path: Path) -> json:
+    """Load knowledge file from CEPH storage."""
+    _LOGGER.info("Loading knowledge from CEPH...")
+    ceph_filename = os.path.relpath(file_path).replace("./", "")
+    try:
+        return get_ceph_store().retrieve_document(ceph_filename)["results"]
+    except NotFoundError:
+        _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
+
+
+def load_previous_knowledge(
+    project_name: str, file_path: Path, knowledge_type: str, use_ceph: bool = False
+) -> Dict[str, Any]:
     """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
     Arguments:
@@ -140,15 +176,13 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
                           Empty dict if the knowledge does not exist.
 
     """
-    if not repo_path.exists() or os.path.getsize(repo_path) == 0:
+    results = load_remotely(file_path) if use_ceph else load_locally(file_path)
+
+    if results is None:
         _LOGGER.info("No previous knowledge found for %s" % project_name)
-        return {}
+        results = {}
 
-    with open(repo_path, "r") as f:
-        data = json.load(f)
-        results = data["results"]
-
-    if knowledge_type == "PullRequest":
+    elif knowledge_type == "PullRequest":
         _LOGGER.info("Found previous knowledge for %s with %d PRs" % (project_name, len(results)))
 
     elif knowledge_type == "Issue":
@@ -160,7 +194,7 @@ def load_previous_knowledge(project_name: str, repo_path: Path, knowledge_type: 
     return results
 
 
-def save_knowledge(file_path: Path, data: Dict[str, Any]):
+def save_knowledge(file_path: Path, data: Dict[str, Any], use_ceph: bool = False):
     """Save collected knowledge as json.
 
     The saved json contains one dictionary with single key 'results'
@@ -172,9 +206,17 @@ def save_knowledge(file_path: Path, data: Dict[str, Any]):
     """
     results = {"results": data}
 
-    with open(file_path, "w") as f:
-        json.dump(results, f)
-    _LOGGER.info("Saved new knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+    _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+
+    if use_ceph:
+        ceph_filename = os.path.relpath(file_path).replace("./", "")
+        s3 = get_ceph_store()
+        s3.store_document(results, ceph_filename)
+        _LOGGER.info("Saved on CEPH at %s%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+    else:
+        with open(file_path, "w") as f:
+            json.dump(results, f)
+        _LOGGER.info("Saved locally at %s" % file_path)
 
 
 def get_interactions(comments):
@@ -219,7 +261,7 @@ def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
     # would it be valuable?
 
 
-def analyse_issues(project: Repository, project_knowledge: Path):
+def analyse_issues(project: Repository, prev_issues: Dict[str, Any]) -> Dict[str, Any]:
     """Analyse of every closed issue in repository.
 
     Arguments:
@@ -230,23 +272,18 @@ def analyse_issues(project: Repository, project_knowledge: Path):
 
     """
     _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
-    issue_data_path = project_knowledge.joinpath("./issues.json")
-
-    prev_issue = load_previous_knowledge(
-        project_name=project.full_name, repo_path=issue_data_path, knowledge_type="Issue"
-    )
 
     current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
-    new_issues = get_only_new_entities(prev_issue, current_issues)
+    new_issues = get_only_new_entities(prev_issues, current_issues)
 
     if len(new_issues) == 0:
         return
 
     for idx, issue in enumerate(new_issues, 1):
         _LOGGER.info("Analysing ISSUE no. %d/%d" % (idx, len(new_issues)))
-        store_issue(issue, prev_issue)
+        store_issue(issue, prev_issues)
 
-    save_knowledge(issue_data_path, prev_issue)
+    return prev_issues
 
 
 def extract_pull_request_review_requests(pull_request: PullRequest) -> List[str]:
@@ -278,7 +315,6 @@ def extract_pull_request_reviews(pull_request: PullRequest) -> Dict[str, Dict[st
 
     Returns:
         Dict[str, Dict[str, Any]] -- dictionary of extracted reviews. Each review is stored
-                                     by its ID.
 
     """
     reviews = pull_request.get_reviews()
@@ -352,7 +388,7 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
     }
 
 
-def analyse_pull_requests(project: Repository, project_knowledge: Path):
+def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Dict[str, Any]:
     """Analyse every closed pull_request in repository.
 
     Arguments:
@@ -362,11 +398,6 @@ def analyse_pull_requests(project: Repository, project_knowledge: Path):
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
     """
     _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
-
-    pulls_data_path = project_knowledge.joinpath("./pull_requests.json")
-    prev_pulls = load_previous_knowledge(
-        project_name=project.full_name, repo_path=pulls_data_path, knowledge_type="PullRequest"
-    )
 
     current_pulls = project.get_pulls(state="closed")
     new_pulls = get_only_new_entities(prev_pulls, current_pulls)
@@ -378,21 +409,49 @@ def analyse_pull_requests(project: Repository, project_knowledge: Path):
         _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
         store_pull_request(pull_request, prev_pulls)
         _LOGGER.info("/n")
-    save_knowledge(pulls_data_path, prev_pulls)
+    return prev_pulls
 
 
-def analyse_projects(projects: List[Tuple[str, str]]) -> None:
+def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool = False):
+    """Load old knowledge and update it with the newly analysed one and save it.
+
+    Arguments:
+        github_repo {str} -- Github repo that will be analysed
+        project_path {str} -- The main directory where the knowledge will be stored
+        github_type {str} -- Currently can be only "Issue" or "PullRequest"
+        use_ceph {bool} -- If true, the CEPH will be used for knowledge loading and storing.
+    """
+    if github_type == "Issue":
+        filename = "issues"
+        analyse = analyse_issues
+
+    elif github_type == "PullRequest":
+        filename = "pull_requests"
+        analyse = analyse_pull_requests
+
+    path = project_path.joinpath("./" + filename + ".json")
+
+    prev_knowledge = load_previous_knowledge(
+        project_name=github_repo.full_name, file_path=path, knowledge_type=github_type, use_ceph=use_ceph,
+    )
+
+    new_knowledge = analyse(github_repo, prev_knowledge)
+    if new_knowledge is not None:
+        save_knowledge(path, new_knowledge, use_ceph=use_ceph)
+
+
+def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projectws.
 
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
     """
-    path = Path.cwd().joinpath("./src_ops_metrics/Bot_Knowledge")
+    path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
         github_repo = connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        analyse_issues(github_repo, project_path)
-        analyse_pull_requests(github_repo, project_path)
+        analyse_entity(github_repo, project_path, "Issue", use_ceph)
+        analyse_entity(github_repo, project_path, "PullRequest", use_ceph)
