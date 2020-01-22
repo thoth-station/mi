@@ -18,14 +18,14 @@ Usage - Create Bot Knowledge
 
 .. code-block:: console
 
-    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run src_ops_metrics/cli.py --project <project_name> -c True
+    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -c True
 
 Usage - Visualize Project Statistics
 ====================================
 
 .. code-block:: console
 
-    PYTHONPATH=. pipenv run src_ops_metrics/cli.py --project <project_name> -v True
+    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -v True
 
 Examples
 =========
@@ -44,7 +44,7 @@ Usage - Reviewer Reccomender
 
 .. code-block:: console
 
-    PYTHONPATH=. pipenv run src_ops_metrics/cli.py --project <project_name> -r True
+    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -r True
 
 If there are bots in the list of contributors of your project you can add them to the list
 at the beginning of the file. In this way you can receive the percentage of the work
