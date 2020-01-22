@@ -116,8 +116,8 @@ def create_per_pr_plot(
 
 def visualize_results(project: str):
     """Visualize results for a project."""
-    knowledge_path = Path.cwd().joinpath("./src_ops_metrics/bot_knowledge")
-    result_path = Path.cwd().joinpath("./src_ops_metrics/knowledge_statistics")
+    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
+    result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
 
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
 
