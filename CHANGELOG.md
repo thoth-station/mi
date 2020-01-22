@@ -71,3 +71,6 @@ all the things that you see...
 * Fix README in setup.py
 * Edit README in setup.py for PyPI long_description compatibility
 * Fix local module imports
+
+## Release 0.2.1 (2020-01-22T11:18:04)
+* Fix intendation error from rstcheck
