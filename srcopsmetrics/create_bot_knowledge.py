@@ -58,7 +58,7 @@ def connect_to_source(project: Tuple[str, str]) -> Repository:
     :param project: Tuple source repo and repo name.
     """
     # Connect using PyGitHub
-    g = Github(_GITHUB_ACCESS_TOKEN)
+    g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
     repo_name = project[0] + "/" + project[1]
     repo = g.get_repo(repo_name)
 
