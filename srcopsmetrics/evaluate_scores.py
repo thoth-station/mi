@@ -61,7 +61,7 @@ def evaluate_reviewers_scores(project: Tuple[str, str], number_reviewer: int = 2
     :project: repository to be analyzed (e.g. (thoth-station, performance))
     :param number_reviewer: number of reviewers to select
     """
-    knowledge_path = Path.cwd().joinpath("./src_ops_metrics/bot_knowledge")
+    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
     if not data:
         return {}
