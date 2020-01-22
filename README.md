@@ -86,6 +86,7 @@ Example results
 .. code-block:: console
 
                Repository  PullRequest n.  Commits n.  PullRequestRev n.           MTTFR     MTTR
+
 thoth-station/performance              33          38                 20  0:17:30.500000  0:46:28
 INFO:reviewer_recommender:-------------------------------------------------------------------------------
 
