@@ -74,3 +74,7 @@ all the things that you see...
 
 ## Release 0.2.1 (2020-01-22T11:18:04)
 * Fix intendation error from rstcheck
+
+## Release 0.2.2 (2020-01-22T16:41:58)
+* Increase timeout to 50ms
+* Refactor src_ops_metrics to srcopsmetrics
