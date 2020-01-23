@@ -24,7 +24,7 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from srcopsmetrics.utils import check_directory, assign_pull_request_size, knowledge
+from srcopsmetrics.utils import check_directory, assign_pull_request_size, Knowledge
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
@@ -287,7 +287,7 @@ def analyse_issues(project: Repository, prev_issues: Dict[str, Any]) -> Dict[str
     if len(new_issues) == 0:
         return
 
-    with knowledge(entity_type="Issue", new_entities=new_issues,
+    with Knowledge(entity_type="Issue", new_entities=new_issues,
                    accumulator=prev_issues, store_method=store_issue) as analysis:
         accumulated = analysis.store()
     return accumulated
@@ -416,7 +416,7 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
     if len(new_pulls) == 0:
         return
 
-    with knowledge(entity_type="PullRequest", new_entities=new_pulls,
+    with Knowledge(entity_type="PullRequest", new_entities=new_pulls,
                    accumulator=prev_pulls, store_method=store_pull_request) as analysis:
         accumulated = analysis.store()
     return accumulated
