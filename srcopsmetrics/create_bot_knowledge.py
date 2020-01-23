@@ -24,7 +24,7 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from srcopsmetrics.utils import check_directory, assign_pull_request_size
+from srcopsmetrics.utils import check_directory, assign_pull_request_size, Knowledge
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
@@ -36,7 +36,8 @@ _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
-ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
+ISSUE_KEYWORDS = {"close", "closes", "closed", "fix",
+                  "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 STANDALONE_LABELS = {"size"}
 
@@ -102,7 +103,8 @@ def get_referenced_issues(pull_request: PullRequest) -> List[int]:
                     referenced_issue_number = message[idx + 1]
                     assert (referenced_issue_number).startswith("https")
                     # last element of url is always the issue number
-                    issues_referenced.append(referenced_issue_number.split("/")[-1])
+                    issues_referenced.append(
+                        referenced_issue_number.split("/")[-1])
                     _LOGGER.info("      ...referenced issue number present")
                     # we assure that this was really referenced issue
                     # and not just a keyword without number
@@ -183,13 +185,16 @@ def load_previous_knowledge(
         results = {}
 
     elif knowledge_type == "PullRequest":
-        _LOGGER.info("Found previous knowledge for %s with %d PRs" % (project_name, len(results)))
+        _LOGGER.info("Found previous knowledge for %s with %d PRs" %
+                     (project_name, len(results)))
 
     elif knowledge_type == "Issue":
-        _LOGGER.info("Found previous knowledge for %s with %d Issues" % (project_name, len(results)))
+        _LOGGER.info("Found previous knowledge for %s with %d Issues" %
+                     (project_name, len(results)))
 
     else:
-        _LOGGER.error("Type %s is not recognized as knowledge." % (knowledge_type))
+        _LOGGER.error("Type %s is not recognized as knowledge." %
+                      (knowledge_type))
 
     return results
 
@@ -206,13 +211,15 @@ def save_knowledge(file_path: Path, data: Dict[str, Any], use_ceph: bool = False
     """
     results = {"results": data}
 
-    _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+    _LOGGER.info("Saving knowledge file %s of size %d" %
+                 (os.path.basename(file_path), len(data)))
 
     if use_ceph:
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         s3 = get_ceph_store()
         s3.store_document(results, ceph_filename)
-        _LOGGER.info("Saved on CEPH at %s%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+        _LOGGER.info("Saved on CEPH at %s%s%s" %
+                     (s3.bucket, s3.prefix, ceph_filename))
     else:
         with open(file_path, "w") as f:
             json.dump(results, f)
@@ -273,17 +280,17 @@ def analyse_issues(project: Repository, prev_issues: Dict[str, Any]) -> Dict[str
     """
     _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-    current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
+    current_issues = [issue for issue in project.get_issues(
+        state="closed") if issue.pull_request is None]
     new_issues = get_only_new_entities(prev_issues, current_issues)
 
     if len(new_issues) == 0:
         return
 
-    for idx, issue in enumerate(new_issues, 1):
-        _LOGGER.info("Analysing ISSUE no. %d/%d" % (idx, len(new_issues)))
-        store_issue(issue, prev_issues)
-
-    return prev_issues
+    with Knowledge(entity_type="Issue", new_entities=new_issues,
+                   accumulator=prev_issues, store_method=store_issue) as analysis:
+        accumulated = analysis.store()
+    return accumulated
 
 
 def extract_pull_request_review_requests(pull_request: PullRequest) -> List[str]:
@@ -322,7 +329,8 @@ def extract_pull_request_reviews(pull_request: PullRequest) -> Dict[str, Dict[st
 
     results = {}
     for idx, review in enumerate(reviews, 1):
-        _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
+        _LOGGER.info("      -analysing review no. %d/%d" %
+                     (idx, reviews.totalCount))
         results[review.id] = {
             "author": review.user.login,
             "words_count": len(review.body.split(" ")),
@@ -354,7 +362,8 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
     # pr_approved_by = pull_request.approved_by.name if approval is not None else None
     # time_to_approve = pr_approved - created_at if approval is not None else None
 
-    merged_at = pull_request.merged_at.timestamp() if pull_request.merged_at is not None else None
+    merged_at = pull_request.merged_at.timestamp(
+    ) if pull_request.merged_at is not None else None
 
     labels = [label.name for label in pull_request.get_labels()]
 
@@ -366,7 +375,8 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
 
     if not pull_request_size:
         lines_changes = pull_request.additions + pull_request.deletions
-        pull_request_size = assign_pull_request_size(lines_changes=lines_changes)
+        pull_request_size = assign_pull_request_size(
+            lines_changes=lines_changes)
 
     results[str(pull_request.number)] = {
         "size": pull_request_size,
@@ -397,7 +407,8 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
 
         project_knowledge {Path} -- project directory where the issues knowledge will be stored
     """
-    _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
+    _LOGGER.info(
+        "-------------Pull Requests Analysis (including its Reviews)-------------")
 
     current_pulls = project.get_pulls(state="closed")
     new_pulls = get_only_new_entities(prev_pulls, current_pulls)
@@ -405,11 +416,10 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
     if len(new_pulls) == 0:
         return
 
-    for idx, pull_request in enumerate(new_pulls, 1):
-        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
-        store_pull_request(pull_request, prev_pulls)
-        _LOGGER.info("/n")
-    return prev_pulls
+    with Knowledge(entity_type="PullRequest", new_entities=new_pulls,
+                   accumulator=prev_pulls, store_method=store_pull_request) as analysis:
+        accumulated = analysis.store()
+    return accumulated
 
 
 def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool = False):
@@ -441,13 +451,15 @@ def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ce
 
 
 def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) -> None:
-    """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projectws.
+    """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
+        _LOGGER.info(
+            "######################## Starting analysing %s ########################" % "/".join(project))
         github_repo = connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
@@ -455,3 +467,5 @@ def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) ->
 
         analyse_entity(github_repo, project_path, "Issue", use_ceph)
         analyse_entity(github_repo, project_path, "PullRequest", use_ceph)
+        _LOGGER.info(
+            "######################## Analysis ended ########################")
