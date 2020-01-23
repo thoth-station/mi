@@ -24,7 +24,7 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from srcopsmetrics.utils import check_directory, assign_pull_request_size
+from srcopsmetrics.utils import check_directory, assign_pull_request_size, knowledge
 
 from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 from github.Repository import Repository
@@ -279,10 +279,8 @@ def analyse_issues(project: Repository, prev_issues: Dict[str, Any]) -> Dict[str
     if len(new_issues) == 0:
         return
 
-    for idx, issue in enumerate(new_issues, 1):
-        _LOGGER.info("Analysing ISSUE no. %d/%d" % (idx, len(new_issues)))
-        store_issue(issue, prev_issues)
-
+    with knowledge(entity_type="Issue", new_entities=new_issues, accumulator=prev_issues, store_method=store_issue) as analysis:
+        accumulated = analysis.store()
     return prev_issues
 
 
@@ -405,11 +403,9 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
     if len(new_pulls) == 0:
         return
 
-    for idx, pull_request in enumerate(new_pulls, 1):
-        _LOGGER.info("Analysing PULL REQUEST no. %d/%d" % (idx, len(new_pulls)))
-        store_pull_request(pull_request, prev_pulls)
-        _LOGGER.info("/n")
-    return prev_pulls
+    with knowledge(entity_type="PullRequest", new_entities=new_pulls, accumulator=prev_pulls, store_method=store_pull_request) as analysis:
+        accumulated = analysis.store()
+    return accumulated
 
 
 def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ceph: bool = False):
