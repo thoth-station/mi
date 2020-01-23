@@ -279,7 +279,8 @@ def analyse_issues(project: Repository, prev_issues: Dict[str, Any]) -> Dict[str
     if len(new_issues) == 0:
         return
 
-    with knowledge(entity_type="Issue", new_entities=new_issues, accumulator=prev_issues, store_method=store_issue) as analysis:
+    with knowledge(entity_type="Issue", new_entities=new_issues,
+                accumulator=prev_issues, store_method=store_issue) as analysis:
         accumulated = analysis.store()
     return prev_issues
 
@@ -403,7 +404,8 @@ def analyse_pull_requests(project: Repository, prev_pulls: Dict[str, Any]) -> Di
     if len(new_pulls) == 0:
         return
 
-    with knowledge(entity_type="PullRequest", new_entities=new_pulls, accumulator=prev_pulls, store_method=store_pull_request) as analysis:
+    with knowledge(entity_type="PullRequest", new_entities=new_pulls,
+                accumulator=prev_pulls, store_method=store_pull_request) as analysis:
         accumulated = analysis.store()
     return accumulated
 

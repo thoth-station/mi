@@ -33,7 +33,8 @@ _LOGGER = logging.getLogger(__name__)
 API_RATE_MINIMAL_REMAINING = 20
 
 class knowledge:
-    """Context manager for entity extraction process"""
+    """Context manager for entity extraction process."""
+
 
     def __init__(self, entity_type, new_entities, accumulator, store_method):
         """Initialize with previous and new knowledge of an entity"""
@@ -42,20 +43,17 @@ class knowledge:
         self.accumulator = accumulator
         self.store_method = store_method
 
-
     def __enter__(self):
-        """Context manager enter method"""
+        """Context manager enter method."""
         return self
-
 
     def __exit__(self, type, value, traceback):
         """Context manager exit method"""
         _LOGGER.info("Something wrong went during the process of analysing, saving current state of work.")
         return self.accumulator
 
-
     def store(self):
-        """Iterate through entities of given repository and accumulate them"""
+        """Iterate through entities of given repository and accumulate them."""
         for idx, entity in enumerate(self.new_entities, 1):
             github = Github(os.getenv("GITHUB_ACCESS_TOKEN"))
             remaining = github.rate_limiting[0]
