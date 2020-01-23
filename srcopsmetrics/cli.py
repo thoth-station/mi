@@ -33,6 +33,7 @@ logging.basicConfig(level=logging.INFO)
 @click.command()
 @click.option(
     "--project",
+    "-p",
     type=str,
     required=True,
     help="Project to be analyzed (e.g thoth-station/performance).",
@@ -70,8 +71,9 @@ def cli(
 ):
     """Command Line Interface for SrcOpsMetrics."""
     if create_knowledge:
+        projects = project.split(',')
         analyse_projects(
-            projects=[project.split("/")],
+            projects=[repo.split("/") for repo in projects],
             use_ceph=use_ceph,
         )
 
