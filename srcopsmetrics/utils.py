@@ -34,7 +34,6 @@ API_RATE_MINIMAL_REMAINING = 20
 
 
 class Knowledge:
-
     """Context manager for entity extraction process."""
 
     def __init__(self, entity_type, new_entities, accumulator, store_method):
