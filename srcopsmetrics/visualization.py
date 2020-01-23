@@ -30,7 +30,7 @@ import itertools
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import retrieve_knowledge
-from srcopsmetrics.pre_processing import pre_process_project_data
+from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -119,16 +119,17 @@ def visualize_results(project: str):
     knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
 
-    data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
+    pr_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
 
-    if data:
-        projects_reviews_data = pre_process_project_data(data=data)
+    if pr_data:
+        projects_reviews_data = pre_process_prs_project_data(data=pr_data)
         prs_ids = projects_reviews_data["ids"]
         prs_created_dts = projects_reviews_data["created_dts"]
         prs_lengths = projects_reviews_data["PRs_size"]
 
         ttfr = projects_reviews_data["TTFR"]
         mttfr = projects_reviews_data["MTTFR"]
+
         # MTTFR
         data = {
             "ids": prs_ids,
@@ -265,3 +266,50 @@ def visualize_results(project: str):
             title=f"TTR in Time per PR length: {project}",
             output_name="TTR-per-PR-length",
         )
+
+    issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+    if issues_data:
+        project_issues_data = pre_process_issues_project_data(data=issues_data)
+        issues_ids = project_issues_data["ids"]
+        issues_created_dts = project_issues_data["created_dts"]
+        issues_ttci = project_issues_data["TTCI"]
+
+        #TTCI
+        data = {
+            "created_dts": issues_created_dts,
+            "TTCI": issues_ttci,
+        }
+        ttci_per_issue_processed = analyze_outliers(
+            quantity="TTCI", data=data
+        )
+        create_per_pr_plot(
+            result_path=result_path,
+            project=project,
+            x_array=[el[0] for el in ttci_per_issue_processed],
+            y_array=[el[1] for el in ttci_per_issue_processed],
+            x_label="Issue created date",
+            y_label="Median Time to Close Issue (h)",
+            title=f"TTCI in Time per project: {project}",
+            output_name="TTCI-in-time",
+        )
+
+        # data = {
+        #     "ids": prs_ids,
+        #     "created_dts": prs_created_dts,
+        #     "TTR": ttr,
+        #     "lengths": prs_lengths
+        # }
+        # ttr_in_time_processed = analyze_outliers(
+        #     quantity="TTR", data=data
+        # )
+
+        # create_per_pr_plot(
+        #     result_path=result_path,
+        #     project=project,
+        #     x_array=[el[1] for el in ttr_in_time_processed],
+        #     y_array=[el[2] for el in ttr_in_time_processed],
+        #     x_label="PR created date",
+        #     y_label="Time to Review (h)",
+        #     title=f"TTR in Time per project: {project}",
+        #     output_name="TTR-in-time",
+        # )

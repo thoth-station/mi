@@ -33,18 +33,29 @@ from srcopsmetrics.utils import convert_num2label, convert_score2num
 _LOGGER = logging.getLogger(__name__)
 
 
-def retrieve_knowledge(knowledge_path: Path, project: str) -> Union[Dict[str, Any], None]:
+def retrieve_knowledge(knowledge_path: Path, project: str, entity_type: str) -> Union[Dict[str, Any], None]:
     """Retrieve knowledge (PRs) collected for a project."""
     project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
-    pull_requests_data_path = project_knowledge_path.joinpath("./pull_requests.json")
 
-    data = load_previous_knowledge(project, pull_requests_data_path, "PullRequest")
+    filename = "issues" if entity_type == "Issue" else "pull_requests"
+    pull_requests_data_path = project_knowledge_path.joinpath("./" + filename + ".json")
+
+    data = load_previous_knowledge(project, pull_requests_data_path, entity_type)
     if data:
         return data
     else:
         _LOGGER.exception("No previous knowledge found for %s" % project)
         return {}
 
+def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extracted_data: Dict[str, Any]):
+    """Extract project data from Pull Request."""
+    extracted_data["ids"].append(issue_id)
+    extracted_data["TTCI"].append(issue["time_to_close"])
+
+    created_dt = datetime.fromtimestamp(issue["created_at"])
+    extracted_data["created_dts"].append(created_dt)
+
+    return extracted_data
 
 def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: Dict[str, Any]):
     """Extract project data from Pull Request."""
@@ -94,12 +105,36 @@ def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: 
 
     return extracted_data
 
-
-def pre_process_project_data(data: Dict[str, Any]):
+def pre_process_issues_project_data(data: Dict[str, Any]):
     """Pre process of data for a given project repository."""
     if not data:
         return {}
-    pr_ids = sorted([int(k) for k in data.keys()])
+    ids = sorted([int(k) for k in data.keys()])
+
+    project_issues_data = {}
+
+    project_issues_data["contributors"] = []
+    project_issues_data["ids"] = []
+    project_issues_data["TTCI"] = []
+    project_issues_data["created_dts"] = []
+
+
+    for id in ids:
+        issue = data[str(id)]
+
+        if issue["created_by"] not in project_issues_data["contributors"]:
+            project_issues_data["contributors"].append(issue["created_by"])
+
+        analyze_issue_for_project_data(issue_id=id, issue=issue, extracted_data=project_issues_data)
+
+    return project_issues_data
+
+def pre_process_prs_project_data(data: Dict[str, Any]):
+    """Pre process of data for a given project repository."""
+    if not data:
+        return {}
+    ids = sorted([int(k) for k in data.keys()])
+    
 
     project_reviews_data = {}
 
@@ -114,16 +149,19 @@ def pre_process_project_data(data: Dict[str, Any]):
     project_reviews_data["TTR"] = []  # Time to Review (TTR) [hr]
     project_reviews_data["MTTR"] = []  # Median TTR [hr]
 
+    project_reviews_data["MTTCI"] = [] # Median TTCI [hr]
+
     project_reviews_data["PRs_size"] = []  # Pull Request length
     project_reviews_data["encoded_PRs_size"] = []  # Pull Request length encoded
 
-    for pr_id in pr_ids:
-        pr = data[str(pr_id)]
+
+    for id in ids:
+        pr = data[str(id)]
 
         if pr["created_by"] not in project_reviews_data["contributors"]:
             project_reviews_data["contributors"].append(pr["created_by"])
 
-        analyze_pr_for_project_data(pr_id=pr_id, pr=pr, extracted_data=project_reviews_data)
+        analyze_pr_for_project_data(pr_id=id, pr=pr, extracted_data=project_reviews_data)
 
     project_reviews_data["last_review_time"] = max(project_reviews_data["reviews_dts"])
 
