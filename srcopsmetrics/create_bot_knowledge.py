@@ -437,13 +437,14 @@ def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ce
 
 
 def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) -> None:
-    """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projectws.
+    """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
+        _LOGGER.info("######################## Starting analysing %s ########################" % "/".join(project))
         github_repo = connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
@@ -451,3 +452,4 @@ def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) ->
 
         analyse_entity(github_repo, project_path, "Issue", use_ceph)
         analyse_entity(github_repo, project_path, "PullRequest", use_ceph)
+        _LOGGER.info("######################## Analysis ended ########################")
