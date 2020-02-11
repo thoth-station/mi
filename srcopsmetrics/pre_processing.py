@@ -59,6 +59,7 @@ def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extract
 
     return extracted_data
 
+
 def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: Dict[str, Any]):
     """Extract project data from Pull Request."""
     if not pr["reviews"]:
@@ -107,6 +108,7 @@ def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: 
 
     return extracted_data
 
+
 def pre_process_issues_project_data(data: Dict[str, Any]):
     """Pre process of data for a given project repository."""
     if not data:
@@ -120,7 +122,6 @@ def pre_process_issues_project_data(data: Dict[str, Any]):
     project_issues_data["TTCI"] = []
     project_issues_data["created_dts"] = []
 
-
     for id in ids:
         issue = data[str(id)]
 
@@ -131,12 +132,12 @@ def pre_process_issues_project_data(data: Dict[str, Any]):
 
     return project_issues_data
 
+
 def pre_process_prs_project_data(data: Dict[str, Any]):
     """Pre process of data for a given project repository."""
     if not data:
         return {}
     ids = sorted([int(k) for k in data.keys()])
-    
 
     project_reviews_data = {}
 
@@ -155,7 +156,6 @@ def pre_process_prs_project_data(data: Dict[str, Any]):
 
     project_reviews_data["PRs_size"] = []  # Pull Request length
     project_reviews_data["encoded_PRs_size"] = []  # Pull Request length encoded
-
 
     for id in ids:
         pr = data[str(id)]
