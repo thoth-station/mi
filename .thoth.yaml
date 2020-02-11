@@ -9,3 +9,19 @@ runtime_environments:
       version: "8"
     python_version: "3.6"
     recommendation_type: latest
+
+managers:
+  - name: update
+    configuration:
+      labels: [bot]
+  - name: info
+  - name: version
+    configuration:
+      maintainers:
+        - goern
+        - xtuchyna
+        - pacospace
+      assignees:
+        - sesheta
+      labels: [bot]
+      changelog_file: true
