@@ -273,7 +273,7 @@ def visualize_results(project: str):
         issues_created_dts = project_issues_data["created_dts"]
         issues_ttci = project_issues_data["TTCI"]
 
-        #TTCI
+        # TTCI
         data = {
             "created_dts": issues_created_dts,
             "TTCI": issues_ttci,
