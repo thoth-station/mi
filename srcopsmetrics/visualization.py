@@ -270,7 +270,6 @@ def visualize_results(project: str):
     issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
     if issues_data:
         project_issues_data = pre_process_issues_project_data(data=issues_data)
-        issues_ids = project_issues_data["ids"]
         issues_created_dts = project_issues_data["created_dts"]
         issues_ttci = project_issues_data["TTCI"]
 

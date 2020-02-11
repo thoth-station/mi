@@ -50,7 +50,9 @@ def retrieve_knowledge(knowledge_path: Path, project: str, entity_type: str) -> 
 def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extracted_data: Dict[str, Any]):
     """Extract project data from Pull Request."""
     extracted_data["ids"].append(issue_id)
-    extracted_data["TTCI"].append(issue["time_to_close"])
+
+    time_to_close = int(issue["closed_at"]) - int(issue["created_at"])
+    extracted_data["TTCI"].append(time_to_close / 3600)
 
     created_dt = datetime.fromtimestamp(issue["created_at"])
     extracted_data["created_dts"].append(created_dt)

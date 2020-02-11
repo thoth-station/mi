@@ -248,19 +248,14 @@ def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
     if issue.pull_request is not None:
         return  # we analyze issues and prs differentely
 
-    created_at = issue.created_at.timestamp()
-    closed_at = issue.closed_at.timestamp()
-    time_to_close = closed_at - created_at
-
     labels = [label.name for label in issue.get_labels()]
 
     data[issue.number] = {
         "created_by": issue.user.login,
-        "created_at": created_at,
+        "created_at": issue.created_at.timestamp(),
         "closed_by": issue.closed_by.login,
-        "closed_at": closed_at,
+        "closed_at": issue.closed_at.timestamp(),
         "labels": get_non_standalone_labels(labels),
-        "time_to_close": time_to_close,
         "interactions": get_interactions(issue.get_comments()),
     }
 
