@@ -47,6 +47,7 @@ def retrieve_knowledge(knowledge_path: Path, project: str, entity_type: str) -> 
         _LOGGER.exception("No previous knowledge found for %s" % project)
         return {}
 
+
 def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extracted_data: Dict[str, Any]):
     """Extract project data from Pull Request."""
     extracted_data["ids"].append(issue_id)
@@ -152,7 +153,7 @@ def pre_process_prs_project_data(data: Dict[str, Any]):
     project_reviews_data["TTR"] = []  # Time to Review (TTR) [hr]
     project_reviews_data["MTTR"] = []  # Median TTR [hr]
 
-    project_reviews_data["MTTCI"] = [] # Median TTCI [hr]
+    project_reviews_data["MTTCI"] = []  # Median TTCI [hr]
 
     project_reviews_data["PRs_size"] = []  # Pull Request length
     project_reviews_data["encoded_PRs_size"] = []  # Pull Request length encoded
