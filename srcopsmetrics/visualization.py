@@ -312,6 +312,9 @@ def visualize_results(project: str):
     overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(issues_data=issues_data, pull_requests_data=pr_data)
     visualize_issues_types_given_developer(overall_issue_types_closers, author_login_id='fridex', developer_type='Closer')
 
+    project_top_x_issues_type(overall_types_data=overall_issue_types_creators, developer_type='Opener')
+    project_top_x_issues_type(overall_types_data=overall_issue_types_closers, developer_type='Closer')
+
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
     df = pd.DataFrame()
@@ -370,7 +373,7 @@ def projects_ttci_comparisson(projects: List[str]):
     # TODO: decide on how this metrics should be implemented
 
 
-def visualize_issues_types_given_developer(overall_types_data, author_login_id: str, developer_type: str):
+def visualize_issues_types_given_developer(overall_types_data: Dict, author_login_id: str, developer_type: str):
     """For given author visualize (categorically by labels) number of opened issues by him."""
     issue_types_data = overall_types_data[author_login_id]
     
@@ -387,14 +390,27 @@ def visualize_issues_types_given_developer(overall_types_data, author_login_id: 
     fig.show()
 
 
-def developer_issues_types_closed(project: str, author_login_id: str):
-    """For given author visualize (categorically by labels) number of closed issues by him."""
-    pass
+def project_top_x_issues_type(overall_types_data: Dict, developer_type: str, top_x: int = 5):
+    """Visualize top 10 issue types that are being opened or closed for given repository."""
+    top_labels_list = []
+    for author in overall_types_data.keys():
+        for label in overall_types_data[author].keys():
+            top_labels_list.append( (author, label, overall_types_data[author][label]) )
+    
+    top_labels_list = sorted(top_labels_list, key=lambda tup: tup[2], reverse=True)
+    top_x_labels = top_labels_list[:top_x]
 
+    df = pd.DataFrame()
+    df['developer_label'] = [f'{label[0]} -> {label[1]}' for label in top_x_labels]
+    df['count'] = [label[2] for label in top_x_labels]
 
-def project_top_10_issues_type_opened(project: str):
-    """Visualize top 10 issue types that are being opened for given repository."""
-    pass
+    if developer_type == 'Opener':
+        action = 'opened'
+    elif developer_type == 'Closer':
+        action = 'closed'
+
+    fig = px.bar(df, x='developer_label', y='count', title=f'Top {top_x} overall {action} issue types in form of <{developer_type}> -> <issue_label>', color='developer_label')
+    fig.show()
 
 
 def developers_top_10_issues_type_opened(project: str):
