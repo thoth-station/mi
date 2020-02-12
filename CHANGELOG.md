@@ -78,3 +78,20 @@ all the things that you see...
 ## Release 0.2.2 (2020-01-22T16:41:58)
 * Increase timeout to 50ms
 * Refactor src_ops_metrics to srcopsmetrics
+
+## Release 0.2.3 (2020-02-11T21:18:45)
+* Update .thoth.yaml
+* :pushpin: Automatic update of dependency pygithub from 1.45 to 1.46
+* :pushpin: Automatic update of dependency thoth-storages from 0.21.11 to 0.22.0
+* :pushpin: Automatic update of dependency pandas from 1.0.0 to 1.0.1
+* :pushpin: Automatic update of dependency matplotlib from 3.2.0rc1 to 3.2.0rc3
+* :pushpin: Automatic update of dependency pandas from 1.0.0rc0 to 1.0.0
+* :pushpin: Automatic update of dependency pytest from 5.3.4 to 5.3.5
+* :pushpin: Automatic update of dependency thoth-storages from 0.21.10 to 0.21.11
+* Satysify coala
+* Fix errors after refactorings
+* Fix issue analysis and docstrings
+* Fix docstrings
+* Add docstrings and fix typos
+* Add alias for --projects argument
+* Add API rate limit check and wait
