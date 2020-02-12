@@ -48,12 +48,14 @@ def evaluate_and_remove_outliers(data: Dict[str, Any], quantity: str):
     Q3 = q[0.75]
     IQR = Q3 - Q1
     outliers = df[
-        (df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR)) | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))
+        (df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR)
+         ) | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))
     ]
     _LOGGER.info("Outliers for %r" % quantity)
     _LOGGER.info("Outliers: %r" % outliers)
     filtered_df = df[
-        (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
+        (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)
+         ) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
     ]
 
     return filtered_df
@@ -121,7 +123,8 @@ def visualize_results(project: str):
     knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
 
-    pr_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
+    pr_data = retrieve_knowledge(
+        knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
 
     if pr_data:
         projects_reviews_data = pre_process_prs_project_data(data=pr_data)
@@ -268,9 +271,9 @@ def visualize_results(project: str):
             title=f"TTR in Time per PR length: {project}",
             output_name="TTR-per-PR-length",
         )
-    
 
-    issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+    issues_data = retrieve_knowledge(
+        knowledge_path=knowledge_path, project=project, entity_type="Issue")
     if issues_data:
         project_issues_data = pre_process_issues_project_data(data=issues_data)
         issues_created_dts = project_issues_data["created_dts"]
@@ -296,24 +299,39 @@ def visualize_results(project: str):
         )
 
     overall_opened_issues = preprocess_issues_creators(issues_data=issues_data)
-    visualize_issues_per_developer(overall_opened_issues, title='Number of opened issues per each developer')
+    visualize_issues_per_developer(
+        overall_opened_issues, title='Number of opened issues per each developer')
 
-    overall_closed_issues = preprocess_issues_closers(issues_data=issues_data, pull_reviews_data=pr_data)
-    visualize_issues_per_developer(overall_closed_issues, title='Number of closed issues per each developer')
+    overall_closed_issues = preprocess_issues_closers(
+        issues_data=issues_data, pull_reviews_data=pr_data)
+    visualize_issues_per_developer(
+        overall_closed_issues, title='Number of closed issues per each developer')
 
-    overall_issues_interactions = preprocess_issue_interactions(issues_data=issues_data)
-    visualize_issue_interactions(overall_issues_interactions=overall_issues_interactions, author_login_id='fridex')
+    overall_issues_interactions = preprocess_issue_interactions(
+        issues_data=issues_data)
+    visualize_issue_interactions(
+        overall_issues_interactions=overall_issues_interactions, author_login_id='fridex')
 
     visualize_top_x_issue_interactions(overall_issues_interactions)
 
-    overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(issues_data=issues_data)
-    visualize_issues_types_given_developer(overall_issue_types_creators, author_login_id='fridex', developer_type='Opener')
-    
-    overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(issues_data=issues_data, pull_requests_data=pr_data)
-    visualize_issues_types_given_developer(overall_issue_types_closers, author_login_id='fridex', developer_type='Closer')
+    overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(
+        issues_data=issues_data)
+    visualize_issues_types_given_developer(
+        overall_issue_types_creators, author_login_id='fridex', developer_type='Opener')
 
-    project_top_x_issues_type(overall_types_data=overall_issue_types_creators, developer_type='Opener')
-    project_top_x_issues_type(overall_types_data=overall_issue_types_closers, developer_type='Closer')
+    overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(
+        issues_data=issues_data, pull_requests_data=pr_data)
+    visualize_issues_types_given_developer(
+        overall_issue_types_closers, author_login_id='fridex', developer_type='Closer')
+
+    visualize_top_x_issues_types_wrt_developers(
+        overall_types_data=overall_issue_types_creators, developer_type='Opener')
+    visualize_top_x_issues_types_wrt_developers(
+        overall_types_data=overall_issue_types_closers, developer_type='Closer')
+
+    visualize_top_X_issues_types_wrt_project(
+        overall_types_data=overall_issue_types_creators, developer_type="Opener")
+
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
@@ -330,9 +348,11 @@ def visualize_issue_interactions(overall_issues_interactions: Dict, author_login
 
     df = pd.DataFrame()
     df['developers'] = [interactioner for interactioner in author_interactions.keys()]
-    df['interactions'] = [author_interactions[interactioner] for interactioner in author_interactions.keys()]
+    df['interactions'] = [author_interactions[interactioner]
+                          for interactioner in author_interactions.keys()]
 
-    fig = px.bar(df, x='developers', y='interactions', title=f'Interactions w.r.t. issues between {author_login_id} and the others in repository', color='developers')
+    fig = px.bar(df, x='developers', y='interactions',
+                 title=f'Interactions w.r.t. issues between {author_login_id} and the others in repository', color='developers')
     fig.show()
 
 
@@ -341,16 +361,20 @@ def visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x:
     top_interactions_list = []
     for author in overall_issues_interactions.keys():
         for interactioner in overall_issues_interactions[author].keys():
-            top_interactions_list.append( (author, interactioner, overall_issues_interactions[author][interactioner]) )
-    
-    top_interactions_list = sorted(top_interactions_list, key=lambda tup: tup[2], reverse=True)
+            top_interactions_list.append(
+                (author, interactioner, overall_issues_interactions[author][interactioner]))
+
+    top_interactions_list = sorted(
+        top_interactions_list, key=lambda tup: tup[2], reverse=True)
     top_x_interactions = top_interactions_list[:top_x]
 
     df = pd.DataFrame()
-    df['developers'] = [f'{interaction[0]}/{interaction[1]}' for interaction in top_x_interactions]
+    df['developers'] = [
+        f'{interaction[0]}/{interaction[1]}' for interaction in top_x_interactions]
     df['interactions'] = [interaction[2] for interaction in top_x_interactions]
 
-    fig = px.bar(df, x='developers', y='interactions', title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>', color='developers')
+    fig = px.bar(df, x='developers', y='interactions',
+                 title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>', color='developers')
     fig.show()
 
 
@@ -376,32 +400,36 @@ def projects_ttci_comparisson(projects: List[str]):
 def visualize_issues_types_given_developer(overall_types_data: Dict, author_login_id: str, developer_type: str):
     """For given author visualize (categorically by labels) number of opened issues by him."""
     issue_types_data = overall_types_data[author_login_id]
-    
+
     if developer_type == 'Opener':
         action = 'opened'
     elif developer_type == 'Closer':
         action = 'closed'
-    
+
     df = pd.DataFrame()
     df['labels'] = [label for label in issue_types_data.keys()]
     df['issues_count'] = [count for count in issue_types_data.values()]
 
-    fig = px.bar(df, x='labels', y='issues_count', title=f'Overall number of {action} issues for {author_login_id} by their label', color='labels')
+    fig = px.bar(df, x='labels', y='issues_count',
+                 title=f'Overall number of {action} issues for {author_login_id} by their label', color='labels')
     fig.show()
 
 
-def project_top_x_issues_type(overall_types_data: Dict, developer_type: str, top_x: int = 5):
-    """Visualize top 10 issue types that are being opened or closed for given repository."""
+def visualize_top_x_issues_types_wrt_developers(overall_types_data: Dict, developer_type: str, top_x: int = 5):
+    """Visualize top X issue types that had been opened or closed for given repository w.r.t to developer."""
     top_labels_list = []
     for author in overall_types_data.keys():
         for label in overall_types_data[author].keys():
-            top_labels_list.append( (author, label, overall_types_data[author][label]) )
-    
-    top_labels_list = sorted(top_labels_list, key=lambda tup: tup[2], reverse=True)
+            top_labels_list.append(
+                (author, label, overall_types_data[author][label]))
+
+    top_labels_list = sorted(
+        top_labels_list, key=lambda tup: tup[2], reverse=True)
     top_x_labels = top_labels_list[:top_x]
 
     df = pd.DataFrame()
-    df['developer_label'] = [f'{label[0]} -> {label[1]}' for label in top_x_labels]
+    df['developer_label'] = [
+        f'{label[0]} -> {label[1]}' for label in top_x_labels]
     df['count'] = [label[2] for label in top_x_labels]
 
     if developer_type == 'Opener':
@@ -409,13 +437,33 @@ def project_top_x_issues_type(overall_types_data: Dict, developer_type: str, top
     elif developer_type == 'Closer':
         action = 'closed'
 
-    fig = px.bar(df, x='developer_label', y='count', title=f'Top {top_x} overall {action} issue types in form of <{developer_type}> -> <issue_label>', color='developer_label')
+    fig = px.bar(df, x='developer_label', y='count',
+                 title=f'Top {top_x} overall {action} issue types in form of <{developer_type}> -> <issue_label>', color='developer_label')
     fig.show()
 
 
-def developers_top_10_issues_type_opened(project: str):
-    pass
+def visualize_top_X_issues_types_wrt_project(overall_types_data: Dict, developer_type: str, top_x: int = 5):
+    """Visualize overall top X issue types that had been opened || closed for given repository w.r.t to project."""
+    top_labels_list = {}
+    for author in overall_types_data.keys():
+        for label in overall_types_data[author].keys():
+            if label not in top_labels_list:
+                top_labels_list[label] = 0
+            top_labels_list[label] += overall_types_data[author][label]
 
+    top_x_labels = zip([label for label in top_labels_list.keys()], [
+                       count for count in top_labels_list.values()])
+    top_x_labels = sorted(top_x_labels, reverse=True, key=lambda tup: tup[1])
 
-def developers_top_10_issues_type_closed(project: str):
-    pass
+    df = pd.DataFrame()
+    df['label'] = [tup[0] for tup in top_x_labels][:top_x]
+    df['count'] = [tup[1] for tup in top_x_labels][:top_x]
+
+    if developer_type == 'Opener':
+        action = 'opened'
+    elif developer_type == 'Closer':
+        action = 'closed'
+
+    fig = px.bar(df, x='label', y='count',
+                 title=f'Top {top_x} overall {action} issue types for project', color='label')
+    fig.show()
