@@ -31,8 +31,7 @@ import plotly.express as px
 
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
-from srcopsmetrics.pre_processing import retrieve_knowledge
-from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions, preprocess_issue_labels_to_issue_closers, preprocess_issue_labels_to_issue_creators
+from srcopsmetrics.pre_processing import *
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -352,7 +351,8 @@ def visualize_issue_interactions(overall_issues_interactions: Dict, author_login
                           for interactioner in author_interactions.keys()]
 
     fig = px.bar(df, x='developers', y='interactions',
-                 title=f'Interactions w.r.t. issues between {author_login_id} and the others in repository', color='developers')
+                 title=f'Interactions w.r.t. issues between {author_login_id} and the others in repository',
+                 color='developers')
     fig.show()
 
 
@@ -374,7 +374,8 @@ def visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x:
     df['interactions'] = [interaction[2] for interaction in top_x_interactions]
 
     fig = px.bar(df, x='developers', y='interactions',
-                 title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>', color='developers')
+                 title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>',
+                 color='developers')
     fig.show()
 
 
@@ -438,7 +439,8 @@ def visualize_top_x_issues_types_wrt_developers(overall_types_data: Dict, develo
         action = 'closed'
 
     fig = px.bar(df, x='developer_label', y='count',
-                 title=f'Top {top_x} overall {action} issue types in form of <{developer_type}> -> <issue_label>', color='developer_label')
+                 title=f'Top {top_x} overall {action} issue types in form of <{developer_type}> -> <issue_label>',
+                 color='developer_label')
     fig.show()
 
 
