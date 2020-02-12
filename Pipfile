@@ -18,6 +18,7 @@ pytest-cov = "*"
 coala-bears = "*"
 twine = "*"
 autopep8 = "*"
+rope = "*"
 
 [requires]
 python_version = "3.6"
