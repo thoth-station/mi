@@ -434,10 +434,10 @@ def preprocess_issue_labels_to_issue_creators(issues_data: Dict) -> Dict:
         issue_author = issues_data[issue_id]["created_by"]
         if issue_author not in authors:
             authors[issue_author] = {}
-        for label in issues_data[issue_id]["labels"].keys():
+        for label in issues_data[issue_id]["labels"]:
             if label not in authors[issue_author]:
                 authors[issue_author][label] = 0
-            authors[issue_author][label] += issues_data[issue_id]["labels"][label]
+            authors[issue_author][label] += 1
     return authors
 
 

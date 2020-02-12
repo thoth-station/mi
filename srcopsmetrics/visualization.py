@@ -32,7 +32,7 @@ import plotly.express as px
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import retrieve_knowledge
-from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions, preprocess_issue_labels_to_issue_closers
+from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions, preprocess_issue_labels_to_issue_closers, preprocess_issue_labels_to_issue_creators
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -306,8 +306,11 @@ def visualize_results(project: str):
 
     visualize_top_x_issue_interactions(overall_issues_interactions)
 
-    overall_issue_types_openers = preprocess_issue_labels_to_issue_closers(issues_data=issues_data, pull_requests_data=pr_data)
-    visualize_issues_types_opened_by_developer(overall_issue_types_openers, author_login_id='fridex')
+    overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(issues_data=issues_data)
+    visualize_issues_types_given_developer(overall_issue_types_creators, author_login_id='fridex', developer_type='Opener')
+    
+    overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(issues_data=issues_data, pull_requests_data=pr_data)
+    visualize_issues_types_given_developer(overall_issue_types_closers, author_login_id='fridex', developer_type='Closer')
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
@@ -367,15 +370,20 @@ def projects_ttci_comparisson(projects: List[str]):
     # TODO: decide on how this metrics should be implemented
 
 
-def visualize_issues_types_opened_by_developer(overall_openers_data, author_login_id: str):
+def visualize_issues_types_given_developer(overall_types_data, author_login_id: str, developer_type: str):
     """For given author visualize (categorically by labels) number of opened issues by him."""
-    opener_data = overall_openers_data[author_login_id]
-
+    issue_types_data = overall_types_data[author_login_id]
+    
+    if developer_type == 'Opener':
+        action = 'opened'
+    elif developer_type == 'Closer':
+        action = 'closed'
+    
     df = pd.DataFrame()
-    df['labels'] = [label for label in opener_data.keys()]
-    df['issues_count'] = [count for count in opener_data.values()]
+    df['labels'] = [label for label in issue_types_data.keys()]
+    df['issues_count'] = [count for count in issue_types_data.values()]
 
-    fig = px.bar(df, x='labels', y='issues_count', title=f'Overall number of closed issues for {author_login_id} by their label', color='labels')
+    fig = px.bar(df, x='labels', y='issues_count', title=f'Overall number of {action} issues for {author_login_id} by their label', color='labels')
     fig.show()
 
 
