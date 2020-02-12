@@ -226,7 +226,7 @@ def save_knowledge(file_path: Path, data: Dict[str, Any], use_ceph: bool = False
         _LOGGER.info("Saved locally at %s" % file_path)
 
 
-def get_interactions(comments):
+def get_interactions(comments) -> Dict:
     """Get overall word count for comments per author."""
     interactions = {comment.user.login: 0 for comment in comments}
     for comment in comments:
@@ -383,7 +383,6 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
         # "time_to_approve": time_to_approve,
         "closed_at": closed_at,
         "closed_by": pull_request.as_issue().closed_by.login,
-        "time_to_close": closed_at - created_at,
         "merged_at": merged_at,
         "commits_number": commits,
         "referenced_issues": get_referenced_issues(pull_request),

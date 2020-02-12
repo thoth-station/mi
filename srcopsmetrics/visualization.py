@@ -30,7 +30,7 @@ import itertools
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import retrieve_knowledge
-from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data
+from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -266,6 +266,7 @@ def visualize_results(project: str):
             title=f"TTR in Time per PR length: {project}",
             output_name="TTR-per-PR-length",
         )
+    
 
     issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
     if issues_data:
@@ -292,23 +293,66 @@ def visualize_results(project: str):
             output_name="TTCI-in-time",
         )
 
-        # data = {
-        #     "ids": prs_ids,
-        #     "created_dts": prs_created_dts,
-        #     "TTR": ttr,
-        #     "lengths": prs_lengths
-        # }
-        # ttr_in_time_processed = analyze_outliers(
-        #     quantity="TTR", data=data
-        # )
+    overall_opened_issues = preprocess_issues_creators(issues_data=issues_data)
+    visualize_issues_per_developer(overall_opened_issues, title='Number of opened issues per each developer')
 
-        # create_per_pr_plot(
-        #     result_path=result_path,
-        #     project=project,
-        #     x_array=[el[1] for el in ttr_in_time_processed],
-        #     y_array=[el[2] for el in ttr_in_time_processed],
-        #     x_label="PR created date",
-        #     y_label="Time to Review (h)",
-        #     title=f"TTR in Time per project: {project}",
-        #     output_name="TTR-in-time",
-        # )
+    overall_closed_issues = preprocess_issues_closers(issues_data=issues_data, pull_reviews_data=pr_data)
+    visualize_issues_per_developer(overall_closed_issues, title='Number of closed issues per each developer')
+
+    overall_issues_interactions = preprocess_issue_interactions(issues_data=issues_data)
+    visualize_issue_interactions(overall_issue_interactions=overall_issues_interactions, author_login_id="fridex")
+
+import plotly.express as px
+
+def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
+    """For each author visualize number of issues opened or closed by them."""
+    df = pd.DataFrame()
+    df['authors'] = overall_issue_data[0]
+    df['issues'] = overall_issue_data[1]
+    fig = px.bar(df, x='authors', y='issues', title=title, color='authors')
+    fig.show()
+
+
+def visualize_issue_interactions(overall_issue_interactions: Dict, author_login_id: str):
+    """For given author visualize interactions between him and all of the other authors in repository."""
+    author_interactions = overall_issue_interactions[author_login_id]
+
+    df = pd.DataFrame()
+    df['developers'] = [interactioner for interactioner in author_interactions.keys()]
+    df['interactions'] = [author_interactions[interactioner] for interactioner in author_interactions.keys()]
+
+    fig = px.bar(df, x='developers', y='interactions', title=f'Interactions w.r.t. issues between {author_login_id} and the others in repository', color='developers')
+    fig.show()
+
+
+def developers_top_5_issue_interactions(project: str):
+    """Visualze top 5 most interactions in issues in repository."""
+    pass
+
+
+def projects_ttci_comparisson(projects: List[str]):
+    """Visualize TTCI in form of graph for given projects inside one plot."""
+    pass
+
+
+def developer_issues_types_open(project: str, author_login_id: str):
+    """For given author visualize (categorically by labels) number of opened issues by him."""
+    pass
+
+
+def developer_issues_types_closed(project: str, author_login_id: str):
+    """For given author visualize (categorically by labels) number of closed issues by him."""
+    pass
+
+
+def project_top_10_issues_type_opened(project: str):
+    """Visualize top 10 issue types that are being opened for given repository."""
+    pass
+
+
+def developers_top_10_issues_type_opened(project: str):
+    pass
+
+
+def developers_top_10_issues_type_closed(project: str):
+    pass

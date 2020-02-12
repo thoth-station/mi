@@ -379,3 +379,50 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
         contributors_reviews_data[reviewer]["interactions"] = interactions[reviewer]
 
     return contributors_reviews_data
+
+
+def preprocess_issues_creators(issues_data: Dict) -> Dict:
+    creators = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in creators:
+            creators[issue_author] = 0
+        creators[issue_author] += 1
+
+    return creators.keys(), creators.values()
+
+
+def preprocess_issues_closers(issues_data: Dict, pull_reviews_data: Dict) -> Dict:
+    closers = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["closed_by"]
+        if issue_author not in closers:
+            closers[issue_author] = 0
+        closers[issue_author] += 1
+    
+    for pr_id in pull_reviews_data.keys():
+        if pull_reviews_data[pr_id]["merged_at"] is None:
+            continue
+
+        pr_author = issues_data[issue_id]["created_by"]
+        for _ in pull_reviews_data[pr_id]["referenced_issues"]:
+            if pr_author not in closers:
+                closers[pr_author] = 0
+            closers[issue["created_by"]] += 1
+    
+    return closers.keys(), closers.values()
+
+
+def preprocess_issue_interactions(issues_data: Dict) -> Dict:
+    authors = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in authors:
+            authors[issue_author] = {}
+        for interactioner in issues_data[issue_id]["interactions"].keys():
+            if interactioner == issue_author:
+                continue
+            if interactioner not in authors[issue_author]:
+                authors[issue_author][interactioner] = 0
+            authors[issue_author][interactioner] += issues_data[issue_id]["interactions"][interactioner]
+    return authors
