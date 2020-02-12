@@ -27,6 +27,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
 
+import plotly.express as px
+
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import retrieve_knowledge
@@ -300,9 +302,10 @@ def visualize_results(project: str):
     visualize_issues_per_developer(overall_closed_issues, title='Number of closed issues per each developer')
 
     overall_issues_interactions = preprocess_issue_interactions(issues_data=issues_data)
-    visualize_issue_interactions(overall_issue_interactions=overall_issues_interactions, author_login_id="fridex")
+    visualize_issue_interactions(overall_issues_interactions=overall_issues_interactions, author_login_id="fridex")
 
-import plotly.express as px
+    visualize_top_x_issue_interactions(overall_issues_interactions)
+
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
@@ -313,9 +316,9 @@ def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     fig.show()
 
 
-def visualize_issue_interactions(overall_issue_interactions: Dict, author_login_id: str):
+def visualize_issue_interactions(overall_issues_interactions: Dict, author_login_id: str):
     """For given author visualize interactions between him and all of the other authors in repository."""
-    author_interactions = overall_issue_interactions[author_login_id]
+    author_interactions = overall_issues_interactions[author_login_id]
 
     df = pd.DataFrame()
     df['developers'] = [interactioner for interactioner in author_interactions.keys()]
@@ -325,9 +328,22 @@ def visualize_issue_interactions(overall_issue_interactions: Dict, author_login_
     fig.show()
 
 
-def developers_top_5_issue_interactions(project: str):
-    """Visualze top 5 most interactions in issues in repository."""
-    pass
+def visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x: int = 5):
+    """Visualze top X most interactions in issues in repository."""
+    top_interactions_list = []
+    for author in overall_issues_interactions.keys():
+        for interactioner in overall_issues_interactions[author].keys():
+            top_interactions_list.append( (author, interactioner, overall_issues_interactions[author][interactioner]) )
+    
+    top_interactions_list = sorted(top_interactions_list, key=lambda tup: tup[2], reverse=True)
+    top_x_interactions = top_interactions_list[:top_x]
+
+    df = pd.DataFrame()
+    df['developers'] = [f'{interaction[0]}/{interaction[1]}' for interaction in top_x_interactions]
+    df['interactions'] = [interaction[2] for interaction in top_x_interactions]
+
+    fig = px.bar(df, x='developers', y='interactions', title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>', color='developers')
+    fig.show()
 
 
 def projects_ttci_comparisson(projects: List[str]):
