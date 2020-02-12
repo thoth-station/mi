@@ -404,11 +404,11 @@ def preprocess_issues_closers(issues_data: Dict, pull_reviews_data: Dict) -> Dic
         if pull_reviews_data[pr_id]["merged_at"] is None:
             continue
 
-        pr_author = issues_data[issue_id]["created_by"]
+        pr_author = pull_reviews_data[pr_id]["created_by"]
         for _ in pull_reviews_data[pr_id]["referenced_issues"]:
             if pr_author not in closers:
                 closers[pr_author] = 0
-            closers[issue["created_by"]] += 1
+            closers[pr_author] += 1
     
     return closers.keys(), closers.values()
 
@@ -426,3 +426,44 @@ def preprocess_issue_interactions(issues_data: Dict) -> Dict:
                 authors[issue_author][interactioner] = 0
             authors[issue_author][interactioner] += issues_data[issue_id]["interactions"][interactioner]
     return authors
+
+
+def preprocess_issue_labels_to_issue_creators(issues_data: Dict) -> Dict:
+    authors = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in authors:
+            authors[issue_author] = {}
+        for label in issues_data[issue_id]["labels"].keys():
+            if label not in authors[issue_author]:
+                authors[issue_author][label] = 0
+            authors[issue_author][label] += issues_data[issue_id]["labels"][label]
+    return authors
+
+
+def preprocess_issue_labels_to_issue_closers(issues_data: Dict, pull_requests_data: Dict) -> Dict:
+    closers = {}
+    for issue_id in issues_data.keys():
+        issue_closer = issues_data[issue_id]["closed_by"]
+        if issue_closer not in closers:
+            closers[issue_closer] = {}
+        for label in issues_data[issue_id]["labels"]:
+            if label not in closers[issue_closer]:
+                closers[issue_closer][label] = 0
+            closers[issue_closer][label] += 1
+    
+    for pr_id in pull_requests_data.keys():
+        if pull_requests_data[pr_id]["merged_at"] is None:
+            continue
+
+        pr_author = pull_requests_data[pr_id]["created_by"]
+        if pr_author not in closers:
+            closers[pr_author] = {}
+
+        for ref_issue in pull_requests_data[pr_id]["referenced_issues"]:
+            for label in issues_data[ref_issue]["labels"]:
+                if label not in closers[pr_author]:
+                    closers[pr_author][label] = 0
+                closers[pr_author][label] += 1
+
+    return closers

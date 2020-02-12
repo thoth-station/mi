@@ -32,7 +32,7 @@ import plotly.express as px
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import retrieve_knowledge
-from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions
+from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_issues_project_data, preprocess_issues_closers, preprocess_issues_creators, preprocess_issue_interactions, preprocess_issue_labels_to_issue_closers
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -302,10 +302,12 @@ def visualize_results(project: str):
     visualize_issues_per_developer(overall_closed_issues, title='Number of closed issues per each developer')
 
     overall_issues_interactions = preprocess_issue_interactions(issues_data=issues_data)
-    visualize_issue_interactions(overall_issues_interactions=overall_issues_interactions, author_login_id="fridex")
+    visualize_issue_interactions(overall_issues_interactions=overall_issues_interactions, author_login_id='fridex')
 
     visualize_top_x_issue_interactions(overall_issues_interactions)
 
+    overall_issue_types_openers = preprocess_issue_labels_to_issue_closers(issues_data=issues_data, pull_requests_data=pr_data)
+    visualize_issues_types_opened_by_developer(overall_issue_types_openers, author_login_id='fridex')
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
@@ -348,12 +350,33 @@ def visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x:
 
 def projects_ttci_comparisson(projects: List[str]):
     """Visualize TTCI in form of graph for given projects inside one plot."""
-    pass
+    # for project in projects:
+    #     issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+
+    #     project_issues_data = pre_process_issues_project_data(data=issues_data)
+    #     issues_created_dts = project_issues_data["created_dts"]
+    #     issues_ttci = project_issues_data["TTCI"]
+
+    #     data = {
+    #         "created_dts": issues_created_dts,
+    #         "TTCI": issues_ttci,
+    #     }
+    #     ttci_per_issue_processed = analyze_outliers(
+    #         quantity="TTCI", data=data
+    #     )
+    # TODO: decide on how this metrics should be implemented
 
 
-def developer_issues_types_open(project: str, author_login_id: str):
+def visualize_issues_types_opened_by_developer(overall_openers_data, author_login_id: str):
     """For given author visualize (categorically by labels) number of opened issues by him."""
-    pass
+    opener_data = overall_openers_data[author_login_id]
+
+    df = pd.DataFrame()
+    df['labels'] = [label for label in opener_data.keys()]
+    df['issues_count'] = [count for count in opener_data.values()]
+
+    fig = px.bar(df, x='labels', y='issues_count', title=f'Overall number of closed issues for {author_login_id} by their label', color='labels')
+    fig.show()
 
 
 def developer_issues_types_closed(project: str, author_login_id: str):
