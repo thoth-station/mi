@@ -332,6 +332,8 @@ def visualize_results(project: str):
 
 
 def visualize_developer_activity(project: str, developer: str):
+    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
+
     pr_data = retrieve_knowledge(
         knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
     issues_data = retrieve_knowledge(
@@ -351,7 +353,35 @@ def visualize_developer_activity(project: str, developer: str):
         overall_issue_types_creators, author_login_id=developer, developer_type='Opener')
     visualize_issues_types_given_developer(
         overall_issue_types_closers, author_login_id=developer, developer_type='Closer')
-    
+
+
+def visualize_projects_ttci_comparisson(projects: List[str]):
+    """Visualize TTCI in form of graph for given projects inside one plot."""
+    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
+
+    projects_data = []
+    for project in projects:
+        issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+
+        project_issues_data = pre_process_issues_project_data(data=issues_data)
+        issues_created_dts = project_issues_data["created_dts"]
+        issues_ttci = project_issues_data["TTCI"]
+
+        data = {
+            "created_dts": issues_created_dts,
+            "TTCI": issues_ttci,
+        }
+        ttci_per_issue_processed = analyze_outliers(
+            quantity="TTCI", data=data
+        )
+
+        projects_data.append(ttci_per_issue_processed)
+
+    create_ttci_multiple_projects_plot(
+            projects_data=projects_data,
+            projects=projects,
+        )
+
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
@@ -511,33 +541,6 @@ def create_ttci_multiple_projects_plot(
     plt.legend()
     plt.show()
 
-
-def visualize_projects_ttci_comparisson(projects: List[str]):
-    """Visualize TTCI in form of graph for given projects inside one plot."""
-    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-
-    projects_data = []
-    for project in projects:
-        issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
-
-        project_issues_data = pre_process_issues_project_data(data=issues_data)
-        issues_created_dts = project_issues_data["created_dts"]
-        issues_ttci = project_issues_data["TTCI"]
-
-        data = {
-            "created_dts": issues_created_dts,
-            "TTCI": issues_ttci,
-        }
-        ttci_per_issue_processed = analyze_outliers(
-            quantity="TTCI", data=data
-        )
-
-        projects_data.append(ttci_per_issue_processed)
-
-    create_ttci_multiple_projects_plot(
-            projects_data=projects_data,
-            projects=projects,
-        )
 
 if USE_NOTEBOOK:
     init_notebook_mode(connected=True)         # initiate notebook for offline plot
