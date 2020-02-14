@@ -116,6 +116,32 @@ def create_per_pr_plot(
     fig.savefig(team_results)
     plt.close()
 
+def create_ttci_multiple_projects_plot(
+    result_path: Path,
+    projects_data: List,
+    projects: List
+):
+    """Create processed data in time per project plot."""
+
+    for project_data,project_name in zip(projects_data, projects):
+        x = [el[0] for el in project_data]
+        y = [el[1] for el in project_data]
+
+        plt.plot(x, y, label=project_name)
+
+    plt.xlabel("Issue created date")
+    plt.ylabel("Median Time to Close Issue (h)")
+    plt.title(f"Median TTCI throughout time per project")
+    
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+    # check_directory(result_path.joinpath(project))
+    # team_results = result_path.joinpath(f"{project}/{output_name}.png")
+    # fig.savefig(team_results)
+    # plt.close()
+
 
 def visualize_results(project: str):
     """Visualize results for a project."""
@@ -332,6 +358,10 @@ def visualize_results(project: str):
         overall_types_data=overall_issue_types_creators, developer_type="Opener")
 
 
+    projects_ttci_comparisson(projects=[project, 'thoth-station/kebechet'], result_path=result_path, knowledge_path=knowledge_path)
+    visualize_ttci_wrt_labels(issues_data=issues_data)
+
+
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
     df = pd.DataFrame()
@@ -377,25 +407,6 @@ def visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x:
                  title=f'Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>',
                  color='developers')
     fig.show()
-
-
-def projects_ttci_comparisson(projects: List[str]):
-    """Visualize TTCI in form of graph for given projects inside one plot."""
-    # for project in projects:
-    #     issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
-
-    #     project_issues_data = pre_process_issues_project_data(data=issues_data)
-    #     issues_created_dts = project_issues_data["created_dts"]
-    #     issues_ttci = project_issues_data["TTCI"]
-
-    #     data = {
-    #         "created_dts": issues_created_dts,
-    #         "TTCI": issues_ttci,
-    #     }
-    #     ttci_per_issue_processed = analyze_outliers(
-    #         quantity="TTCI", data=data
-    #     )
-    # TODO: decide on how this metrics should be implemented
 
 
 def visualize_issues_types_given_developer(overall_types_data: Dict, author_login_id: str, developer_type: str):
@@ -469,3 +480,47 @@ def visualize_top_X_issues_types_wrt_project(overall_types_data: Dict, developer
     fig = px.bar(df, x='label', y='count',
                  title=f'Top {top_x} overall {action} issue types for project', color='label')
     fig.show()
+
+
+def visualize_ttci_wrt_labels(issues_data: Dict):
+    issues_labels = preprocess_issue_labels_with_ttci(issues_data=issues_data)
+    processed_labels = {}
+    for label in issues_labels.keys():
+        processed_labels[label] = issues_labels[label][0]
+
+    df = pd.DataFrame()
+    df['label'] = [label for label in processed_labels.keys()]
+    df['TTCI'] = [np.average(label_ttcis) for label_ttcis in processed_labels.values()]
+
+    fig = px.bar(df, x='label', y='TTCI', 
+                 title=f'Average TTCI w.r.t. issue labels', color='label')
+    fig.update_layout(yaxis_title='Average Time To Close Issue (hrs)',
+                        xaxis_title='Label name')
+    fig.show()
+
+
+def projects_ttci_comparisson(projects: List[str], result_path, knowledge_path):
+    """Visualize TTCI in form of graph for given projects inside one plot."""
+    projects_data = []
+    for project in projects:
+        issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+
+        project_issues_data = pre_process_issues_project_data(data=issues_data)
+        issues_created_dts = project_issues_data["created_dts"]
+        issues_ttci = project_issues_data["TTCI"]
+
+        data = {
+            "created_dts": issues_created_dts,
+            "TTCI": issues_ttci,
+        }
+        ttci_per_issue_processed = analyze_outliers(
+            quantity="TTCI", data=data
+        )
+
+        projects_data.append(ttci_per_issue_processed)
+
+    create_ttci_multiple_projects_plot(
+            result_path=result_path,
+            projects_data=projects_data,
+            projects=projects,
+        )
