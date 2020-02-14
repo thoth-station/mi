@@ -118,33 +118,8 @@ def create_per_pr_plot(
     check_directory(result_path.joinpath(project))
     team_results = result_path.joinpath(f"{project}/{output_name}.png")
     fig.savefig(team_results)
-    plt.close()
-
-def create_ttci_multiple_projects_plot(
-    result_path: Path,
-    projects_data: List,
-    projects: List
-):
-    """Create processed data in time per project plot."""
-
-    for project_data,project_name in zip(projects_data, projects):
-        x = [el[0] for el in project_data]
-        y = [el[1] for el in project_data]
-
-        plt.plot(x, y, label=project_name)
-
-    plt.xlabel("Issue created date")
-    plt.ylabel("Median Time to Close Issue (h)")
-    plt.title(f"Median TTCI throughout time per project")
-    
-    plt.grid()
-    plt.legend()
     plt.show()
-
-    # check_directory(result_path.joinpath(project))
-    # team_results = result_path.joinpath(f"{project}/{output_name}.png")
-    # fig.savefig(team_results)
-    # plt.close()
+    plt.close()
 
 
 def visualize_results(project: str):
@@ -338,36 +313,49 @@ def visualize_results(project: str):
 
     overall_issues_interactions = preprocess_issue_interactions(
         issues_data=issues_data)
-    visualize_issue_interactions(
-        overall_issues_interactions=overall_issues_interactions, author_login_id='fridex')
-
-    visualize_top_x_issue_interactions(overall_issues_interactions)
-
     overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(
-        issues_data=issues_data)
-    visualize_issues_types_given_developer(
-        overall_issue_types_creators, author_login_id='fridex', developer_type='Opener')
-
+            issues_data=issues_data)
     overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(
-        issues_data=issues_data, pull_requests_data=pr_data)
-    visualize_issues_types_given_developer(
-        overall_issue_types_closers, author_login_id='fridex', developer_type='Closer')
+            issues_data=issues_data, pull_requests_data=pr_data)
+    
 
     visualize_top_x_issues_types_wrt_developers(
         overall_types_data=overall_issue_types_creators, developer_type='Opener')
     visualize_top_x_issues_types_wrt_developers(
         overall_types_data=overall_issue_types_closers, developer_type='Closer')
-
     visualize_top_X_issues_types_wrt_project(
         overall_types_data=overall_issue_types_creators, developer_type="Opener")
 
+    visualize_top_x_issue_interactions(overall_issues_interactions)
 
-    projects_ttci_comparisson(projects=[project, 'thoth-station/kebechet'], result_path=result_path, knowledge_path=knowledge_path)
     visualize_ttci_wrt_labels(issues_data=issues_data)
 
 
+def visualize_developer_activity(project: str, developer: str):
+    pr_data = retrieve_knowledge(
+        knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
+    issues_data = retrieve_knowledge(
+        knowledge_path=knowledge_path, project=project, entity_type="Issue")
+
+    overall_issues_interactions = preprocess_issue_interactions(
+        issues_data=issues_data)
+    overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(
+        issues_data=issues_data)
+    overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(
+            issues_data=issues_data, pull_requests_data=pr_data)
+
+
+    visualize_issue_interactions(
+        overall_issues_interactions=overall_issues_interactions, author_login_id=developer)
+    visualize_issues_types_given_developer(
+        overall_issue_types_creators, author_login_id=developer, developer_type='Opener')
+    visualize_issues_types_given_developer(
+        overall_issue_types_closers, author_login_id=developer, developer_type='Closer')
+    
+
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
+
     df = pd.DataFrame()
     df['authors'] = overall_issue_data[0]
     df['issues'] = overall_issue_data[1]
@@ -503,8 +491,31 @@ def visualize_ttci_wrt_labels(issues_data: Dict):
     fig.show()
 
 
-def projects_ttci_comparisson(projects: List[str], result_path, knowledge_path):
+def create_ttci_multiple_projects_plot(
+    projects_data: List,
+    projects: List
+):
+    """Create processed data in time per project plot."""
+
+    for project_data,project_name in zip(projects_data, projects):
+        x = [el[0] for el in project_data]
+        y = [el[1] for el in project_data]
+
+        plt.plot(x, y, label=project_name)
+
+    plt.xlabel("Issue created date")
+    plt.ylabel("Median Time to Close Issue (h)")
+    plt.title(f"Median TTCI throughout time per project")
+    
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+
+def visualize_projects_ttci_comparisson(projects: List[str]):
     """Visualize TTCI in form of graph for given projects inside one plot."""
+    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
+
     projects_data = []
     for project in projects:
         issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
@@ -524,7 +535,6 @@ def projects_ttci_comparisson(projects: List[str], result_path, knowledge_path):
         projects_data.append(ttci_per_issue_processed)
 
     create_ttci_multiple_projects_plot(
-            result_path=result_path,
             projects_data=projects_data,
             projects=projects,
         )
