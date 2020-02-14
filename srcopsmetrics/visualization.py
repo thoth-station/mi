@@ -28,11 +28,15 @@ import pandas as pd
 import itertools
 
 import plotly.express as px
+import os
 
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 from srcopsmetrics.pre_processing import *
 
+from plotly.offline import init_notebook_mode, iplot
+
+USE_NOTEBOOK = os.getenv("JUPYTER")
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -524,3 +528,6 @@ def projects_ttci_comparisson(projects: List[str], result_path, knowledge_path):
             projects_data=projects_data,
             projects=projects,
         )
+
+if USE_NOTEBOOK:
+    init_notebook_mode(connected=True)         # initiate notebook for offline plot
