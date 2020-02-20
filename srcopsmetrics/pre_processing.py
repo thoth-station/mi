@@ -27,23 +27,40 @@ from datetime import timedelta
 from datetime import datetime
 
 from srcopsmetrics.create_bot_knowledge import load_previous_knowledge
-from srcopsmetrics.utils import convert_num2label, convert_score2num
+from srcopsmetrics.utils import convert_num2label, convert_score2num, IssuesSchema, PullRequestsSchema
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def retrieve_knowledge(knowledge_path: Path, project: str) -> Union[Dict[str, Any], None]:
+def retrieve_knowledge(knowledge_path: Path, project: str, entity_type: str) -> Union[Dict[str, Any], None]:
     """Retrieve knowledge (PRs) collected for a project."""
     project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
-    pull_requests_data_path = project_knowledge_path.joinpath("./pull_requests.json")
 
-    data = load_previous_knowledge(project, pull_requests_data_path, "PullRequest")
+    filename = "issues" if entity_type == "Issue" else "pull_requests"
+    pull_requests_data_path = project_knowledge_path.joinpath(
+        "./" + filename + ".json")
+
+    data = load_previous_knowledge(
+        project, pull_requests_data_path, entity_type)
     if data:
         return data
     else:
         _LOGGER.exception("No previous knowledge found for %s" % project)
         return {}
+
+
+def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extracted_data: Dict[str, Any]):
+    """Extract project data from Pull Request."""
+    extracted_data["ids"].append(issue_id)
+
+    time_to_close = int(issue["closed_at"]) - int(issue["created_at"])
+    extracted_data["TTCI"].append(time_to_close / 3600)
+
+    created_dt = datetime.fromtimestamp(issue["created_at"])
+    extracted_data["created_dts"].append(created_dt)
+
+    return extracted_data
 
 
 def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: Dict[str, Any]):
@@ -68,7 +85,8 @@ def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: 
     extracted_data["created_dts"].append(pr_created_dt)
 
     # PR first review timestamp (no matter the contributor)
-    pr_first_review_dt = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
+    pr_first_review_dt = datetime.fromtimestamp(
+        [r for r in pr["reviews"].values()][0]["submitted_at"])
 
     ttfr = (pr_first_review_dt - pr_created_dt).total_seconds() / 3600
     extracted_data["TTFR"].append(ttfr)
@@ -78,7 +96,8 @@ def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: 
 
     project_prs_size = pr["size"]
     extracted_data["PRs_size"].append(project_prs_size)
-    extracted_data["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+    extracted_data["encoded_PRs_size"].append(
+        convert_score2num(label=project_prs_size))
 
     # Take maximum to consider last approved if more than one contributor has to approve
     pr_approved_dt = max(pr_approved_dt)
@@ -90,16 +109,42 @@ def analyze_pr_for_project_data(pr_id: int, pr: Dict[str, Any], extracted_data: 
     extracted_data["MTTR"].append(mttr)
 
     # PR reviews timestamps
-    extracted_data["reviews_dts"] += [r["submitted_at"] for r in pr["reviews"].values()]
+    extracted_data["reviews_dts"] += [r["submitted_at"]
+                                      for r in pr["reviews"].values()]
 
     return extracted_data
 
 
-def pre_process_project_data(data: Dict[str, Any]):
+def pre_process_issues_project_data(data: Dict[str, Any]):
     """Pre process of data for a given project repository."""
     if not data:
         return {}
-    pr_ids = sorted([int(k) for k in data.keys()])
+    ids = sorted([int(k) for k in data.keys()])
+
+    project_issues_data = {}
+
+    project_issues_data["contributors"] = []
+    project_issues_data["ids"] = []
+    project_issues_data["TTCI"] = []
+    project_issues_data["created_dts"] = []
+
+    for id in ids:
+        issue = data[str(id)]
+
+        if issue["created_by"] not in project_issues_data["contributors"]:
+            project_issues_data["contributors"].append(issue["created_by"])
+
+        analyze_issue_for_project_data(
+            issue_id=id, issue=issue, extracted_data=project_issues_data)
+
+    return project_issues_data
+
+
+def pre_process_prs_project_data(data: Dict[str, Any]):
+    """Pre process of data for a given project repository."""
+    if not data:
+        return {}
+    ids = sorted([int(k) for k in data.keys()])
 
     project_reviews_data = {}
 
@@ -114,18 +159,23 @@ def pre_process_project_data(data: Dict[str, Any]):
     project_reviews_data["TTR"] = []  # Time to Review (TTR) [hr]
     project_reviews_data["MTTR"] = []  # Median TTR [hr]
 
-    project_reviews_data["PRs_size"] = []  # Pull Request length
-    project_reviews_data["encoded_PRs_size"] = []  # Pull Request length encoded
+    project_reviews_data["MTTCI"] = []  # Median TTCI [hr]
 
-    for pr_id in pr_ids:
-        pr = data[str(pr_id)]
+    project_reviews_data["PRs_size"] = []  # Pull Request length
+    # Pull Request length encoded
+    project_reviews_data["encoded_PRs_size"] = []
+
+    for id in ids:
+        pr = data[str(id)]
 
         if pr["created_by"] not in project_reviews_data["contributors"]:
             project_reviews_data["contributors"].append(pr["created_by"])
 
-        analyze_pr_for_project_data(pr_id=pr_id, pr=pr, extracted_data=project_reviews_data)
+        analyze_pr_for_project_data(
+            pr_id=id, pr=pr, extracted_data=project_reviews_data)
 
-    project_reviews_data["last_review_time"] = max(project_reviews_data["reviews_dts"])
+    project_reviews_data["last_review_time"] = max(
+        project_reviews_data["reviews_dts"])
 
     # Encode Pull Request sizes for the contributor
     project_pr_median_size, project_length_score = convert_num2label(
@@ -148,10 +198,10 @@ def evaluate_reviewer_data(
         return extracted_data
 
     dt_approved = [
-            datetime.fromtimestamp(review["submitted_at"])
-            for review in pr["reviews"].values()
-            if review["state"] == "APPROVED" and review["author"] == reviewer
-        ]
+        datetime.fromtimestamp(review["submitted_at"])
+        for review in pr["reviews"].values()
+        if review["state"] == "APPROVED" and review["author"] == reviewer
+    ]
 
     if not dt_approved:
         return extracted_data
@@ -169,7 +219,8 @@ def evaluate_reviewer_data(
 
     project_prs_size = pr["size"]
     extracted_data[reviewer]["PRs_size"].append(project_prs_size)
-    extracted_data[reviewer]["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+    extracted_data[reviewer]["encoded_PRs_size"].append(
+        convert_score2num(label=project_prs_size))
 
     # Take maximum to consider last approved if more than one contributor has to approve
     pr_approved_dt = max(dt_approved)
@@ -198,12 +249,18 @@ def extract_review_data(
         extracted_data[contributor_review["author"]] = {}
         extracted_data[contributor_review["author"]]["reviews"] = {}
         extracted_data[contributor_review["author"]]["ids"] = []
-        extracted_data[contributor_review["author"]]["TTFR"] = []  # Time to First Review (TTFR) [hr]
-        extracted_data[contributor_review["author"]]["MTTFR"] = []  # Median TTFR [hr]
-        extracted_data[contributor_review["author"]]["TTR"] = []  # Time to Review (TTR) [hr]
-        extracted_data[contributor_review["author"]]["MTTR"] = []  # Median TTR [hr]
-        extracted_data[contributor_review["author"]]["PRs_size"] = []  # Pull Request length
-        extracted_data[contributor_review["author"]]["encoded_PRs_size"] = []  # Pull Request length encoded
+        # Time to First Review (TTFR) [hr]
+        extracted_data[contributor_review["author"]]["TTFR"] = []
+        extracted_data[contributor_review["author"]
+                       ]["MTTFR"] = []  # Median TTFR [hr]
+        extracted_data[contributor_review["author"]
+                       ]["TTR"] = []  # Time to Review (TTR) [hr]
+        extracted_data[contributor_review["author"]
+                       ]["MTTR"] = []  # Median TTR [hr]
+        extracted_data[contributor_review["author"]
+                       ]["PRs_size"] = []  # Pull Request length
+        # Pull Request length encoded
+        extracted_data[contributor_review["author"]]["encoded_PRs_size"] = []
 
     if pr_id not in extracted_data[contributor_review["author"]]["reviews"].keys():
         extracted_data[contributor_review["author"]]["reviews"][pr_id] = [
@@ -223,9 +280,11 @@ def extract_review_data(
         )
 
     if contributor_review["author"] not in reviews_submitted_dts_per_reviewer.keys():
-        reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [contributor_review["submitted_at"]]
+        reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [
+            contributor_review["submitted_at"]]
     else:
-        reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(contributor_review["submitted_at"])
+        reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(
+            contributor_review["submitted_at"])
 
     return extracted_data
 
@@ -294,7 +353,8 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
     for pr_id in pr_ids:
         pr = data[str(pr_id)]
 
-        analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
+        analyze_pr_for_contributor_data(
+            pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
 
         analyze_contributors_interaction(
             pr_interactions=pr["interactions"],
@@ -319,16 +379,18 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
         last_review_dt = max(time_reviews)
 
         contributors_reviews_data[reviewer]["number_reviews"] = number_reviews
-        contributors_reviews_data[reviewer]["median_review_length"] = np.median(reviews_length)
+        contributors_reviews_data[reviewer]["median_review_length"] = np.median(
+            reviews_length)
         contributors_reviews_data[reviewer]["last_review_time"] = last_review_dt
 
         # Encode Pull Request sizes for the contributor
         if len(contributors_reviews_data[reviewer]["PRs_size"]) > 1:
             contributor_prs_size_encoded = [
                 convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
-                ]
+            ]
         else:
-            contributor_prs_size_encoded = convert_score2num(label=contributors_reviews_data[reviewer]["PRs_size"])
+            contributor_prs_size_encoded = convert_score2num(
+                label=contributors_reviews_data[reviewer]["PRs_size"])
 
         contributor_pr_median_size, contributor_relative_score = convert_num2label(
             score=np.median(contributor_prs_size_encoded)
@@ -338,3 +400,170 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
         contributors_reviews_data[reviewer]["interactions"] = interactions[reviewer]
 
     return contributors_reviews_data
+
+
+def preprocess_issues_creators(issues_data: IssuesSchema) -> Dict[str, int]:
+    """Analyse number of created issues for each contributor that has created issue.
+
+    :type issues_data:IssuesSchema:
+    :param issues_data:IssuesSchema:
+    :rtype: { <contributor> : <number of created issues> }
+    """
+    creators = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in creators:
+            creators[issue_author] = 0
+        creators[issue_author] += 1
+
+    return creators
+
+
+def preprocess_issues_closers(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> Dict[str, int]:
+    """Analyse number of closed issues for each contributor that has closed issue.
+
+    A closure is also when the contributor's Pull Request closed the issue.
+
+    :param issues_data:IssuesSchema:
+    :param pr_data:PullRequestsSchema:
+    :rtype: { <contributor> : <number of closed issues> }
+    """
+    closers = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["closed_by"]
+        if issue_author not in closers:
+            closers[issue_author] = 0
+        closers[issue_author] += 1
+
+    for pr_id in pr_data.keys():
+        if pr_data[pr_id]["merged_at"] is None:
+            continue
+
+        pr_author = pr_data[pr_id]["created_by"]
+        for _ in pr_data[pr_id]["referenced_issues"]:
+            if pr_author not in closers:
+                closers[pr_author] = 0
+            closers[pr_author] += 1
+
+    return closers
+
+
+def preprocess_issue_interactions(issues_data: IssuesSchema) -> Dict[str, Dict[str, int]]:
+    """Analyse interactions between contributors with respect to closed issues in project.
+
+    The interaction is analysed between any issue creator and any person who has ever commented
+    any issue created by the issue creator.
+
+    Interaction number is just a sum of all of the words in a comment.
+
+    :param issues_data:IssuesSchema:
+    :rtype: { <contributor> : { <commenter> : <overall interaction number throughout the project> } }
+    """
+    authors = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in authors:
+            authors[issue_author] = {}
+        for interactioner in issues_data[issue_id]["interactions"].keys():
+            if interactioner == issue_author:
+                continue
+            if interactioner not in authors[issue_author]:
+                authors[issue_author][interactioner] = 0
+            authors[issue_author][interactioner] += issues_data[issue_id]["interactions"][interactioner]
+    return authors
+
+
+def preprocess_issue_labels_with_ttci(issues_data: IssuesSchema) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
+    """Analyse Time To Close Issue for any label that labeled closed issue.
+
+    :param issues_data:Dict:
+    :rtype: { <label> : [[<closed_issue_ttci>], [<closed_issue_creation_date>]] }
+    """
+    issues = {}
+    for issue_id in issues_data.keys():
+        issue_labels = issues_data[issue_id]['labels']
+        ttci = int(issues_data[issue_id]['closed_at'] - int(issues_data[issue_id]['created_at']))
+        for label in issue_labels:
+            if label not in issues:
+                issues[label] = [[], []]
+            issues[label][0].append(ttci / 3600)
+            issues[label][1].append(datetime.fromtimestamp(
+                issues_data[issue_id]['created_at']))
+    return issues
+
+
+def preprocess_issue_labels_to_issue_creators(issues_data: IssuesSchema) -> Dict[str, Dict[str, int]]:
+    """Analyse number of every label (of closed issues) for any contributor that has created an issue.
+
+    :param issues_data:IssuesSchema:
+    :rtype: { <issue_creator> : { <issue_label> : <label_occurence_in_created_issues> } }
+    """
+    authors = {}
+    for issue_id in issues_data.keys():
+        issue_author = issues_data[issue_id]["created_by"]
+        if issue_author not in authors:
+            authors[issue_author] = {}
+        for label in issues_data[issue_id]["labels"]:
+            if label not in authors[issue_author]:
+                authors[issue_author][label] = 0
+            authors[issue_author][label] += 1
+    return authors
+
+
+def preprocess_issue_labels_to_issue_closers(
+    issues_data: IssuesSchema,
+    pull_requests_data: PullRequestsSchema
+) -> Dict[str, Dict[str, int]]:
+    """Analyse number of every label (of closed issues) for any contributor that has closed an issue.
+
+    A issue closer is also a contributor, whose Pull Request closed the issue (by referencing it)
+
+    :param issues_data:IssuesSchema:
+    :param pull_requests_data:PullRequestsSchema:
+    :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
+    """
+    closers = {}
+    for issue_id in issues_data.keys():
+        issue_closer = issues_data[issue_id]["closed_by"]
+        if issue_closer not in closers:
+            closers[issue_closer] = {}
+        for label in issues_data[issue_id]["labels"]:
+            if label not in closers[issue_closer]:
+                closers[issue_closer][label] = 0
+            closers[issue_closer][label] += 1
+
+    for pr_id in pull_requests_data.keys():
+        if pull_requests_data[pr_id]["merged_at"] is None:
+            continue
+
+        pr_author = pull_requests_data[pr_id]["created_by"]
+        if pr_author not in closers:
+            closers[pr_author] = {}
+
+        for ref_issue in pull_requests_data[pr_id]["referenced_issues"]:
+            for label in issues_data[ref_issue]["labels"]:
+                if label not in closers[pr_author]:
+                    closers[pr_author][label] = 0
+                closers[pr_author][label] += 1
+
+    return closers
+
+
+def preprocess_issues_closed_by_pr_size(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> Dict[str, int]:
+    """Analyse number of closed issues to every Pull Request size.
+
+    :param issues_data:Dict:
+    :param pr_data:Dict:
+    :rtype: { <pr_size_label> : <number_of_closed_issues> }
+    """
+    issues = {}
+    for pr_id in pr_data.keys():
+        for issue_id in pr_data[pr_id]['referenced_issues']:
+
+            ttci = int(issues_data[issue_id]['closed_at'] - int(issues_data[issue_id]['created_at']))
+            size = pr_data[pr_id]['size']
+
+            if pr_data[pr_id][size] not in issues:
+                issues[size] = []
+            issues[size].append(ttci)
+    return issues

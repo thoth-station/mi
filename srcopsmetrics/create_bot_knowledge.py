@@ -226,7 +226,7 @@ def save_knowledge(file_path: Path, data: Dict[str, Any], use_ceph: bool = False
         _LOGGER.info("Saved locally at %s" % file_path)
 
 
-def get_interactions(comments):
+def get_interactions(comments) -> Dict:
     """Get overall word count for comments per author."""
     interactions = {comment.user.login: 0 for comment in comments}
     for comment in comments:
@@ -248,19 +248,14 @@ def store_issue(issue: Issue, data: Dict[str, Dict[str, Any]]):
     if issue.pull_request is not None:
         return  # we analyze issues and prs differentely
 
-    created_at = issue.created_at.timestamp()
-    closed_at = issue.closed_at.timestamp()
-    time_to_close = closed_at - created_at
-
     labels = [label.name for label in issue.get_labels()]
 
     data[issue.number] = {
         "created_by": issue.user.login,
-        "created_at": created_at,
+        "created_at": issue.created_at.timestamp(),
         "closed_by": issue.closed_by.login,
-        "closed_at": closed_at,
+        "closed_at": issue.closed_at.timestamp(),
         "labels": get_non_standalone_labels(labels),
-        "time_to_close": time_to_close,
         "interactions": get_interactions(issue.get_comments()),
     }
 
@@ -388,7 +383,6 @@ def store_pull_request(pull_request: PullRequest, results: Dict[str, Dict[str, A
         # "time_to_approve": time_to_approve,
         "closed_at": closed_at,
         "closed_by": pull_request.as_issue().closed_by.login,
-        "time_to_close": closed_at - created_at,
         "merged_at": merged_at,
         "commits_number": commits,
         "referenced_issues": get_referenced_issues(pull_request),

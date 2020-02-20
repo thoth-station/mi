@@ -9,6 +9,7 @@ pygithub = "*"
 matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
+plotly = "*"
 
 [dev-packages]
 pytest = "*"
@@ -16,6 +17,8 @@ pytest-timeout = "*"
 pytest-cov = "*"
 coala-bears = "*"
 twine = "*"
+autopep8 = "*"
+rope = "*"
 
 [requires]
 python_version = "3.6"
