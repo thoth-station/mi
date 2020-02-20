@@ -27,7 +27,7 @@ from datetime import timedelta
 from datetime import datetime
 
 from srcopsmetrics.create_bot_knowledge import load_previous_knowledge
-from srcopsmetrics.utils import convert_num2label, convert_score2num
+from srcopsmetrics.utils import convert_num2label, convert_score2num, IssuesSchema, PullRequestsSchema
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -402,7 +402,13 @@ def pre_process_contributors_data(data: Dict[str, Any], contributors: List[str])
     return contributors_reviews_data
 
 
-def preprocess_issues_creators(issues_data: Dict) -> Dict:
+def preprocess_issues_creators(issues_data: IssuesSchema) -> Dict[str, int]:
+    """Analyse number of created issues for each contributor that has created issue.
+
+    :type issues_data:IssuesSchema:
+    :param issues_data:IssuesSchema:
+    :rtype: { <contributor> : <number of created issues> }
+    """
     creators = {}
     for issue_id in issues_data.keys():
         issue_author = issues_data[issue_id]["created_by"]
@@ -410,10 +416,18 @@ def preprocess_issues_creators(issues_data: Dict) -> Dict:
             creators[issue_author] = 0
         creators[issue_author] += 1
 
-    return creators.keys(), creators.values()
+    return creators
 
 
-def preprocess_issues_closers(issues_data: Dict, pull_reviews_data: Dict) -> Dict:
+def preprocess_issues_closers(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> Dict[str, int]:
+    """Analyse number of closed issues for each contributor that has closed issue.
+
+    A closure is also when the contributor's Pull Request closed the issue.
+
+    :param issues_data:IssuesSchema:
+    :param pr_data:PullRequestsSchema:
+    :rtype: { <contributor> : <number of closed issues> }
+    """
     closers = {}
     for issue_id in issues_data.keys():
         issue_author = issues_data[issue_id]["closed_by"]
@@ -421,20 +435,30 @@ def preprocess_issues_closers(issues_data: Dict, pull_reviews_data: Dict) -> Dic
             closers[issue_author] = 0
         closers[issue_author] += 1
 
-    for pr_id in pull_reviews_data.keys():
-        if pull_reviews_data[pr_id]["merged_at"] is None:
+    for pr_id in pr_data.keys():
+        if pr_data[pr_id]["merged_at"] is None:
             continue
 
-        pr_author = pull_reviews_data[pr_id]["created_by"]
-        for _ in pull_reviews_data[pr_id]["referenced_issues"]:
+        pr_author = pr_data[pr_id]["created_by"]
+        for _ in pr_data[pr_id]["referenced_issues"]:
             if pr_author not in closers:
                 closers[pr_author] = 0
             closers[pr_author] += 1
 
-    return closers.keys(), closers.values()
+    return closers
 
 
-def preprocess_issue_interactions(issues_data: Dict) -> Dict:
+def preprocess_issue_interactions(issues_data: IssuesSchema) -> Dict[str, Dict[str, int]]:
+    """Analyse interactions between contributors with respect to closed issues in project.
+
+    The interaction is analysed between any issue creator and any person who has ever commented
+    any issue created by the issue creator.
+
+    Interaction number is just a sum of all of the words in a comment.
+
+    :param issues_data:IssuesSchema:
+    :rtype: { <contributor> : { <commenter> : <overall interaction number throughout the project> } }
+    """
     authors = {}
     for issue_id in issues_data.keys():
         issue_author = issues_data[issue_id]["created_by"]
@@ -449,7 +473,31 @@ def preprocess_issue_interactions(issues_data: Dict) -> Dict:
     return authors
 
 
-def preprocess_issue_labels_to_issue_creators(issues_data: Dict) -> Dict:
+def preprocess_issue_labels_with_ttci(issues_data: IssuesSchema) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
+    """Analyse Time To Close Issue for any label that labeled closed issue.
+
+    :param issues_data:Dict:
+    :rtype: { <label> : [[<closed_issue_ttci>], [<closed_issue_creation_date>]] }
+    """
+    issues = {}
+    for issue_id in issues_data.keys():
+        issue_labels = issues_data[issue_id]['labels']
+        ttci = int(issues_data[issue_id]['closed_at'] - int(issues_data[issue_id]['created_at']))
+        for label in issue_labels:
+            if label not in issues:
+                issues[label] = [[], []]
+            issues[label][0].append(ttci / 3600)
+            issues[label][1].append(datetime.fromtimestamp(
+                issues_data[issue_id]['created_at']))
+    return issues
+
+
+def preprocess_issue_labels_to_issue_creators(issues_data: IssuesSchema) -> Dict[str, Dict[str, int]]:
+    """Analyse number of every label (of closed issues) for any contributor that has created an issue.
+
+    :param issues_data:IssuesSchema:
+    :rtype: { <issue_creator> : { <issue_label> : <label_occurence_in_created_issues> } }
+    """
     authors = {}
     for issue_id in issues_data.keys():
         issue_author = issues_data[issue_id]["created_by"]
@@ -461,22 +509,19 @@ def preprocess_issue_labels_to_issue_creators(issues_data: Dict) -> Dict:
             authors[issue_author][label] += 1
     return authors
 
-def preprocess_issue_labels_with_ttci(issues_data: Dict) -> Dict:
-    issues = {}
-    for issue_id in issues_data.keys():
-        issue_labels = issues_data[issue_id]['labels']
-        ttci = int(issues_data[issue_id]['closed_at'] - int(issues_data[issue_id]['created_at']))
-        for label in issue_labels:
-            if label not in issues:
-                issues[label] = []
-                issues[label].append([])
-                issues[label].append([])
-            issues[label][0].append(ttci / 3600)
-            issues[label][1].append(datetime.fromtimestamp(issues_data[issue_id]['created_at']))
-    return issues
 
+def preprocess_issue_labels_to_issue_closers(
+    issues_data: IssuesSchema,
+    pull_requests_data: PullRequestsSchema
+) -> Dict[str, Dict[str, int]]:
+    """Analyse number of every label (of closed issues) for any contributor that has closed an issue.
 
-def preprocess_issue_labels_to_issue_closers(issues_data: Dict, pull_requests_data: Dict) -> Dict:
+    A issue closer is also a contributor, whose Pull Request closed the issue (by referencing it)
+
+    :param issues_data:IssuesSchema:
+    :param pull_requests_data:PullRequestsSchema:
+    :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
+    """
     closers = {}
     for issue_id in issues_data.keys():
         issue_closer = issues_data[issue_id]["closed_by"]
@@ -502,3 +547,23 @@ def preprocess_issue_labels_to_issue_closers(issues_data: Dict, pull_requests_da
                 closers[pr_author][label] += 1
 
     return closers
+
+
+def preprocess_issues_closed_by_pr_size(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> Dict[str, int]:
+    """Analyse number of closed issues to every Pull Request size.
+
+    :param issues_data:Dict:
+    :param pr_data:Dict:
+    :rtype: { <pr_size_label> : <number_of_closed_issues> }
+    """
+    issues = {}
+    for pr_id in pr_data.keys():
+        for issue_id in pr_data[pr_id]['referenced_issues']:
+
+            ttci = int(issues_data[issue_id]['closed_at'] - int(issues_data[issue_id]['created_at']))
+            size = pr_data[pr_id]['size']
+
+            if pr_data[pr_id][size] not in issues:
+                issues[size] = []
+            issues[size].append(ttci)
+    return issues

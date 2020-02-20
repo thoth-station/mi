@@ -118,7 +118,7 @@ def create_per_pr_plot(
     check_directory(result_path.joinpath(project))
     team_results = result_path.joinpath(f"{project}/{output_name}.png")
     fig.savefig(team_results)
-    plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -307,17 +307,16 @@ def visualize_results(project: str):
         overall_opened_issues, title='Number of opened issues per each developer')
 
     overall_closed_issues = preprocess_issues_closers(
-        issues_data=issues_data, pull_reviews_data=pr_data)
+        issues_data=issues_data, pr_data=pr_data)
     visualize_issues_per_developer(
         overall_closed_issues, title='Number of closed issues per each developer')
 
     overall_issues_interactions = preprocess_issue_interactions(
         issues_data=issues_data)
     overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(
-            issues_data=issues_data)
+        issues_data=issues_data)
     overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(
-            issues_data=issues_data, pull_requests_data=pr_data)
-    
+        issues_data=issues_data, pull_requests_data=pr_data)
 
     visualize_top_x_issues_types_wrt_developers(
         overall_types_data=overall_issue_types_creators, developer_type='Opener')
@@ -330,8 +329,11 @@ def visualize_results(project: str):
 
     visualize_ttci_wrt_labels(issues_data=issues_data)
 
+    visualize_ttci_wrt_pr_length(issues_data=issues_data, pr_data=pr_data)
+
 
 def visualize_developer_activity(project: str, developer: str):
+    """Create plots that are focused on a single contributor."""
     knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
 
     pr_data = retrieve_knowledge(
@@ -344,8 +346,7 @@ def visualize_developer_activity(project: str, developer: str):
     overall_issue_types_creators = preprocess_issue_labels_to_issue_creators(
         issues_data=issues_data)
     overall_issue_types_closers = preprocess_issue_labels_to_issue_closers(
-            issues_data=issues_data, pull_requests_data=pr_data)
-
+        issues_data=issues_data, pull_requests_data=pr_data)
 
     visualize_issue_interactions(
         overall_issues_interactions=overall_issues_interactions, author_login_id=developer)
@@ -361,7 +362,8 @@ def visualize_projects_ttci_comparisson(projects: List[str]):
 
     projects_data = []
     for project in projects:
-        issues_data = retrieve_knowledge(knowledge_path=knowledge_path, project=project, entity_type="Issue")
+        issues_data = retrieve_knowledge(
+            knowledge_path=knowledge_path, project=project, entity_type="Issue")
 
         project_issues_data = pre_process_issues_project_data(data=issues_data)
         issues_created_dts = project_issues_data["created_dts"]
@@ -378,17 +380,36 @@ def visualize_projects_ttci_comparisson(projects: List[str]):
         projects_data.append(ttci_per_issue_processed)
 
     create_ttci_multiple_projects_plot(
-            projects_data=projects_data,
-            projects=projects,
-        )
+        projects_data=projects_data,
+        projects=projects,
+    )
+
+
+def create_ttci_multiple_projects_plot(
+    projects_data: List,
+    projects: List
+) -> None:
+    """Create processed data in time per project plot."""
+    for project_data, project_name in zip(projects_data, projects):
+        x = [el[0] for el in project_data]
+        y = [el[1] for el in project_data]
+
+        plt.plot(x, y, label=project_name)
+
+    plt.xlabel("Issue created date")
+    plt.ylabel("Median Time to Close Issue (h)")
+    plt.title(f"Median TTCI throughout time per project")
+
+    plt.grid()
+    plt.legend()
+    plt.show()
 
 
 def visualize_issues_per_developer(overall_issue_data: Dict, title: str):
     """For each author visualize number of issues opened or closed by them."""
-
     df = pd.DataFrame()
-    df['authors'] = overall_issue_data[0]
-    df['issues'] = overall_issue_data[1]
+    df['authors'] = overall_issue_data.keys()
+    df['issues'] = overall_issue_data.values()
     fig = px.bar(df, x='authors', y='issues', title=title, color='authors')
     fig.show()
 
@@ -504,43 +525,59 @@ def visualize_top_X_issues_types_wrt_project(overall_types_data: Dict, developer
     fig.show()
 
 
-def visualize_ttci_wrt_labels(issues_data: Dict):
+def visualize_ttci_wrt_pr_length(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> None:
+    """For each pull request size label visualize its TTCI.
+
+    Time To Close Issue is summed with respect to all of the Issues
+    the Pull requests with given size label have closed.
+
+    :param issues_data:IssuesSchema:
+    :param pr_data:PullRequestsSchema:
+    :rtype: None
+    """
+    pr_size_issues = preprocess_issues_closed_by_pr_size(
+        issues_data=issues_data, pr_data=pr_data)
+    df = pd.DataFrame()
+
+    sizes = []
+    ttcis = []
+    for size in pr_size_issues.keys():
+        for ttci in pr_size_issues[size]:
+            sizes.append(size)
+            ttcis.append(ttci)
+
+    df['size'] = sizes
+    df['TTCI'] = ttcis
+
+    fig = px.scatter(df, x='size', y='TTCI', color='size')
+    fig.show()
+
+
+def visualize_ttci_wrt_labels(issues_data: IssuesSchema, metrics: str = 'Median') -> None:
+    """For each label visualize its Time To Close Issue.
+
+    :param issues_data:IssuesSchema:
+    :param metrics:str: Either 'Median' or 'Average'
+    :rtype: None
+    """
     issues_labels = preprocess_issue_labels_with_ttci(issues_data=issues_data)
     processed_labels = {}
     for label in issues_labels.keys():
         processed_labels[label] = issues_labels[label][0]
 
+    metrics = np.median if metrics == 'Median' else np.average
+
     df = pd.DataFrame()
     df['label'] = [label for label in processed_labels.keys()]
-    df['TTCI'] = [np.average(label_ttcis) for label_ttcis in processed_labels.values()]
+    df['TTCI'] = [metrics(label_ttcis) for label_ttcis in processed_labels.values()]
 
-    fig = px.bar(df, x='label', y='TTCI', 
-                 title=f'Average TTCI w.r.t. issue labels', color='label')
+    fig = px.bar(df, x='label', y='TTCI',
+                 title=f'{metrics} TTCI w.r.t. issue labels', color='label')
     fig.update_layout(yaxis_title='Average Time To Close Issue (hrs)',
-                        xaxis_title='Label name')
+                      xaxis_title='Label name')
     fig.show()
 
 
-def create_ttci_multiple_projects_plot(
-    projects_data: List,
-    projects: List
-):
-    """Create processed data in time per project plot."""
-
-    for project_data,project_name in zip(projects_data, projects):
-        x = [el[0] for el in project_data]
-        y = [el[1] for el in project_data]
-
-        plt.plot(x, y, label=project_name)
-
-    plt.xlabel("Issue created date")
-    plt.ylabel("Median Time to Close Issue (h)")
-    plt.title(f"Median TTCI throughout time per project")
-    
-    plt.grid()
-    plt.legend()
-    plt.show()
-
-
 if USE_NOTEBOOK:
-    init_notebook_mode(connected=True)         # initiate notebook for offline plot
+    # initiate notebook for offline plot
+    init_notebook_mode(connected=True)

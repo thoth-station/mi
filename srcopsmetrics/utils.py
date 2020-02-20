@@ -29,6 +29,49 @@ from github import Github
 import time
 from datetime import datetime
 
+from voluptuous import Schema
+
+IssuesSchema = Schema({
+    int: Schema({
+        "created_by": str,
+        "created_at": int,
+        "closed_by": str,
+        "closed_at": int,
+        "labels": List[str],
+        "interactions": Dict[str, int],
+    })
+})
+
+PullRequestReviewsSchema = Schema({
+    int: Schema({
+        "author": str,
+        "words_count": int,
+        "submitted_at": int,
+        "state": str,
+    })
+})
+
+PullRequestsSchema = Schema({
+    int: Schema({
+        "size": str,
+        "labels": List[str],
+        "created_by": str,
+        "created_at": int,
+        # "approved_at": pr_approved,
+        # "approved_by": pr_approved_by,
+        # "time_to_approve": time_to_approve,
+        "closed_at": int,
+        "closed_by": str,
+        "merged_at": int,
+        "commits_number": int,
+        "referenced_issues": List[int],
+        "interactions": Dict[str, int],
+        "reviews": pr_review_schema,
+        "requested_reviewers": List[str],
+    })
+})
+
+
 _LOGGER = logging.getLogger(__name__)
 API_RATE_MINIMAL_REMAINING = 20
 
@@ -49,8 +92,8 @@ class Knowledge:
 
     def __exit__(self, type, value, traceback):
         """Context manager exit method."""
-        _LOGGER.info(
-            "Something wrong went during the process of analysing, saving current state of work.")
+        if type not None:
+            _LOGGER.info("Problem occured, current state of the knowledge saved.")
         return self.accumulator
 
     def store(self):
