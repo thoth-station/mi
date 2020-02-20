@@ -19,6 +19,7 @@
 
 import logging
 import os
+import json
 
 import numpy as np
 
@@ -29,7 +30,20 @@ from github import Github
 import time
 from datetime import datetime
 
+from thoth.storages.exceptions import NotFoundError
+from thoth.storages.ceph import CephStore
+
 from voluptuous import Schema
+
+
+_LOGGER = logging.getLogger(__name__)
+
+API_RATE_MINIMAL_REMAINING = 20
+
+USE_CEPH = True
+PREFIX = os.getenv("PREFIX")
+HOST = os.getenv("HOST")
+BUCKET = os.getenv("BUCKET")
 
 IssuesSchema = Schema({
     int: Schema({
@@ -72,8 +86,100 @@ PullRequestsSchema = Schema({
 })
 
 
-_LOGGER = logging.getLogger(__name__)
-API_RATE_MINIMAL_REMAINING = 20
+def get_ceph_store() -> CephStore:
+    """Establish a connection to the CEPH."""
+    s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
+    s3.connect()
+    return s3
+
+
+def load_locally(file_path: Path) -> json:
+    """Load knowledge file from local storage."""
+    _LOGGER.info("Loading knowledge locally...")
+    if not file_path.exists() or os.path.getsize(file_path) == 0:
+        return None
+    with open(file_path, "r") as f:
+        data = json.load(f)
+        results = data["results"]
+    return results
+
+
+def load_remotely(file_path: Path) -> json:
+    """Load knowledge file from CEPH storage."""
+    _LOGGER.info("Loading knowledge from CEPH...")
+    ceph_filename = os.path.relpath(file_path).replace("./", "")
+    try:
+        return get_ceph_store().retrieve_document(ceph_filename)["results"]
+    except NotFoundError:
+        _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
+
+
+def load_previous_knowledge(
+    project_name: str, knowledge_type: str, file_path: Path = None,
+) -> Dict[str, Any]:
+    """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
+
+    Arguments:
+        repo_path {Path} -- path of the inspected github repository
+
+    Returns:
+        Dict[str, Any] -- previusly collected knowledge.
+                          Empty dict if the knowledge does not exist.
+
+    """
+    if knowledge_type == "Issue":
+        filename = "issues"
+    elif knowledge_type == "PullRequest":
+        filename = "pull_requests"
+
+    if file_path is None:
+        pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
+        project_path = pwd.joinpath("./" + project_name)
+        file_path = project_path.joinpath("./" + filename + ".json")
+
+    results = load_remotely(file_path) if USE_CEPH else load_locally(file_path)
+
+    if results is None:
+        _LOGGER.info("No previous knowledge found for %s" % project_name)
+        results = {}
+
+    _LOGGER.info("Found previous knowledge for %s with %d entities of type %s" % (
+        project_name, len(results), knowledge_type))
+
+    return results
+
+
+def save_knowledge(file_path: Path, data: Dict[str, Any]):
+    """Save collected knowledge as json.
+
+    The saved json contains one dictionary with single key 'results'
+    under which the knowledge is stored.
+
+    Arguments:
+        file_path {Path} -- where the knowledge should be saved
+        data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+    """
+    results = {"results": data}
+
+    _LOGGER.info("Saving knowledge file %s of size %d" %
+                 (os.path.basename(file_path), len(data)))
+
+    if USE_CEPH:
+        ceph_filename = os.path.relpath(file_path).replace("./", "")
+        s3 = get_ceph_store()
+        s3.store_document(results, ceph_filename)
+        _LOGGER.info("Saved on CEPH at %s%s%s" %
+                     (s3.bucket, s3.prefix, ceph_filename))
+    else:
+        with open(file_path, "w") as f:
+            json.dump(results, f)
+        _LOGGER.info("Saved locally at %s" % file_path)
+
+
+def use_local_storage():
+    """Set knowledge loading and saving to use local storage."""
+    global USE_CEPH
+    USE_CEPH = False
 
 
 class Knowledge:

@@ -17,6 +17,9 @@
 
 """Connect and store knowledge for the bots from GitHub."""
 
+from srcopsmetrics.utils import load_previous_knowledge, save_knowledge
+from github.Repository import Repository
+from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
 import logging
 import os
 import json
@@ -24,13 +27,9 @@ import json
 from typing import List, Tuple, Dict, Optional, Union, Set, Any, Sequence
 from pathlib import Path
 
-from srcopsmetrics.utils import check_directory, assign_pull_request_size, Knowledge
+from srcopsmetrics.utils import check_directory, assign_pull_request_size, Knowledge, \
+    get_ceph_store, load_locally, load_remotely
 
-from github import Github, GithubObject, Issue, IssueComment, PullRequest, PullRequestReview, PaginatedList
-from github.Repository import Repository
-
-from thoth.storages.exceptions import NotFoundError
-from thoth.storages.ceph import CephStore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,17 +39,6 @@ ISSUE_KEYWORDS = {"close", "closes", "closed", "fix",
                   "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 STANDALONE_LABELS = {"size"}
-
-PREFIX = os.getenv("PREFIX")
-HOST = os.getenv("HOST")
-BUCKET = os.getenv("BUCKET")
-
-
-def get_ceph_store() -> CephStore:
-    """Establish a connection to the CEPH."""
-    s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
-    s3.connect()
-    return s3
 
 
 def connect_to_source(project: Tuple[str, str]) -> Repository:
@@ -142,88 +130,6 @@ def get_only_new_entities(old_data: Dict[str, Any], new_data: PaginatedList) -> 
         _LOGGER.debug("New ids to be examined are %s" % only_new_ids)
 
     return [x for x in new_data if x.number in only_new_ids]
-
-
-def load_locally(file_path: Path) -> json:
-    """Load knowledge file from local storage."""
-    _LOGGER.info("Loading knowledge locally...")
-    if not file_path.exists() or os.path.getsize(file_path) == 0:
-        return None
-    with open(file_path, "r") as f:
-        data = json.load(f)
-        results = data["results"]
-    return results
-
-
-def load_remotely(file_path: Path) -> json:
-    """Load knowledge file from CEPH storage."""
-    _LOGGER.info("Loading knowledge from CEPH...")
-    ceph_filename = os.path.relpath(file_path).replace("./", "")
-    try:
-        return get_ceph_store().retrieve_document(ceph_filename)["results"]
-    except NotFoundError:
-        _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
-
-
-def load_previous_knowledge(
-    project_name: str, file_path: Path, knowledge_type: str, use_ceph: bool = False
-) -> Dict[str, Any]:
-    """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
-
-    Arguments:
-        repo_path {Path} -- path of the inspected github repository
-
-    Returns:
-        Dict[str, Any] -- previusly collected knowledge.
-                          Empty dict if the knowledge does not exist.
-
-    """
-    results = load_remotely(file_path) if use_ceph else load_locally(file_path)
-
-    if results is None:
-        _LOGGER.info("No previous knowledge found for %s" % project_name)
-        results = {}
-
-    elif knowledge_type == "PullRequest":
-        _LOGGER.info("Found previous knowledge for %s with %d PRs" %
-                     (project_name, len(results)))
-
-    elif knowledge_type == "Issue":
-        _LOGGER.info("Found previous knowledge for %s with %d Issues" %
-                     (project_name, len(results)))
-
-    else:
-        _LOGGER.error("Type %s is not recognized as knowledge." %
-                      (knowledge_type))
-
-    return results
-
-
-def save_knowledge(file_path: Path, data: Dict[str, Any], use_ceph: bool = False):
-    """Save collected knowledge as json.
-
-    The saved json contains one dictionary with single key 'results'
-    under which the knowledge is stored.
-
-    Arguments:
-        file_path {Path} -- where the knowledge should be saved
-        data {Dict[str, Any]} -- collected knowledge. Should be json compatible
-    """
-    results = {"results": data}
-
-    _LOGGER.info("Saving knowledge file %s of size %d" %
-                 (os.path.basename(file_path), len(data)))
-
-    if use_ceph:
-        ceph_filename = os.path.relpath(file_path).replace("./", "")
-        s3 = get_ceph_store()
-        s3.store_document(results, ceph_filename)
-        _LOGGER.info("Saved on CEPH at %s%s%s" %
-                     (s3.bucket, s3.prefix, ceph_filename))
-    else:
-        with open(file_path, "w") as f:
-            json.dump(results, f)
-        _LOGGER.info("Saved locally at %s" % file_path)
 
 
 def get_interactions(comments) -> Dict:
@@ -436,15 +342,14 @@ def analyse_entity(github_repo: str, project_path: str, github_type: str, use_ce
     path = project_path.joinpath("./" + filename + ".json")
 
     prev_knowledge = load_previous_knowledge(
-        project_name=github_repo.full_name, file_path=path, knowledge_type=github_type, use_ceph=use_ceph,
-    )
+        project_name=github_repo.full_name, file_path=path, knowledge_type=github_type)
 
     new_knowledge = analyse(github_repo, prev_knowledge)
     if new_knowledge is not None:
-        save_knowledge(path, new_knowledge, use_ceph=use_ceph)
+        save_knowledge(path, new_knowledge)
 
 
-def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) -> None:
+def analyse_projects(projects: List[Tuple[str, str]], local: bool = False) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
@@ -459,7 +364,7 @@ def analyse_projects(projects: List[Tuple[str, str]], use_ceph: bool = False) ->
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        analyse_entity(github_repo, project_path, "Issue", use_ceph)
-        analyse_entity(github_repo, project_path, "PullRequest", use_ceph)
+        analyse_entity(github_repo, project_path, "Issue")
+        analyse_entity(github_repo, project_path, "PullRequest")
         _LOGGER.info(
             "######################## Analysis ended ########################")

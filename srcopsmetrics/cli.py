@@ -18,9 +18,10 @@
 """This is the main script of the template project."""
 
 import logging
-
 import click
+import os
 
+from srcopsmetrics.utils import use_local_storage
 from srcopsmetrics.create_bot_knowledge import analyse_projects
 from srcopsmetrics.visualization import visualize_results
 from srcopsmetrics.evaluate_scores import evaluate_reviewers_scores
@@ -45,8 +46,8 @@ logging.basicConfig(level=logging.INFO)
     help="Create knowledge from a project repository.",
 )
 @click.option(
-    "--use-ceph",
-    "-C",
+    "--local",
+    "-l",
     is_flag=True,
     help="Use ceph for knowledge loading and storing.",
 )
@@ -65,16 +66,18 @@ logging.basicConfig(level=logging.INFO)
 def cli(
     project: str,
     create_knowledge: bool,
-    use_ceph: bool,
+    local: bool,
     visualize_statistics: bool,
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
+    if local is True:
+        use_local_storage()
+
     if create_knowledge:
         projects = project.split(',')
         analyse_projects(
-            projects=[repo.split("/") for repo in projects],
-            use_ceph=use_ceph,
+            projects=[repo.split("/") for repo in projects]
         )
 
     if visualize_statistics:
