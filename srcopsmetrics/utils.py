@@ -66,7 +66,7 @@ PullRequestsSchema = Schema({
         "commits_number": int,
         "referenced_issues": List[int],
         "interactions": Dict[str, int],
-        "reviews": pr_review_schema,
+        "reviews": PullRequestReviewsSchema,
         "requested_reviewers": List[str],
     })
 })
@@ -92,7 +92,7 @@ class Knowledge:
 
     def __exit__(self, type, value, traceback):
         """Context manager exit method."""
-        if type not None:
+        if type is not None:
             _LOGGER.info("Problem occured, current state of the knowledge saved.")
         return self.accumulator
 
