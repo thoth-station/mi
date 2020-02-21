@@ -26,28 +26,11 @@ from pathlib import Path
 from datetime import timedelta
 from datetime import datetime
 
-from srcopsmetrics.create_bot_knowledge import load_previous_knowledge
-from srcopsmetrics.utils import convert_num2label, convert_score2num, IssuesSchema, PullRequestsSchema
+from srcopsmetrics.utils import convert_num2label, convert_score2num, IssuesSchema, \
+    PullRequestsSchema, load_previous_knowledge
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def retrieve_knowledge(knowledge_path: Path, project: str, entity_type: str) -> Union[Dict[str, Any], None]:
-    """Retrieve knowledge (PRs) collected for a project."""
-    project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
-
-    filename = "issues" if entity_type == "Issue" else "pull_requests"
-    pull_requests_data_path = project_knowledge_path.joinpath(
-        "./" + filename + ".json")
-
-    data = load_previous_knowledge(
-        project, pull_requests_data_path, entity_type)
-    if data:
-        return data
-    else:
-        _LOGGER.exception("No previous knowledge found for %s" % project)
-        return {}
 
 
 def analyze_issue_for_project_data(issue_id: int, issue: Dict[str, Any], extracted_data: Dict[str, Any]):

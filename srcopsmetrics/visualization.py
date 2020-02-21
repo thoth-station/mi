@@ -127,8 +127,7 @@ def visualize_results(project: str):
     knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
 
-    pr_data = retrieve_knowledge(
-        knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
+    pr_data = load_previous_knowledge(project_name=project, knowledge_type="PullRequest")
 
     if pr_data:
         projects_reviews_data = pre_process_prs_project_data(data=pr_data)
@@ -276,8 +275,7 @@ def visualize_results(project: str):
             output_name="TTR-per-PR-length",
         )
 
-    issues_data = retrieve_knowledge(
-        knowledge_path=knowledge_path, project=project, entity_type="Issue")
+    issues_data = load_previous_knowledge(project_name=project, knowledge_type="Issue")
     if issues_data:
         project_issues_data = pre_process_issues_project_data(data=issues_data)
         issues_created_dts = project_issues_data["created_dts"]
@@ -334,12 +332,8 @@ def visualize_results(project: str):
 
 def visualize_developer_activity(project: str, developer: str):
     """Create plots that are focused on a single contributor."""
-    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-
-    pr_data = retrieve_knowledge(
-        knowledge_path=knowledge_path, project=project, entity_type="PullRequest")
-    issues_data = retrieve_knowledge(
-        knowledge_path=knowledge_path, project=project, entity_type="Issue")
+    pr_data = load_previous_knowledge(project_name=project, knowledge_type="PullRequest")
+    issues_data = load_previous_knowledge(project_name=project, knowledge_type="Issue")
 
     overall_issues_interactions = preprocess_issue_interactions(
         issues_data=issues_data)
@@ -358,12 +352,9 @@ def visualize_developer_activity(project: str, developer: str):
 
 def visualize_projects_ttci_comparisson(projects: List[str]):
     """Visualize TTCI in form of graph for given projects inside one plot."""
-    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-
     projects_data = []
     for project in projects:
-        issues_data = retrieve_knowledge(
-            knowledge_path=knowledge_path, project=project, entity_type="Issue")
+        issues_data = load_previous_knowledge(project_name=project, knowledge_type="Issue")
 
         project_issues_data = pre_process_issues_project_data(data=issues_data)
         issues_created_dts = project_issues_data["created_dts"]

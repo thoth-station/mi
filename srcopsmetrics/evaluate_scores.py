@@ -32,7 +32,7 @@ import pandas as pd
 from pathlib import Path
 from collections import Counter
 
-from srcopsmetrics.pre_processing import retrieve_knowledge
+from srcopsmetrics.utils import load_previous_knowledge
 from srcopsmetrics.pre_processing import pre_process_prs_project_data, pre_process_contributors_data
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 
@@ -62,13 +62,13 @@ def evaluate_reviewers_scores(project: Tuple[str, str], number_reviewer: int = 2
     :param number_reviewer: number of reviewers to select
     """
     knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-    data = retrieve_knowledge(knowledge_path=knowledge_path, project=project)
+    data = load_previous_knowledge(project_name=project, knowledge_type="PullRequest")
     if not data:
         return {}
 
     now_time = datetime.now()
 
-    projects_reviews_data = pre_process_project_data(data=data)
+    projects_reviews_data = pre_process_prs_project_data(data=data)
 
     # Project statistics
     project_commits_number = sum([pr["commits_number"] for pr in data.values()])
