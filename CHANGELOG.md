@@ -95,3 +95,36 @@ all the things that you see...
 * Add docstrings and fix typos
 * Add alias for --projects argument
 * Add API rate limit check and wait
+
+## Release 1.0.0 (2020-02-26T23:49:29)
+* Remove static method from _visualize_ttci_wrt_labels
+* Add StatisticalQuantity Enum and adjust Schema
+* Adjust docstring for GitHubKnowledge Class
+* Adjust Schema names
+* Divide classes by context
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.2 to 0.22.3
+* :pushpin: Automatic update of dependency plotly from 4.5.1 to 4.5.2
+* :pushpin: Automatic update of dependency plotly from 4.5.0 to 4.5.1
+* Fix CEPH to be working and used by default
+* Fix mistakes in utils
+* Document & refactor
+* Fix developer vizs
+* Minor refactor changes
+* Add notebook plotting compatibility
+* Add TTCI viz for labels and project comparisson
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.1 to 0.22.2
+* Satisfy coala only for visualization.py
+* Add overall top x issues types for project viz
+* Add refactor lib rope for dev
+* Add top X issue types viz
+* Fix issue type viz and slight refactor for methods
+* Add new viz for issue labels and fix previous one
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.0 to 0.22.1
+* Add top X issue interactions visualization
+* Add plotly into dependencies
+* Add issues closed and single interactions visualizations
+* Fix comment block mistake
+* Satisfy the last coala reqs
+* Satisfy coala
+* Fix TTCI measurement metrics and storage
+* Add TTCI plots for visualization
