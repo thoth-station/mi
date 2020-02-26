@@ -538,7 +538,6 @@ class Visualization:
         fig = px.scatter(df, x="size", y="TTCI", color="size")
         fig.show()
 
-    @staticmethod
     def _visualize_ttci_wrt_labels(
         self, issues_data: IssueSchema, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
     ) -> None:
