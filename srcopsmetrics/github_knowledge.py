@@ -50,8 +50,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
-ISSUE_KEYWORDS = {"close", "closes", "closed", "fix",
-                  "fixes", "fixed", "resolve", "resolves", "resolved"}
+ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 STANDALONE_LABELS = {"size"}
 
@@ -127,8 +126,7 @@ class GitHubKnowledge:
                         referenced_issue_number = message[idx + 1]
                         assert (referenced_issue_number).startswith("https")
                         # last element of url is always the issue number
-                        issues_referenced.append(
-                            referenced_issue_number.split("/")[-1])
+                        issues_referenced.append(referenced_issue_number.split("/")[-1])
                         _LOGGER.info("      ...referenced issue number present")
                         # we assure that this was really referenced issue
                         # and not just a keyword without number
@@ -203,8 +201,9 @@ class GitHubKnowledge:
         # TODO: think about saving comments
         # would it be valuable?
 
-
-    def analyse_issues(self, project: Repository, prev_issues: Dict[str, Any], is_local: bool=False) -> Dict[str, Any]:
+    def analyse_issues(
+        self, project: Repository, prev_issues: Dict[str, Any], is_local: bool = False
+    ) -> Dict[str, Any]:
         """Analyse of every closed issue in repository.
 
         Arguments:
@@ -216,15 +215,19 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in project.get_issues(
-            state="closed") if issue.pull_request is None]
+        current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
         new_issues = self.get_only_new_entities(prev_issues, current_issues)
 
         if len(new_issues) == 0:
             return
 
-        with GitHubKnowledgeStore(entity_type=EntityTypeEnum.ISSUE.value, new_entities=new_issues,
-                    accumulator=prev_issues, store_method=self.store_issue, is_local=is_local) as analysis:
+        with GitHubKnowledgeStore(
+            entity_type=EntityTypeEnum.ISSUE.value,
+            new_entities=new_issues,
+            accumulator=prev_issues,
+            store_method=self.store_issue,
+            is_local=is_local,
+        ) as analysis:
             accumulated = analysis.store()
         return accumulated
 
@@ -265,8 +268,7 @@ class GitHubKnowledge:
 
         results = {}
         for idx, review in enumerate(reviews, 1):
-            _LOGGER.info("      -analysing review no. %d/%d" %
-                        (idx, reviews.totalCount))
+            _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
             results[review.id] = {
                 "author": review.user.login,
                 "words_count": len(review.body.split(" ")),
@@ -297,8 +299,7 @@ class GitHubKnowledge:
         # pr_approved_by = pull_request.approved_by.name if approval is not None else None
         # time_to_approve = pr_approved - created_at if approval is not None else None
 
-        merged_at = pull_request.merged_at.timestamp(
-        ) if pull_request.merged_at is not None else None
+        merged_at = pull_request.merged_at.timestamp() if pull_request.merged_at is not None else None
 
         labels = [label.name for label in pull_request.get_labels()]
 
@@ -310,8 +311,7 @@ class GitHubKnowledge:
 
         if not pull_request_size:
             lines_changes = pull_request.additions + pull_request.deletions
-            pull_request_size = self.assign_pull_request_size(
-                lines_changes=lines_changes)
+            pull_request_size = self.assign_pull_request_size(lines_changes=lines_changes)
 
         results[str(pull_request.number)] = {
             "size": pull_request_size,
@@ -331,8 +331,9 @@ class GitHubKnowledge:
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
         }
 
-
-    def analyse_pull_requests(self, project: Repository, prev_pulls: Dict[str, Any], is_local: bool=False) -> Dict[str, Any]:
+    def analyse_pull_requests(
+        self, project: Repository, prev_pulls: Dict[str, Any], is_local: bool = False
+    ) -> Dict[str, Any]:
         """Analyse every closed pull_request in repository.
 
         Arguments:
@@ -341,8 +342,7 @@ class GitHubKnowledge:
 
             project_knowledge {Path} -- project directory where the issues knowledge will be stored
         """
-        _LOGGER.info(
-            "-------------Pull Requests Analysis (including its Reviews)-------------")
+        _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
         current_pulls = project.get_pulls(state="closed")
         new_pulls = self.get_only_new_entities(prev_pulls, current_pulls)
@@ -350,8 +350,13 @@ class GitHubKnowledge:
         if len(new_pulls) == 0:
             return
 
-        with GitHubKnowledgeStore(entity_type=EntityTypeEnum.PULL_REQUEST.value, new_entities=new_pulls,
-                    accumulator=prev_pulls, store_method=self.store_pull_request, is_local=is_local) as analysis:
+        with GitHubKnowledgeStore(
+            entity_type=EntityTypeEnum.PULL_REQUEST.value,
+            new_entities=new_pulls,
+            accumulator=prev_pulls,
+            store_method=self.store_pull_request,
+            is_local=is_local,
+        ) as analysis:
             accumulated = analysis.store()
         return accumulated
 
@@ -364,10 +369,7 @@ class GitHubKnowledge:
             github_type {str} -- Currently can be only "Issue" or "PullRequest"
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
         """
-        _METHOD_ANALYSIS_ENTITY = {
-            "Issue": self.analyse_issues,
-            "PullRequest": self.analyse_pull_requests
-        }
+        _METHOD_ANALYSIS_ENTITY = {"Issue": self.analyse_issues, "PullRequest": self.analyse_pull_requests}
 
         filename = self._FILENAME_ENTITY[github_type]
         analyse = _METHOD_ANALYSIS_ENTITY[github_type]
@@ -376,7 +378,7 @@ class GitHubKnowledge:
 
         with GitHubKnowledgeStore(is_local=is_local) as store:
             prev_knowledge = store.load_previous_knowledge(
-                project_name=github_repo.full_name, file_path=path, knowledge_type=github_type,
+                project_name=github_repo.full_name, file_path=path, knowledge_type=github_type
             )
             new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
             if new_knowledge is not None:

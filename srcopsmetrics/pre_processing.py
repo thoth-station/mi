@@ -34,8 +34,8 @@ from srcopsmetrics.github_knowledge_store import GitHubKnowledgeStore
 from srcopsmetrics.utils import convert_num2label
 from srcopsmetrics.utils import convert_score2num
 
-from srcopsmetrics.entity_schema import IssuesSchema
-from srcopsmetrics.entity_schema import PullRequestsSchema
+from srcopsmetrics.entity_schema import IssueSchema
+from srcopsmetrics.entity_schema import PullRequestSchema
 
 _LOGGER = logging.getLogger(__name__)
 

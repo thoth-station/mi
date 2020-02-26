@@ -24,7 +24,7 @@ from typing import Optional
 from typing import Tuple
 from voluptuous import Schema
 
-IssuesSchema = Schema(
+IssueSchema = Schema(
     {
         int: Schema(
             {
@@ -39,9 +39,20 @@ IssuesSchema = Schema(
     }
 )
 
-PullRequestReviewsSchema = Schema({int: Schema({"author": str, "words_count": int, "submitted_at": int, "state": str})})
+PullRequestReviewsSchema = Schema(
+    {
+        int: Schema(
+            {
+                "author": str,
+                "words_count": int,
+                "submitted_at": int,
+                "state": str
+            }
+        )
+    }
+)
 
-PullRequestsSchema = Schema(
+PullRequestSchema = Schema(
     {
         int: Schema(
             {
