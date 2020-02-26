@@ -39,9 +39,10 @@ from srcopsmetrics.utils import convert_score2num
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.enums import DeveloperActionEnum
+from srcopsmetrics.enums import StatisticalQuantityEnum
 from srcopsmetrics.pre_processing import PreProcessing
-from srcopsmetrics.entity_schema import IssuesSchema
-from srcopsmetrics.entity_schema import PullRequestsSchema
+from srcopsmetrics.entity_schema import IssueSchema
+from srcopsmetrics.entity_schema import PullRequestSchema
 
 from plotly.offline import init_notebook_mode, iplot
 
@@ -56,6 +57,8 @@ class Visualization:
     """"Class for visualizing knowledge collected for the bot."""
 
     _DEVELOPER_ACTION = {"Open": "opened", "Close": "closed"}
+
+    _STATISTICAL_FUNCTION_MAP = {"Median": np.median, "Average": np.average}
 
     def __init__(self, *, use_notebook: Optional[str] = None):
         """Initialize Visualization class for bot."""
@@ -509,14 +512,14 @@ class Visualization:
         fig.show()
 
     @staticmethod
-    def _visualize_ttci_wrt_pr_length(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> None:
+    def _visualize_ttci_wrt_pr_length(issues_data: IssueSchema, pr_data: PullRequestSchema) -> None:
         """For each pull request size label visualize its TTCI.
 
         Time To Close Issue is summed with respect to all of the Issues
         the Pull requests with given size label have closed.
 
-        :param issues_data:IssuesSchema:
-        :param pr_data:PullRequestsSchema:
+        :param issues_data:IssueSchema:
+        :param pr_data:PullRequestSchema:
         :rtype: None
         """
         pr_size_issues = pre_processing.pre_process_issues_closed_by_pr_size(issues_data=issues_data, pr_data=pr_data)
@@ -536,11 +539,13 @@ class Visualization:
         fig.show()
 
     @staticmethod
-    def _visualize_ttci_wrt_labels(issues_data: IssuesSchema, metrics: str = "Median") -> None:
+    def _visualize_ttci_wrt_labels(
+        self, issues_data: IssueSchema, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
+    ) -> None:
         """For each label visualize its Time To Close Issue.
 
-        :param issues_data:IssuesSchema:
-        :param metrics:str: Either 'Median' or 'Average'
+        :param issues_data:IssueSchema:
+        :param statistical_quantity:str: Either 'Median' or 'Average'
         :rtype: None
         """
         issues_labels = pre_processing.pre_process_issue_labels_with_ttci(issues_data=issues_data)
@@ -548,12 +553,12 @@ class Visualization:
         for label in issues_labels.keys():
             processed_labels[label] = issues_labels[label][0]
 
-        metrics = np.median if metrics == "Median" else np.average
+        statistical_method = self._STATISTICAL_FUNCTION_MAP[statistical_quantity]
 
         df = pd.DataFrame()
         df["label"] = [label for label in processed_labels.keys()]
-        df["TTCI"] = [metrics(label_ttcis) for label_ttcis in processed_labels.values()]
+        df["TTCI"] = [statistical_method(label_ttcis) for label_ttcis in processed_labels.values()]
 
-        fig = px.bar(df, x="label", y="TTCI", title=f"{metrics} TTCI w.r.t. issue labels", color="label")
+        fig = px.bar(df, x="label", y="TTCI", title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
         fig.update_layout(yaxis_title="Average Time To Close Issue (hrs)", xaxis_title="Label name")
         fig.show()

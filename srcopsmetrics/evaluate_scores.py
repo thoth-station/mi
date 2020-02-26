@@ -32,7 +32,6 @@ import pandas as pd
 from pathlib import Path
 from collections import Counter
 
-from srcopsmetrics.utils import load_previous_knowledge
 from srcopsmetrics.pre_processing import PreProcessing
 from srcopsmetrics.utils import convert_num2label
 from srcopsmetrics.utils import convert_score2num

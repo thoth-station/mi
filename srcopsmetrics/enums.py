@@ -28,7 +28,14 @@ class EntityTypeEnum(Enum):
 
 
 class DeveloperActionEnum(Enum):
-    """Class for the entity type to be collected."""
+    """Class for the developer action on an entity type."""
 
     OPEN = "Open"
     CLOSE = "Close"
+
+
+class StatisticalQuantityEnum(Enum):
+    """Class for the statistical quantities to be used for data manipulation."""
+
+    AVERAGE = "Average"
+    MEDIAN = "Median"
