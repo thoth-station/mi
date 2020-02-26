@@ -47,6 +47,7 @@ pd.set_option("display.max_columns", 500)
 
 pre_processing = PreProcessing()
 
+
 class ReviewerAssigner:
     """"Class of methods to analyze bot knowledge for statistics about reviewers."""
 
@@ -58,7 +59,6 @@ class ReviewerAssigner:
             final_score += contribution * w_factor
         return final_score
 
-
     def evaluate_reviewers_scores(self, project: Tuple[str, str], number_reviewer: int = 2, is_local: bool = False):
         """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
@@ -67,7 +67,10 @@ class ReviewerAssigner:
         """
         knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
         data = pre_processing.retrieve_knowledge(
-            knowledge_path=knowledge_path, project=project, entity_type=EntityTypeEnum.PULL_REQUEST.value, is_local=is_local
+            knowledge_path=knowledge_path,
+            project=project,
+            entity_type=EntityTypeEnum.PULL_REQUEST.value,
+            is_local=is_local,
         )
         if not data:
             return {}
@@ -186,10 +189,10 @@ class ReviewerAssigner:
                     project_time_since_last_review.total_seconds() / contributor_time_last_review.total_seconds()
                 )
 
-                # TODO 6: Number of issue closed by a PR reviewed from an author respect to total number of issue closed.
+                # TODO: 6 Number of issues closed by a PR reviewed from an author/total number of issues closed.
                 contributions.append(1)
 
-                # TODO 7: Median time to close an issue by reviewer respect to team repostiory MTTCI.
+                # TODO: 7 Median time to close an issue by reviewer respect to team repostiory MTTCI.
                 contributions.append(1)
 
                 final_score = self.evaluate_contributor_technical_score(

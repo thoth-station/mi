@@ -56,7 +56,7 @@ STANDALONE_LABELS = {"size"}
 
 
 class GitHubKnowledge:
-    """Context manager for entity extraction process from GitHub."""
+    """Class of methods entity extraction from GitHub."""
 
     _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests"}
 

@@ -56,7 +56,7 @@ class GitHubKnowledgeStore:
         new_entities: Optional[str] = None,
         accumulator: Optional[str] = None,
         store_method: Optional[str] = None,
-        ):
+    ):
         """Initialize with previous and new knowledge of an entity."""
         self.is_local = is_local
         if is_local:
@@ -86,17 +86,14 @@ class GitHubKnowledgeStore:
             remaining = github.rate_limiting[0]
 
             if remaining <= API_RATE_MINIMAL_REMAINING:
-                wait_time = github.rate_limiting_resettime - \
-                    int(datetime.now().timestamp())
-                _LOGGER.info(
-                    "API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
+                wait_time = github.rate_limiting_resettime - int(datetime.now().timestamp())
+                _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
                 time.sleep(wait_time)
 
             if idx % 10 == 0:
                 _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-            _LOGGER.info("Analysing %s no. %d/%d" %
-                         (self.entity_type, idx, len(self.new_entities)))
+            _LOGGER.info("Analysing %s no. %d/%d" % (self.entity_type, idx, len(self.new_entities)))
 
             self.store_method(entity, self.accumulator)
         return self.accumulator
@@ -113,15 +110,13 @@ class GitHubKnowledgeStore:
         """
         results = {"results": data}
 
-        _LOGGER.info("Saving knowledge file %s of size %d" %
-                    (os.path.basename(file_path), len(data)))
+        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
 
         if not self.is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = self.get_ceph_store()
             s3.store_document(results, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s%s%s" %
-                        (s3.bucket, s3.prefix, ceph_filename))
+            _LOGGER.info("Saved on CEPH at %s%s%s" % (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
                 json.dump(results, f)
@@ -133,9 +128,7 @@ class GitHubKnowledgeStore:
         s3.connect()
         return s3
 
-    def load_previous_knowledge(
-        self, project_name: str, file_path: Path, knowledge_type: str,
-    ) -> Dict[str, Any]:
+    def load_previous_knowledge(self, project_name: str, file_path: Path, knowledge_type: str) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
@@ -152,7 +145,7 @@ class GitHubKnowledgeStore:
             pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
             project_path = pwd.joinpath("./" + project_name)
             file_path = project_path.joinpath("./" + filename + ".json")
-        
+
         results = self.load_remotely(file_path) if not self.is_local else self.load_locally(file_path)
 
         if results is None:
@@ -160,8 +153,9 @@ class GitHubKnowledgeStore:
             results = {}
             return results
 
-        _LOGGER.info("Found previous knowledge for %s with %d entities of type %s" % (
-            project_name, len(results), knowledge_type))
+        _LOGGER.info(
+            "Found previous knowledge for %s with %d entities of type %s" % (project_name, len(results), knowledge_type)
+        )
 
         return results
 
