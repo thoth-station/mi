@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# Copyright (C) 2019, 2020 Francesco Murdaca
+# SrcOpsMetrics
+# Copyright (C) 2019, 2020 Francesco Murdaca, Dominik Tuchyna
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,210 +19,13 @@
 
 import logging
 import os
-import json
 
 import numpy as np
 
-from typing import Tuple, Dict, Any, List, Optional
+from typing import Tuple
 from pathlib import Path
 
-from github import Github
-import time
-from datetime import datetime
-
-from thoth.storages.exceptions import NotFoundError
-from thoth.storages.ceph import CephStore
-
-from voluptuous import Schema
-
-
 _LOGGER = logging.getLogger(__name__)
-
-API_RATE_MINIMAL_REMAINING = 20
-
-USE_CEPH = True
-PREFIX = os.getenv("PREFIX")
-HOST = os.getenv("HOST")
-BUCKET = os.getenv("BUCKET")
-
-IssuesSchema = Schema({
-    int: Schema({
-        "created_by": str,
-        "created_at": int,
-        "closed_by": str,
-        "closed_at": int,
-        "labels": List[str],
-        "interactions": Dict[str, int],
-    })
-})
-
-PullRequestReviewsSchema = Schema({
-    int: Schema({
-        "author": str,
-        "words_count": int,
-        "submitted_at": int,
-        "state": str,
-    })
-})
-
-PullRequestsSchema = Schema({
-    int: Schema({
-        "size": str,
-        "labels": List[str],
-        "created_by": str,
-        "created_at": int,
-        # "approved_at": pr_approved,
-        # "approved_by": pr_approved_by,
-        # "time_to_approve": time_to_approve,
-        "closed_at": int,
-        "closed_by": str,
-        "merged_at": int,
-        "commits_number": int,
-        "referenced_issues": List[int],
-        "interactions": Dict[str, int],
-        "reviews": PullRequestReviewsSchema,
-        "requested_reviewers": List[str],
-    })
-})
-
-
-def get_ceph_store() -> CephStore:
-    """Establish a connection to the CEPH."""
-    s3 = CephStore(prefix=PREFIX, host=HOST, bucket=BUCKET)
-    s3.connect()
-    return s3
-
-
-def load_locally(file_path: Path) -> json:
-    """Load knowledge file from local storage."""
-    _LOGGER.info("Loading knowledge locally...")
-    if not file_path.exists() or os.path.getsize(file_path) == 0:
-        return None
-    with open(file_path, "r") as f:
-        data = json.load(f)
-        results = data["results"]
-    return results
-
-
-def load_remotely(file_path: Path) -> json:
-    """Load knowledge file from CEPH storage."""
-    _LOGGER.info("Loading knowledge from CEPH...")
-    ceph_filename = os.path.relpath(file_path).replace("./", "")
-    try:
-        return get_ceph_store().retrieve_document(ceph_filename)["results"]
-    except NotFoundError:
-        _LOGGER.info("Knowledge %s not found on CEPH" % file_path)
-
-
-def load_previous_knowledge(
-    project_name: str, knowledge_type: str, file_path: Path = None,
-) -> Dict[str, Any]:
-    """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
-
-    Arguments:
-        repo_path {Path} -- path of the inspected github repository
-
-    Returns:
-        Dict[str, Any] -- previusly collected knowledge.
-                          Empty dict if the knowledge does not exist.
-
-    """
-    if knowledge_type == "Issue":
-        filename = "issues"
-    elif knowledge_type == "PullRequest":
-        filename = "pull_requests"
-
-    if file_path is None:
-        pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-        project_path = pwd.joinpath("./" + project_name)
-        file_path = project_path.joinpath("./" + filename + ".json")
-
-    results = load_remotely(file_path) if USE_CEPH else load_locally(file_path)
-
-    if results is None:
-        _LOGGER.info("No previous knowledge found for %s" % project_name)
-        results = {}
-
-    _LOGGER.info("Found previous knowledge for %s with %d entities of type %s" % (
-        project_name, len(results), knowledge_type))
-
-    return results
-
-
-def save_knowledge(file_path: Path, data: Dict[str, Any]):
-    """Save collected knowledge as json.
-
-    The saved json contains one dictionary with single key 'results'
-    under which the knowledge is stored.
-
-    Arguments:
-        file_path {Path} -- where the knowledge should be saved
-        data {Dict[str, Any]} -- collected knowledge. Should be json compatible
-    """
-    results = {"results": data}
-
-    _LOGGER.info("Saving knowledge file %s of size %d" %
-                 (os.path.basename(file_path), len(data)))
-
-    if USE_CEPH:
-        ceph_filename = os.path.relpath(file_path).replace("./", "")
-        s3 = get_ceph_store()
-        s3.store_document(results, ceph_filename)
-        _LOGGER.info("Saved on CEPH at %s%s%s" %
-                     (s3.bucket, s3.prefix, ceph_filename))
-    else:
-        with open(file_path, "w") as f:
-            json.dump(results, f)
-        _LOGGER.info("Saved locally at %s" % file_path)
-
-
-def use_local_storage():
-    """Set knowledge loading and saving to use local storage."""
-    global USE_CEPH
-    USE_CEPH = False
-
-
-class Knowledge:
-    """Context manager for entity extraction process."""
-
-    def __init__(self, entity_type, new_entities, accumulator, store_method):
-        """Initialize with previous and new knowledge of an entity."""
-        self.entity_type = entity_type
-        self.new_entities = new_entities
-        self.accumulator = accumulator
-        self.store_method = store_method
-
-    def __enter__(self):
-        """Context manager enter method."""
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Context manager exit method."""
-        if type is not None:
-            _LOGGER.info("Problem occured, current state of the knowledge saved.")
-        return self.accumulator
-
-    def store(self):
-        """Iterate through entities of given repository and accumulate them."""
-        for idx, entity in enumerate(self.new_entities, 1):
-            github = Github(os.getenv("GITHUB_ACCESS_TOKEN"))
-            remaining = github.rate_limiting[0]
-
-            if remaining <= API_RATE_MINIMAL_REMAINING:
-                wait_time = github.rate_limiting_resettime - \
-                    int(datetime.now().timestamp())
-                _LOGGER.info(
-                    "API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
-                time.sleep(wait_time)
-
-            if idx % 10 == 0:
-                _LOGGER.info("[ API requests remaining: %d ]" % remaining)
-
-            _LOGGER.info("Analysing %s no. %d/%d" %
-                         (self.entity_type, idx, len(self.new_entities)))
-
-            self.store_method(entity, self.accumulator)
-        return self.accumulator
 
 
 def check_directory(knowledge_dir: Path):
@@ -231,22 +34,6 @@ def check_directory(knowledge_dir: Path):
         _LOGGER.info(
             "No repo identified, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
-
-
-def assign_pull_request_size(lines_changes: int) -> str:
-    """Assign size of PR is label is not provided."""
-    if lines_changes > 1000:
-        return "XXL"
-    elif lines_changes >= 500 and lines_changes <= 999:
-        return "XL"
-    elif lines_changes >= 100 and lines_changes <= 499:
-        return "L"
-    elif lines_changes >= 30 and lines_changes <= 99:
-        return "M"
-    elif lines_changes >= 10 and lines_changes <= 29:
-        return "S"
-    elif lines_changes >= 0 and lines_changes <= 9:
-        return "XS"
 
 
 def convert_score2num(label: str) -> float:
@@ -270,7 +57,7 @@ def convert_score2num(label: str) -> float:
         return 0.01
     # lines_changes >= 0 and lines_changes <= 9:
     else:
-        _LOGGER.error("%s is not a recognized size" % label)
+        _LOGGER.error("%s is not a recognized size." % label)
 
 
 def convert_num2label(score: float) -> Tuple[str, float]:
@@ -306,11 +93,6 @@ def convert_num2label(score: float) -> Tuple[str, float]:
         assigned_score = np.mean([0.01, 0.02])
 
     else:
-        _LOGGER.error("%s cannot be mapped, it's out of range [%f, %f]" % (
-            score,
-            0.01,
-            0.9
-        )
-        )
+        _LOGGER.error("%s cannot be mapped, it's out of range [%f, %f]." % (score, 0.01, 0.9))
 
     return pull_request_size, assigned_score
