@@ -1,0 +1,30 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  labels:
+    app: srcopsmetrics
+  name: srcopsmetrics
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'srcopsmetrics:latest'
+  source:
+    git:
+      ref: master
+      uri: 'https://github.com/xtuchyna/SrcOpsMetrics.git'
+    type: Git
+  strategy:
+    sourceStrategy:
+      env:
+        - name: ENABLE_PIPENV
+          value: "1"
+        - name: THOTH_ADVISE
+          value: "0"
+      from:
+        kind: ImageStreamTag
+        name: 's2i-thoth-ubi8-py36:latest' # TODO: change to s2i thoth
+        namespace: thoth-test-core
+    type: Source
+  triggers:
+    - type: ConfigChange
