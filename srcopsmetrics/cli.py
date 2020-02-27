@@ -35,8 +35,22 @@ logging.basicConfig(level=logging.INFO)
     "--project",
     "-p",
     type=str,
-    required=True,
-    help="Project to be analyzed (e.g thoth-station/performance).",
+    required=False,
+    help="All repositories of a Project to be analyzed (e.g thoth-station)",
+)
+@click.option(
+    "--repository",
+    "-r",
+    type=str,
+    required=False,
+    help="Repository to be analysed (e.g thoth-station/performance)",
+)
+@click.option(
+    "--organization",
+    "-o",
+    type=str,
+    required=False,
+    help="All repositories of an Organization to be analysed",
 )
 @click.option(
     "--create-knowledge",
@@ -58,16 +72,27 @@ logging.basicConfig(level=logging.INFO)
     help="Visualize statistics on the project repository knowledge collected.",
 )
 @click.option(
-    "--reviewer-reccomender", "-r", is_flag=True, help="Assign reviewers based on previous knowledge collected."
+    "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
 def cli(
     project: str,
+    repository: str,
+    organization: str,
     create_knowledge: bool,
     is_local: bool,
     visualize_statistics: bool,
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
+    projects = [] if project not None else projects 
+
+    for proj in repository:
+        projec.append(proj.fullname)
+    
+    for repo in organization:
+        for proj in repo:
+            projec.append(proj.fullname)
+
     if create_knowledge:
         projects = project.split(',')
         analyse_projects(
