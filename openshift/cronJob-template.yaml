@@ -15,34 +15,34 @@ spec:
       template:
         spec:
           containers:
-          - name: srcopsmetrics
-            image: docker-registry.default.svc:5000/dtuchyna-thoth-dev/srcopsmetrics
-            env:
-              # - name: APP_FILE
-              #   value: ./srcopsmetrics/cli.py
-              - name: GITHUB_ACCESS_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics-secrets
-                    key: githubAccessToken
-              - name: THOTH_CEPH_SECRET_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics-secrets
-                    key: thothCephSecretKey
-              - name: THOTH_CEPH_KEY_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics-secrets
-                    key: thothCephKeyID
-              - name: PYTHONPATH
-                value: "."
-              - name: PREFIX
-                value: data/thoth/dtuchyna
-              - name: HOST
-                value: https://s3.upshift.redhat.com
-              - name: BUCKET
-                value: DH-DEV-DATA
-            command: ["srcopsmetrics/cli.py"]
-            args: ["-cp", "thoth-station/amun-api"]
+            - name: srcopsmetrics
+              image: docker-registry.default.svc:5000/dtuchyna-thoth-dev/srcopsmetrics
+              command: ["srcopsmetrics/cli.py", "-cp", "thoth-station/amun-api"]
+              args: ["cp thoth-station/amun-api"]
+              env:
+                # - name: APP_FILE
+                #   value: ./srcopsmetrics/cli.py
+                - name: GITHUB_ACCESS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: srcopsmetrics-secrets
+                      key: githubAccessToken
+                - name: THOTH_CEPH_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: srcopsmetrics-secrets
+                      key: thothCephSecretKey
+                - name: THOTH_CEPH_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: srcopsmetrics-secrets
+                      key: thothCephKeyID
+                - name: PYTHONPATH
+                  value: "."
+                - name: PREFIX
+                  value: data/thoth/dtuchyna
+                - name: HOST
+                  value: https://s3.upshift.redhat.com
+                - name: BUCKET
+                  value: DH-DEV-DATA
           restartPolicy: OnFailure

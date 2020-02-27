@@ -23,7 +23,7 @@ spec:
           value: "0"
       from:
         kind: ImageStreamTag
-        name: 's2i-thoth-ubi8-py36:latest' # TODO: change to s2i thoth
+        name: 's2i-thoth-ubi8-py36:latest'
         namespace: thoth-test-core
     type: Source
   triggers:
