@@ -34,6 +34,7 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--project",
     "-p",
+    envvar="PROJECTS",
     type=str,
     required=True,
     help="Project to be analyzed (e.g thoth-station/performance).",
@@ -41,6 +42,7 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--create-knowledge",
     "-c",
+    envvar="CREATE_KNOWLEDGE",
     is_flag=True,
     help="Create knowledge from a project repository.",
 )
