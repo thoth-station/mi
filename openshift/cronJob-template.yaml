@@ -17,8 +17,8 @@ spec:
           containers:
             - name: srcopsmetrics
               image: docker-registry.default.svc:5000/dtuchyna-thoth-dev/srcopsmetrics
-              command: ["srcopsmetrics/cli.py", "-cp", "thoth-station/amun-api"]
-              args: ["cp thoth-station/amun-api"]
+              command: ["srcopsmetrics/cli.py"]
+              args: ["-cp", "thoth-station/amun-api"]
               env:
                 # - name: APP_FILE
                 #   value: ./srcopsmetrics/cli.py
@@ -40,9 +40,18 @@ spec:
                 - name: PYTHONPATH
                   value: "."
                 - name: PREFIX
-                  value: data/thoth/dtuchyna
+                  valueFrom:
+                    configMapKeyRef:
+                      name: srcopsmetrics-config
+                      key: prefix
                 - name: HOST
-                  value: https://s3.upshift.redhat.com
+                  valueFrom:
+                    configMapKeyRef:
+                      name: srcopsmetrics-config
+                      key: host
                 - name: BUCKET
-                  value: DH-DEV-DATA
+                  valueFrom:
+                    configMapKeyRef:
+                      name: srcopsmetrics-config
+                      key: bucket
           restartPolicy: OnFailure
