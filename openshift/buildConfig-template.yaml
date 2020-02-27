@@ -12,7 +12,7 @@ spec:
   source:
     git:
       ref: master
-      uri: 'https://github.com/xtuchyna/SrcOpsMetrics.git'
+      uri: 'https://github.com/AICoE/SrcOpsMetrics.git'
     type: Git
   strategy:
     sourceStrategy:
