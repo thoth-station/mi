@@ -25,19 +25,14 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.bot_knowledge import visualize_project_results
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 
+from github import Github
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
 
+_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 @click.command()
-@click.option(
-    "--project",
-    "-p",
-    type=str,
-    required=False,
-    help="All repositories of a Project to be analyzed (e.g thoth-station)",
-)
 @click.option(
     "--repository",
     "-r",
@@ -75,7 +70,6 @@ logging.basicConfig(level=logging.INFO)
     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
 def cli(
-    project: str,
     repository: str,
     organization: str,
     create_knowledge: bool,
@@ -84,19 +78,20 @@ def cli(
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
-    projects = [] if project not None else projects 
-
-    for proj in repository:
-        projec.append(proj.fullname)
+    repos = []
+    gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
     
-    for repo in organization:
-        for proj in repo:
-            projec.append(proj.fullname)
+    if repository is not None:
+        repos.append(gh.get_repo(repository).full_name)
 
+    if organization is not None:
+        for r in gh.get_organization(organization).get_repos():
+            repos.append(r.full_name)
+
+    _LOGGER.info("Overall repositories found: %d" % len(repos))
     if create_knowledge:
-        projects = project.split(',')
         analyse_projects(
-            projects=[repo.split("/") for repo in projects],
+            projects=[repo.split("/") for repo in repos],
             is_local=is_local
         )
 
