@@ -97,7 +97,8 @@ def cli(
         )
 
     if visualize_statistics:
-        visualize_project_results(project=project, is_local=is_local)
+        for project in repos:
+            visualize_project_results(project=project, is_local=is_local)
 
     if reviewer_reccomender:
         reviewer_assigner = ReviewerAssigner()
