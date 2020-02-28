@@ -32,6 +32,7 @@ logging.basicConfig(level=logging.INFO)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
+
 @click.command()
 @click.option(
     "--repository",
@@ -80,7 +81,7 @@ def cli(
     """Command Line Interface for SrcOpsMetrics."""
     repos = []
     gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
-    
+
     if repository is not None:
         repos.append(gh.get_repo(repository).full_name)
 
