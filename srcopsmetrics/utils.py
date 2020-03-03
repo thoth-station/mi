@@ -101,7 +101,7 @@ def convert_num2label(score: float) -> Tuple[str, float]:
 
 
 def get_repositories(repository: str = None, organization: str = None) -> List[str]:
-    """Get overall repositories to be inspected
+    """Get overall repositories to be inspected.
 
     :param repository:str:
     :param organization:str:
