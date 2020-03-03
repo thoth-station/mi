@@ -52,6 +52,7 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 @click.option(
     "--create-knowledge",
     "-c",
+    envvar="CREATE_KNOWLEDGE",
     is_flag=True,
     help="Create knowledge from a project repository.",
 )
