@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: srcopsmetrics
+  labels:
+    app: srcopsmetrics
+  annotations:
+    thoth-station.ninja/template-version: 0.1.0
+    description: >
+      SrcOpsMetrics CronJob, collects data about all projects found
+      in AICoE organization and thoth-station repository
+    openshift.io/display-name: 'Knowledge Cronjob'
+    version: 0.0.1
+    tags: srcopsmetrics
+    template.openshift.io/long-description: >
+      SrcOpsMetrics CronJob, collects data about all projects found
+      in AICoE organization and thoth-station repository.
+    template.openshift.io/provider-display-name: Red Hat, Inc
+
+objects:
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      name: srcopsmetrics
+      labels:
+        app: srcopsmetrics
+      annotations:
+        thoth-station.ninja/template-version: 0.1.0
+    spec:
+      lookupPolicy:
+        local: false

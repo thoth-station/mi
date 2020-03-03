@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: srcopsmetrics
+  labels:
+    app: srcopsmetrics
+  annotations:
+    thoth-station.ninja/template-version: 0.1.0
+    description: >
+      SrcOpsMetrics CronJob, collects data about all projects found
+      in AICoE organization and thoth-station repository
+    openshift.io/display-name: 'Knowledge Cronjob'
+    version: 0.0.1
+    tags: srcopsmetrics
+    template.openshift.io/long-description: >
+      SrcOpsMetrics CronJob, collects data about all projects found
+      in AICoE organization and thoth-station repository.
+    template.openshift.io/provider-display-name: Red Hat, Inc.
+
+parameters:
+  - description: Registry the ImageStream to be use lives in
+    displayName: ImageStream Registry
+    required: true
+    name: IMAGE_STREAM_REGISTRY
+    value: "docker-registry.default.svc:5000"
+
+  - description: Project the ImageStream to be use lives in
+    displayName: ImageStream Project
+    required: true
+    name: IMAGE_STREAM_NAMESPACE
+    value: "dtuchyna-thoth-dev"
+
+  - description: Tag of the ImageStream to be use
+    displayName: ImageStream Tag
+    required: true
+    name: IMAGE_STREAM_TAG
+    value: "latest"
+
+objects:
+  - kind: CronJob
+    apiVersion: batch/v1beta1
+    metadata:
+      name: srcopsmetrics
+      labels:
+        app: srcopsmetrics
+      annotations:
+        thoth-station.ninja/template-version: 0.1.0
+    spec:
+      schedule: "0 0 * * 0"
+      jobTemplate:
+        metadata:
+          name: srcopsmetrics
+        spec:
+          template:
+            spec:
+              containers:
+                - image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+                  name: srcopsmetrics
+                  command: ["srcopsmetrics/cli.py"]
+                  args: ["-cp", "thoth-station/amun-api"]
+                  env:
+                    # - name: APP_FILE
+                    #   value: ./srcopsmetrics/cli.py
+                    - name: GITHUB_ACCESS_TOKEN
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics-secrets
+                          key: githubAccessToken
+                    - name: THOTH_CEPH_SECRET_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics-secrets
+                          key: thothCephSecretKey
+                    - name: THOTH_CEPH_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics-secrets
+                          key: thothCephKeyID
+                    - name: PYTHONPATH
+                      value: "."
+                    - name: PREFIX
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics-config
+                          key: prefix
+                    - name: HOST
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics-config
+                          key: host
+                    - name: BUCKET
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics-config
+                          key: bucket
+              restartPolicy: OnFailure
