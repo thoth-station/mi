@@ -24,6 +24,7 @@ import os
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.bot_knowledge import visualize_project_results
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
+from srcopsmetrics.utils import get_repositories
 
 from github import Github
 
@@ -79,17 +80,7 @@ def cli(
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
-    repos = []
-    gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
-
-    if repository is not None:
-        repos.append(gh.get_repo(repository).full_name)
-
-    if organization is not None:
-        for r in gh.get_organization(organization).get_repos():
-            repos.append(r.full_name)
-
-    _LOGGER.info("Overall repositories found: %d" % len(repos))
+    repos = get_repositories(repository=repository, organization=organization)
     if create_knowledge:
         analyse_projects(
             projects=[repo.split("/") for repo in repos],

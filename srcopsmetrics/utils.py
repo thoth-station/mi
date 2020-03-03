@@ -22,8 +22,10 @@ import os
 
 import numpy as np
 
-from typing import Tuple
+from typing import Tuple, List
 from pathlib import Path
+from github import Github
+from github_knowledge import _GITHUB_ACCESS_TOKEN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,3 +98,25 @@ def convert_num2label(score: float) -> Tuple[str, float]:
         _LOGGER.error("%s cannot be mapped, it's out of range [%f, %f]." % (score, 0.01, 0.9))
 
     return pull_request_size, assigned_score
+
+
+def get_repositories(repository: str = None, organization: str = None) -> List[str]:
+    """Get overall repositories to be inspected
+
+    :param repository:str:
+    :param organization:str:
+
+    :rtype: List of all repositories (repository + repositories in organization)
+    """
+    repos = []
+    gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
+
+    if repository is not None:
+        repos.append(gh.get_repo(repository).full_name)
+
+    if organization is not None:
+        for r in gh.get_organization(organization).get_repos():
+            repos.append(r.full_name)
+
+    _LOGGER.info("Overall repositories found: %d" % len(repos))
+    return repos
