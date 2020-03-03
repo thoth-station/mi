@@ -23,8 +23,8 @@ import os
 
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.bot_knowledge import visualize_project_results
+from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
-from srcopsmetrics.utils import get_repositories
 
 from github import Github
 
@@ -81,7 +81,7 @@ def cli(
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
-    repos = get_repositories(repository=repository, organization=organization)
+    repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
     if create_knowledge:
         analyse_projects(
             projects=[repo.split("/") for repo in repos],
