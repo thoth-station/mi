@@ -26,12 +26,9 @@ from srcopsmetrics.bot_knowledge import visualize_project_results
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 
-from github import Github
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
-
-_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 
 @click.command()
