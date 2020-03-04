@@ -24,8 +24,7 @@ import numpy as np
 
 from typing import Tuple, List
 from pathlib import Path
-from github import Github
-from github_knowledge import _GITHUB_ACCESS_TOKEN
+
 
 _LOGGER = logging.getLogger(__name__)
 

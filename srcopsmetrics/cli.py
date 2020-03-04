@@ -88,13 +88,13 @@ def cli(
             is_local=is_local
         )
 
-    if visualize_statistics:
-        for project in repos:
+    for project in repos:
+        if visualize_statistics:
             visualize_project_results(project=project, is_local=is_local)
 
-    if reviewer_reccomender:
-        reviewer_assigner = ReviewerAssigner()
-        reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+        if reviewer_reccomender:
+            reviewer_assigner = ReviewerAssigner()
+            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
 
 if __name__ == "__main__":

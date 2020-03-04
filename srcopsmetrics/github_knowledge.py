@@ -88,7 +88,10 @@ class GitHubKnowledge:
             repos.append(gh.get_repo(repository).full_name)
 
         if organization is not None:
-            for r in gh.get_organization(organization).get_repos():
+            repositories = gh.get_organization(organization).get_repos()
+            if repositories.totalCount == 0:
+                _LOGGER.warn("Organization does not contain any repository")
+            for r in repositories:
                 repos.append(r.full_name)
 
         _LOGGER.info("Overall repositories found: %d" % len(repos))
