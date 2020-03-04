@@ -23,6 +23,7 @@ import os
 
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.bot_knowledge import visualize_project_results
+from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 
 
@@ -32,12 +33,18 @@ logging.basicConfig(level=logging.INFO)
 
 @click.command()
 @click.option(
-    "--project",
-    "-p",
-    envvar="PROJECTS",
+    "--repository",
+    "-r",
     type=str,
-    required=True,
-    help="Project to be analyzed (e.g thoth-station/performance).",
+    required=False,
+    help="Repository to be analysed (e.g thoth-station/performance)",
+)
+@click.option(
+    "--organization",
+    "-o",
+    type=str,
+    required=False,
+    help="All repositories of an Organization to be analysed",
 )
 @click.option(
     "--create-knowledge",
@@ -60,29 +67,31 @@ logging.basicConfig(level=logging.INFO)
     help="Visualize statistics on the project repository knowledge collected.",
 )
 @click.option(
-    "--reviewer-reccomender", "-r", is_flag=True, help="Assign reviewers based on previous knowledge collected."
+    "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
 def cli(
-    project: str,
+    repository: str,
+    organization: str,
     create_knowledge: bool,
     is_local: bool,
     visualize_statistics: bool,
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
+    repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
     if create_knowledge:
-        projects = project.split(',')
         analyse_projects(
-            projects=[repo.split("/") for repo in projects],
+            projects=[repo.split("/") for repo in repos],
             is_local=is_local
         )
 
-    if visualize_statistics:
-        visualize_project_results(project=project, is_local=is_local)
+    for project in repos:
+        if visualize_statistics:
+            visualize_project_results(project=project, is_local=is_local)
 
-    if reviewer_reccomender:
-        reviewer_assigner = ReviewerAssigner()
-        reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+        if reviewer_reccomender:
+            reviewer_assigner = ReviewerAssigner()
+            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
 
 if __name__ == "__main__":
