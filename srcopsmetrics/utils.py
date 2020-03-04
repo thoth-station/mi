@@ -25,7 +25,6 @@ import numpy as np
 from typing import Tuple
 from pathlib import Path
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
