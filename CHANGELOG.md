@@ -128,3 +128,27 @@ all the things that you see...
 * Satisfy coala
 * Fix TTCI measurement metrics and storage
 * Add TTCI plots for visualization
+
+## Release 1.0.1 (2020-03-10T19:42:51)
+* :pushpin: Automatic update of dependency matplotlib from 3.2.0rc3 to 3.2.0
+* Remove unnecessary line
+* Clear more unused stuff
+* Remove unused imports, add warning, fix cli reccomender
+* Move get_repositories to github_knowledge
+* satisfy coala
+* Move get_repositories to utisl
+* satisfy coala
+* Add secret & configmap template
+* Add templates for build and imgStream
+* Fix viz in cli for orgs and repos
+* Satisfy coala
+* Add cronjob template
+* Remove project, implement org and repo option
+* Add annotations for reminding templates
+* Add description and change ninja templ version
+* Add skelet for various entities
+* Add configMap configurations
+* Fix template intendation structure
+* Add yaml configs for openshift
+* Add envvars options to cli tool
+* Add yamls for openshift cronjob
