@@ -162,7 +162,7 @@ class GitHubKnowledgeStore:
     @staticmethod
     def load_locally(file_path: Path) -> json:
         """Load knowledge file from local storage."""
-        _LOGGER.info("Loading knowledge locally...")
+        _LOGGER.info("Loading knowledge locally")
         if not file_path.exists() or os.path.getsize(file_path) == 0:
             _LOGGER.debug("Knowledge %s not found locally" % file_path)
             return None

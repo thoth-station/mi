@@ -254,7 +254,7 @@ class GitHubKnowledge:
             is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
-        
+
         return accumulated
 
     @staticmethod
