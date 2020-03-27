@@ -47,15 +47,17 @@ def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) ->
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
-        _LOGGER.info("######################## Start analysis %s ########################" % "/".join(project))
+        _LOGGER.info("######################## Analysing %s ########################\n" % "/".join(project))
         github_repo = github_knowledge.connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
+        _LOGGER.info("Issues inspection")
         github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
+
+        _LOGGER.info("Pull requests inspection")
         github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
-        _LOGGER.info("######################## Analysis ended ########################")
 
 
 def visualize_project_results(project: str, is_local: bool = False):

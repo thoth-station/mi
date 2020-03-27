@@ -60,9 +60,9 @@ class GitHubKnowledgeStore:
         """Initialize with previous and new knowledge of an entity."""
         self.is_local = is_local
         if is_local:
-            _LOGGER.info("Use local for knowledge loading and storing.")
+            _LOGGER.debug("Use local for knowledge loading and storing.")
         else:
-            _LOGGER.info("Use Ceph for knowledge loading and storing.")
+            _LOGGER.debug("Use Ceph for knowledge loading and storing.")
 
         self.entity_type = entity_type
         self.new_entities = new_entities
@@ -164,6 +164,7 @@ class GitHubKnowledgeStore:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally...")
         if not file_path.exists() or os.path.getsize(file_path) == 0:
+            _LOGGER.debug("Knowledge %s not found locally" % file_path)
             return None
         with open(file_path, "r") as f:
             data = json.load(f)
@@ -172,9 +173,9 @@ class GitHubKnowledgeStore:
 
     def load_remotely(self, file_path: Path) -> json:
         """Load knowledge file from Ceph storage."""
-        _LOGGER.info("Loading knowledge from Ceph...")
+        _LOGGER.info("Loading knowledge from Ceph")
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
             return self.get_ceph_store().retrieve_document(ceph_filename)["results"]
         except NotFoundError:
-            _LOGGER.info("Knowledge %s not found on Ceph" % file_path)
+            _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
