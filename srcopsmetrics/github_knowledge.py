@@ -186,8 +186,8 @@ class GitHubKnowledge:
         if len(only_new_ids) == 0:
             _LOGGER.info("No new knowledge found for update")
         else:
+            _LOGGER.info("Update with %s new IDs" % len(new_knowledge_ids))
             _LOGGER.debug("New ids to be examined are %s" % only_new_ids)
-
         return [x for x in new_data if x.number in only_new_ids]
 
     @staticmethod
@@ -254,6 +254,7 @@ class GitHubKnowledge:
             is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
+
         return accumulated
 
     @staticmethod
@@ -383,6 +384,7 @@ class GitHubKnowledge:
             is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
+
         return accumulated
 
     def analyse_entity(self, github_repo: str, project_path: str, github_type: str, is_local: bool = False):
@@ -408,3 +410,6 @@ class GitHubKnowledge:
             new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
             if new_knowledge is not None:
                 store.save_knowledge(path, new_knowledge)
+                _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
+            else:
+                _LOGGER.info("repository has 0 entities of type %s\n" % github_type)
