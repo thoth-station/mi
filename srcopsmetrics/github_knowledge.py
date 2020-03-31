@@ -214,7 +214,7 @@ class GitHubKnowledge:
 
         labels = [label.name for label in issue.get_labels()]
 
-        data[issue.number] = {
+        data[str(issue.number)] = {
             "created_by": issue.user.login,
             "created_at": issue.created_at.timestamp(),
             "closed_by": issue.closed_by.login,
