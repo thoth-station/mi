@@ -22,6 +22,7 @@ import logging
 import os
 import time
 from datetime import datetime
+<<<<<<< HEAD
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
@@ -33,6 +34,14 @@ from github import PullRequest
 from github import PullRequestReview
 from github import PaginatedList
 from github import ContentFile
+=======
+from os import stat
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+
+from github import (Github, GithubObject, Issue, IssueComment, PaginatedList,
+                    PullRequest, PullRequestReview)
+>>>>>>> init commit, raw ideas in code
 from github.Repository import Repository
 
 from srcopsmetrics.enums import EntityTypeEnum
@@ -234,6 +243,7 @@ class GitHubKnowledge:
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": self.get_non_standalone_labels(labels),
             "interactions": self.get_interactions(issue.get_comments()),
+            "state": issue.state,
         }
 
         # TODO: think about saving comments
@@ -253,7 +263,11 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
+<<<<<<< HEAD
         current_issues = [issue for issue in repository.get_issues(state='all') if issue.pull_request is None]
+=======
+        current_issues = [issue for issue in repository.get_issues() if issue.pull_request is None]
+>>>>>>> init commit, raw ideas in code
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -431,7 +445,11 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
+<<<<<<< HEAD
         current_pulls = repository.get_pulls(state='all')
+=======
+        current_pulls = repository.get_pulls()
+>>>>>>> init commit, raw ideas in code
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
