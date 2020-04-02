@@ -70,7 +70,7 @@ objects:
                       valueFrom:
                         configMapKeyRef:
                           name: srcopsmetrics
-                          key: bucket
+                          key: host
                     - name: CEPH_BUCKET
                       valueFrom:
                         configMapKeyRef:
@@ -80,7 +80,7 @@ objects:
                       valueFrom:
                         configMapKeyRef:
                           name: srcopsmetrics
-                          key: bucket
+                          key: prefix
                     - name: CEPH_SECRET_KEY
                       valueFrom:
                         secretKeyRef:

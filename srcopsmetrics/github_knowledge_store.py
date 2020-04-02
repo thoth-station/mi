@@ -78,9 +78,6 @@ class GitHubKnowledgeStore:
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Context manager exit method."""
-        print("exc_type", exc_type)
-        print("exc_value", exc_value)
-        print("traceback", traceback)
         if exc_type is not None:
             _LOGGER.info("Problem occured, current state of the knowledge saved.")
         return self.accumulator
@@ -130,7 +127,13 @@ class GitHubKnowledgeStore:
 
     def get_ceph_store(self) -> CephStore:
         """Establish a connection to the CEPH."""
-        s3 = CephStore(key_id=self._KEY_ID, secret_key=self._SECRET_KEY, prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET)
+        s3 = CephStore(
+            key_id=self._KEY_ID,
+            secret_key=self._SECRET_KEY,
+            prefix=self._PREFIX,
+            host=self._HOST,
+            bucket=self._BUCKET
+        )
         s3.connect()
         return s3
 

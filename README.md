@@ -14,18 +14,46 @@ Pre-Usage
 Usage - Create Bot Knowledge
 ============================
 
-1. You can extract knowledge from a project using the following command:
+1. You can extract knowledge from a repository using the following command:
 
 .. code-block:: console
 
-    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -c True
+    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run srcopsmetrics/cli.py --repository <repo_name> -c
+
+2. You can extract knowledge from a organization using the following command:
+
+.. code-block:: console
+
+    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run srcopsmetrics/cli.py --organization <org_name> -c
+
+Usage - Storing Knowledge
+====================================
+
+By default the cli will try to store the bot knowledge on Ceph.
+In order to store on Ceph you need to provide the following env variables:
+
+- `S3_ENDPOINT_URL` Ceph Host name where knowledge is stored.
+- `CEPH_BUCKET` Ceph Bucket name where knowledge is stored.
+- `CEPH_BUCKET_PREFIX` Ceph Prefix where knowledge is stored.
+- `CEPH_KEY_ID` Ceph Key ID
+- `CEPH_SECRET_KEY` Ceph Secret Key
+
+If you want to test locally you have also the option to store locally without providing any parameter adding `-l` flag:
+
+.. code-block:: console
+
+    GITHUB_ACCESS_TOKEN=<github_acess_token> PYTHONPATH=. pipenv run srcopsmetrics/cli.py --repository <repo_name> -c -l
 
 Usage - Visualize Project Statistics
 ====================================
 
 .. code-block:: console
 
-    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -v True
+    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --repository <repo_name> -v
+
+.. code-block:: console
+
+    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --organization <org_name> -v
 
 Examples
 =========

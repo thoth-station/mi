@@ -227,12 +227,12 @@ class GitHubKnowledge:
         # would it be valuable?
 
     def analyse_issues(
-        self, project: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
+        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
     ) -> Dict[str, Any]:
         """Analyse of every closed issue in repository.
 
         Arguments:
-            project {Repository} -- currently the PyGithub lib is used because of its functionality
+            repository {Repository} -- currently the PyGithub lib is used because of its functionality
                                     ogr unfortunatelly did not provide enough to properly analyze issues
 
             prev_knowledge {Dict[str, Any]} -- previous knowledge stored
@@ -240,7 +240,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
+        current_issues = [issue for issue in repository.get_issues(state="closed") if issue.pull_request is None]
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -358,19 +358,19 @@ class GitHubKnowledge:
         }
 
     def analyse_pull_requests(
-        self, project: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
+        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
     ) -> Dict[str, Any]:
         """Analyse every closed pull_request in repository.
 
         Arguments:
-            project {Repository} -- currently the PyGithub lib is used because of its functionality
+            repository {Repository} -- currently the PyGithub lib is used because of its functionality
                                     ogr unfortunatelly did not provide enough to properly analyze issues
 
             prev_knowledge {Dict[str, Any]} -- previous knowledge stored
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-        current_pulls = project.get_pulls(state="closed")
+        current_pulls = repository.get_pulls(state="closed")
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:

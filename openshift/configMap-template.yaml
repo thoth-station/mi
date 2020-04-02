@@ -22,8 +22,8 @@ parameters:
     name: CEPH_BUCKET
     value: DH-DEV-DATA
 
-  - description: Ceph Host name where knowledge is stored.
-    displayName: Ceph Host (endpoint)
+  - description: Ceph Host URL where knowledge is stored.
+    displayName: Ceph Host (endpoint URL)
     required: true
     name: S3_ENDPOINT_URL
     value: https://s3.upshift.redhat.com
