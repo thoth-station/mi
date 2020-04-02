@@ -19,19 +19,19 @@ parameters:
   - description: Ceph Bucket name where knowledge is stored.
     displayName: Ceph Bucket
     required: true
-    name: BUCKET
+    name: CEPH_BUCKET
     value: DH-DEV-DATA
 
   - description: Ceph Host name where knowledge is stored.
     displayName: Ceph Host (endpoint)
     required: true
-    name: HOST
+    name: S3_ENDPOINT_URL
     value: https://s3.upshift.redhat.com
 
   - description: Ceph Prefix where knowledge is stored.
     displayName: Ceph Prefix
     required: true
-    name: PREFIX
+    name: CEPH_BUCKET_PREFIX
     value: data/thoth/dtuchyna
 
 objects:
@@ -42,6 +42,6 @@ objects:
       labels:
         app: srcopsmetrics
     data:
-      bucket: ${BUCKET}
-      host: ${HOST}
-      prefix: ${PREFIX}
+      bucket: ${CEPH_BUCKET}
+      host: ${S3_ENDPOINT_URL}
+      prefix: ${CEPH_BUCKET_PREFIX}

@@ -44,9 +44,12 @@ class GitHubKnowledgeStore:
 
     _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests"}
 
-    _PREFIX = os.getenv("PREFIX")
-    _HOST = os.getenv("HOST")
-    _BUCKET = os.getenv("BUCKET")
+    _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+    _KEY_ID = os.getenv("CEPH_KEY_ID")
+    _SECRET_KEY = os.getenv("CEPH_SECRET_KEY")
+    _PREFIX = os.getenv("CEPH_BUCKET_PREFIX")
+    _HOST = os.getenv("S3_ENDPOINT_URL")
+    _BUCKET = os.getenv("CEPH_BUCKET")
 
     def __init__(
         self,
@@ -73,16 +76,19 @@ class GitHubKnowledgeStore:
         """Context manager enter method."""
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         """Context manager exit method."""
-        if type is not None:
+        print("exc_type", exc_type)
+        print("exc_value", exc_value)
+        print("traceback", traceback)
+        if exc_type is not None:
             _LOGGER.info("Problem occured, current state of the knowledge saved.")
         return self.accumulator
 
     def store(self):
         """Iterate through entities of given repository and accumulate them."""
+        github = Github(self._GITHUB_ACCESS_TOKEN)
         for idx, entity in enumerate(self.new_entities, 1):
-            github = Github(os.getenv("GITHUB_ACCESS_TOKEN"))
             remaining = github.rate_limiting[0]
 
             if remaining <= API_RATE_MINIMAL_REMAINING:
@@ -124,7 +130,7 @@ class GitHubKnowledgeStore:
 
     def get_ceph_store(self) -> CephStore:
         """Establish a connection to the CEPH."""
-        s3 = CephStore(prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET)
+        s3 = CephStore(key_id=self._KEY_ID, secret_key=self._SECRET_KEY, prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET)
         s3.connect()
         return s3
 

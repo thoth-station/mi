@@ -65,32 +65,32 @@ objects:
                       valueFrom:
                         secretKeyRef:
                           name: srcopsmetrics
-                          key: githubAccessToken
-                    - name: THOTH_CEPH_SECRET_KEY
-                      valueFrom:
-                        secretKeyRef:
-                          name: srcopsmetrics
-                          key: thothCephSecretKey
-                    - name: THOTH_CEPH_KEY_ID
-                      valueFrom:
-                        secretKeyRef:
-                          name: srcopsmetrics
-                          key: thothCephKeyID
-                    - name: PYTHONPATH
-                      value: "."
-                    - name: PREFIX
-                      valueFrom:
-                        configMapKeyRef:
-                          name: srcopsmetrics
-                          key: prefix
-                    - name: HOST
-                      valueFrom:
-                        configMapKeyRef:
-                          name: srcopsmetrics
-                          key: host
-                    - name: BUCKET
+                          key: github-access-token
+                    - name: S3_ENDPOINT_URL
                       valueFrom:
                         configMapKeyRef:
                           name: srcopsmetrics
                           key: bucket
+                    - name: CEPH_BUCKET
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics
+                          key: bucket
+                    - name: CEPH_BUCKET_PREFIX
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics
+                          key: bucket
+                    - name: CEPH_SECRET_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics
+                          key: ceph-secret-key
+                    - name: CEPH_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics
+                          key: ceph-key-id
+                    - name: PYTHONPATH
+                      value: "."
               restartPolicy: OnFailure

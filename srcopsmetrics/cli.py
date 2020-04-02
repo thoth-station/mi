@@ -21,6 +21,8 @@ import logging
 import click
 import os
 
+from typing import Optional
+
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.bot_knowledge import visualize_project_results
 from srcopsmetrics.github_knowledge import GitHubKnowledge
@@ -70,8 +72,8 @@ logging.basicConfig(level=logging.INFO)
     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
 def cli(
-    repository: str,
-    organization: str,
+    repository: Optional[str],
+    organization: Optional[str],
     create_knowledge: bool,
     is_local: bool,
     visualize_statistics: bool,

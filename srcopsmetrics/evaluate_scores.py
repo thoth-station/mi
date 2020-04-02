@@ -118,7 +118,6 @@ class ReviewerAssigner:
         scores_data = []
 
         # Contributors that reviewed and that didn't reviewed
-        print(contributors)
         contributors_reviews_data = pre_processing.pre_process_contributors_data(
             data=data, contributors=[c for c in contributors if c not in BOTS_NAMES]
         )
