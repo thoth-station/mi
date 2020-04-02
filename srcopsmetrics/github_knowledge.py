@@ -73,7 +73,7 @@ class GitHubKnowledge:
         return repo
 
     @staticmethod
-    def get_repositories(repository: str = None, organization: str = None) -> List[str]:
+    def get_repositories(repository: Optional[str] = None, organization: Optional[str] = None) -> List[str]:
         """Get overall repositories to be inspected.
 
         :param repository:str:
@@ -227,21 +227,21 @@ class GitHubKnowledge:
         # would it be valuable?
 
     def analyse_issues(
-        self, project: Repository, prev_issues: Dict[str, Any], is_local: bool = False
+        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
     ) -> Dict[str, Any]:
         """Analyse of every closed issue in repository.
 
         Arguments:
-            project {Repository} -- currently the PyGithub lib is used because of its functionality
+            repository {Repository} -- currently the PyGithub lib is used because of its functionality
                                     ogr unfortunatelly did not provide enough to properly analyze issues
 
-            project_knowledge {Path} -- project directory where the issues knowledge will be stored
+            prev_knowledge {Dict[str, Any]} -- previous knowledge stored
 
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in project.get_issues(state="closed") if issue.pull_request is None]
-        new_issues = self.get_only_new_entities(prev_issues, current_issues)
+        current_issues = [issue for issue in repository.get_issues(state="closed") if issue.pull_request is None]
+        new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
             return
@@ -249,7 +249,7 @@ class GitHubKnowledge:
         with GitHubKnowledgeStore(
             entity_type=EntityTypeEnum.ISSUE.value,
             new_entities=new_issues,
-            accumulator=prev_issues,
+            accumulator=prev_knowledge,
             store_method=self.store_issue,
             is_local=is_local,
         ) as analysis:
@@ -358,20 +358,20 @@ class GitHubKnowledge:
         }
 
     def analyse_pull_requests(
-        self, project: Repository, prev_pulls: Dict[str, Any], is_local: bool = False
+        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
     ) -> Dict[str, Any]:
         """Analyse every closed pull_request in repository.
 
         Arguments:
-            project {Repository} -- currently the PyGithub lib is used because of its functionality
+            repository {Repository} -- currently the PyGithub lib is used because of its functionality
                                     ogr unfortunatelly did not provide enough to properly analyze issues
 
-            project_knowledge {Path} -- project directory where the issues knowledge will be stored
+            prev_knowledge {Dict[str, Any]} -- previous knowledge stored
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-        current_pulls = project.get_pulls(state="closed")
-        new_pulls = self.get_only_new_entities(prev_pulls, current_pulls)
+        current_pulls = repository.get_pulls(state="closed")
+        new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
             return
@@ -379,7 +379,7 @@ class GitHubKnowledge:
         with GitHubKnowledgeStore(
             entity_type=EntityTypeEnum.PULL_REQUEST.value,
             new_entities=new_pulls,
-            accumulator=prev_pulls,
+            accumulator=prev_knowledge,
             store_method=self.store_pull_request,
             is_local=is_local,
         ) as analysis:
