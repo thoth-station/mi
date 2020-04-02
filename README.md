@@ -57,15 +57,25 @@ Usage - Visualize Project Statistics
 
 Examples
 =========
-For each project is possible to obtain the following plots:
+For each repository is possible to obtain the following plots:
 
-`MTTR-in-time-<name-project>.png` --> Mean time to Review (MTTR) variation after each PR approved in time.
+`MTTFR-in-time.png` --> Mean time to First Review (MTTFR) variation after each PR approved in time.
 
-`MTTR-in-time-<name-project>-authors.png` --> Mean time to Review (MTTR) variation after each PR approved for each author in time.
+`MTTR-in-time.png` --> Mean time to Review (MTTR) variation after each PR approved in time.
 
-`thoth-station-<name-project>.png` --> Time to Review (TTR) variation after each PR approved.
+`TTCI-in-time.png` --> Time to Close an Issue (TTCI) variation after each PR approved in time.
 
-`thoth-station-<name-project>-authors.png` --> Time to Review (TTR) variation after each PR approved per reviwer.
+`TTFR-in-time.png` --> Time to First Review (TTFR) variation after each PR approved in time.
+
+`TTR-in-time.png` --> Time to Review (TTR) variation after each PR approved in time.
+
+`TTR-per-PR-length.png` --> Time to Review (TTR) variation after each PR length.
+
+`TTR-per-PR.png` --> Time to Review (TTR) variation after each PR.
+
+`TTFR-per-PR-length.png` --> Time to First Review (TTFR) variation after each PR length.
+
+`TTFR-per-PR.png` --> Time to First Review (TTFR) variation after each PR.
 
 Usage - Reviewer Reccomender
 ============================
