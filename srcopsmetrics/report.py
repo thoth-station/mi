@@ -27,28 +27,28 @@ app = Flask(__name__)
 
 def overall_entities_status(analysed_entities) -> Dict[str, int]:
         statuses = {}
-        for entity in analysed_entities:
-            if entity['status'] not in analysed_entities.keys():
-                statuses[entity['status']] = 0
-            statuses[entity['status']] += 1
+        for id in analysed_entities.keys():
+            status = 'active' if analysed_entities[id]['closed_at'] is None else 'closed'
+            if status not in statuses.keys():
+                statuses[status] = 0
+            statuses[status] += 1
         return statuses
 
 def entities(analysed_entities):
     processed = overall_entities_status(analysed_entities)
-    labels = processed.keys()
-    values = processed.values()
-    print(labels, values)
+    labels = list(processed.keys())
+    values = list(processed.values())
 
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-    fig.write_html('./templates/report.html')
+    fig.write_html(file='./srcopsmetrics/templates/report.html')
 
 @app.route('/')
 def home():
     ghs = GitHubKnowledgeStore(is_local=True)
-    knowledge = ghs.load_previous_knowledge(project_name='thoth-station/amun-api', knowledge_type='Issue')
-    print(knowledge)
+    knowledge = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='Issue')
+
     entities(analysed_entities=knowledge)
-    return render_template('./templates/report.html')
+    return render_template('./report.html')
 
 @app.route('/about')
 def about():

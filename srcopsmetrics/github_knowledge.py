@@ -234,7 +234,6 @@ class GitHubKnowledge:
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": self.get_non_standalone_labels(labels),
             "interactions": self.get_interactions(issue.get_comments()),
-            "state": issue.state,
         }
 
         # TODO: think about saving comments
@@ -254,7 +253,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in repository.get_issues() if issue.pull_request is None]
+        current_issues = [issue for issue in repository.get_issues(state='all') if issue.pull_request is None]
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -337,7 +336,6 @@ class GitHubKnowledge:
 
         # Evaluate size of PR
         pull_request_size = None
-
         if labels:
             pull_request_size = self.get_labeled_size(labels)
 
@@ -349,13 +347,10 @@ class GitHubKnowledge:
             "size": pull_request_size,
             "labels": self.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
-            "created_at": created_at,
-            # "approved_at": pr_approved,
-            # "approved_by": pr_approved_by,
-            # "time_to_approve": time_to_approve,
-            "closed_at": closed_at,
-            "closed_by": pull_request.as_issue().closed_by.login,
-            "merged_at": merged_at,
+            "created_at": pull_request.created_at.timestamp() if pull_request.created_at is not None else None,
+            "closed_at": pull_request.closed_at.timestamp() if pull_request.closed_at is not None else None,
+            "closed_by": pull_request.as_issue().closed_by.login if pull_request.as_issue().closed_by is not None else None,
+            "merged_at": pull_request.merged_at.timestamp() if pull_request.merged_at is not None else None,
             "commits_number": commits,
             "referenced_issues": self.get_referenced_issues(pull_request),
             "interactions": self.get_interactions(pull_request.get_issue_comments()),
@@ -436,7 +431,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-        current_pulls = repository.get_pulls()
+        current_pulls = repository.get_pulls(state='all')
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
