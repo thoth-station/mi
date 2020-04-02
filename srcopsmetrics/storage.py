@@ -24,13 +24,21 @@ import os
 from datetime import datetime
 from functools import partial
 from pathlib import Path
+<<<<<<< HEAD
 from typing import Any, Dict, List, Optional
+=======
+from typing import Any, Dict, Optional
+>>>>>>> add general pr/issue info section
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics import utils
 from srcopsmetrics.entity_schema import Schemas
+<<<<<<< HEAD
+=======
+from thoth.storages.exceptions import NotFoundError
+>>>>>>> add general pr/issue info section
 from srcopsmetrics.enums import EntityTypeEnum
 
 _LOGGER = logging.getLogger(__name__)
