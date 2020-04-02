@@ -17,6 +17,7 @@
 
 """Pre-processing GitHub data."""
 
+import itertools
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -542,3 +543,17 @@ class Processing:
                     issues[size] = []
                 issues[size].append(ttci)
         return issues
+
+    # def issues_active_closed(issues_data: IssueSchema) -> Dict[str, int]:
+    #     issues = {}
+    #     for issue in issues_data:
+    #         issues[issue]
+    #         prs['closed'] = 
+    #     return prs
+
+    # def pull_requests_active_merged_rejected(pr_data: PullRequestSchema) -> Dict[str, int]:
+    #     prs = {}
+    #     prs['active'] =
+    #     prs['merged'] = 
+    #     prs['rejected'] = 
+        # return prs
