@@ -82,6 +82,37 @@ def entities(analysed_entities):
 
     return go.Pie(labels=labels, values=values, hole=.3)
 
+def top_x_contributors_activity(issues, prs, x):
+    issue_creators = pre_process.pre_process_issues_creators(issues)
+    pr_creators = pre_process.pre_process_issues_creators(prs)
+    issue_closers = pre_process.pre_process_issues_closers(issues, prs)
+    # pr_reviews = pre_process.pre_process_pr_reviews(prs)
+
+    overall_stats = {}
+    for issue_creator, pr_creator, issue_closer in zip(issue_creators.keys(), pr_creators.keys(), issue_closers.keys()):
+        if issue_creator not in overall_stats.keys():
+            overall_stats[issue_creator] = 0
+        if issue_closer not in overall_stats.keys():
+            overall_stats[issue_closer] = 0
+        if pr_creator not in overall_stats.keys():
+            overall_stats[pr_creator] = 0
+        
+        overall_stats[issue_creator] += issue_creators[issue_creator]
+        overall_stats[issue_closer] += issue_closers[issue_closer]
+        overall_stats[pr_creator] += pr_creators[pr_creator]
+
+    overall_stats = sorted(list(overall_stats.items()), key = lambda contributor: contributor[1], reverse=True)
+    top_x_contributors = [el[0] for el in overall_stats[:5]]
+    data = []
+
+    data.append(go.Bar(name='issues created', x=top_x_contributors, y=[issue_creators[creator] for creator in top_x_contributors if creator in issue_creators.keys()]))
+    data.append(go.Bar(name='issues closed', x=top_x_contributors, y=[issue_closers[closer] for closer in top_x_contributors if closer in issue_closers.keys()]))
+    data.append(go.Bar(name='pull requests created', x=top_x_contributors, y=[pr_creators[creator] for creator in top_x_contributors if creator in pr_creators.keys()]))
+
+    fig = go.Figure(data)
+    fig.update_layout(barmode='stack', title_text=f'Top {x} active contributors')
+    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+
 def general_section(issues, prs):
     fig = make_subplots(rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]], subplot_titles=('Issues', 'Pull Requests'))
     fig.append_trace(entities(issues), row=1, col=1)
@@ -96,6 +127,14 @@ def in_time_section(issues, prs):
     fig.update_layout(title_text='in time stats')
     return fig.to_html(full_html=False, include_plotlyjs='cdn')
 
+def contributor_section(issues, pr):
+    x = 5
+    # fig = make_subplots(rows=1, cols=1, subplot_titles=(f'Top {x} active contributors', 'MTTR'))
+    # # metrics = issue closed-1 pt, issue created-1pt, pr-created-1pt, pr-review-1pt
+    # fig.append_trace(top_x_contributors_activity(issues, pr, x), row=1, col=1)
+    # fig.update_layout(title_text='top 5 active contributors')
+    return top_x_contributors_activity(issues, pr, x)
+
 def generate_report_html():
     ghs = GitHubKnowledgeStore(is_local=True)
 
@@ -105,6 +144,7 @@ def generate_report_html():
     with open('./srcopsmetrics/templates/report.html', 'w') as f:
         f.write(general_section(issues,prs))
         f.write(in_time_section(issues, prs))
+        f.write(contributor_section(issues, prs))
 
 @app.route('/')
 def home():
