@@ -19,8 +19,6 @@
 
 from voluptuous import Schema, Any
 
-<<<<<<< HEAD
-=======
 IssueSchema = Schema(
     {
         int: Schema(
@@ -36,7 +34,6 @@ IssueSchema = Schema(
         )
     }
 )
->>>>>>> init commit, raw ideas in code
 
 class Schemas:
     """Schemas that describes how knowledge should be analysed and stored."""
