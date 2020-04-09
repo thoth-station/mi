@@ -22,7 +22,6 @@ import logging
 import os
 import time
 from datetime import datetime
-<<<<<<< HEAD
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
@@ -34,14 +33,6 @@ from github import PullRequest
 from github import PullRequestReview
 from github import PaginatedList
 from github import ContentFile
-=======
-from os import stat
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
-
-from github import (Github, GithubObject, Issue, IssueComment, PaginatedList,
-                    PullRequest, PullRequestReview)
->>>>>>> init commit, raw ideas in code
 from github.Repository import Repository
 
 from srcopsmetrics.enums import EntityTypeEnum
