@@ -17,61 +17,64 @@
 
 """Schema definition for knowledge collected."""
 
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from voluptuous import Schema
+from voluptuous import Schema, Any
 
-IssuesSchema = Schema(
-    {
-        int: Schema(
-            {
-                "created_by": str,
-                "created_at": int,
-                "closed_by": str,
-                "closed_at": int,
-                "labels": List[str],
-                "interactions": Dict[str, int],
-            }
-        )
-    }
-)
+class Schemas:
 
-PullRequestReviewsSchema = Schema(
-    {
-        int: Schema(
-            {
-                "author": str,
-                "words_count": int,
-                "submitted_at": int,
-                "state": str
-            }
-        )
-    }
-)
+    Issue = Schema(
+        {
+            "created_by": str,
+            "created_at": int,
+            "closed_by": Any(str, None),
+            "closed_at": Any(int, None),
+            "labels": [str],
+            "interactions": {str: int},
+        }
+    )
 
-PullRequestsSchema = Schema(
-    {
-        int: Schema(
-            {
-                "size": str,
-                "labels": List[str],
-                "created_by": str,
-                "created_at": int,
-                # "approved_at": pr_approved,
-                # "approved_by": pr_approved_by,
-                # "time_to_approve": time_to_approve,
-                "closed_at": int,
-                "closed_by": str,
-                "merged_at": int,
-                "commits_number": int,
-                "referenced_issues": List[int],
-                "interactions": Dict[str, int],
-                "reviews": PullRequestReviewsSchema,
-                "requested_reviewers": List[str],
-            }
-        )
-    }
-)
+    Issues = Schema(
+        {
+            str: Issue,
+        }
+    )
+
+    PullRequestReview = Schema(
+        {
+            "author": str,
+            "words_count": int,
+            "submitted_at": int,
+            "state": str,
+        }
+    )
+
+    PullRequestReviews = Schema(
+        {
+            str: PullRequestReview,
+        }
+    )
+
+    PullRequest = Schema(
+        {
+            "size": str,
+            "labels": [str],
+            "created_by": str,
+            "created_at": int,
+            # "approved_at": pr_approved,
+            # "approved_by": pr_approved_by,
+            # "time_to_approve": time_to_approve,
+            "closed_at": Any(int, None),
+            "closed_by": Any(str, None),
+            "merged_at": Any(int, None),
+            "commits_number": int,
+            "referenced_issues": [int],
+            "interactions": {str: int},
+            "reviews": PullRequestReviews,
+            "requested_reviewers": [str],
+        }
+    )
+
+    PullRequests = Schema(
+        {
+            str: PullRequest,
+        }
+    )
