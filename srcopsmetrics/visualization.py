@@ -41,8 +41,8 @@ from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.enums import DeveloperActionEnum
 from srcopsmetrics.enums import StatisticalQuantityEnum
 from srcopsmetrics.pre_processing import PreProcessing
-from srcopsmetrics.entity_schema import IssueSchema
-from srcopsmetrics.entity_schema import PullRequestSchema
+from srcopsmetrics.entity_schema import IssuesSchema
+from srcopsmetrics.entity_schema import PullRequestsSchema
 
 from plotly.offline import init_notebook_mode, iplot
 
@@ -512,7 +512,7 @@ class Visualization:
         fig.show()
 
     @staticmethod
-    def _visualize_ttci_wrt_pr_length(issues_data: IssueSchema, pr_data: PullRequestSchema) -> None:
+    def _visualize_ttci_wrt_pr_length(issues_data: IssuesSchema, pr_data: PullRequestsSchema) -> None:
         """For each pull request size label visualize its TTCI.
 
         Time To Close Issue is summed with respect to all of the Issues
@@ -539,7 +539,7 @@ class Visualization:
         fig.show()
 
     def _visualize_ttci_wrt_labels(
-        self, issues_data: IssueSchema, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
+        self, issues_data: IssuesSchema, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
     ) -> None:
         """For each label visualize its Time To Close Issue.
 

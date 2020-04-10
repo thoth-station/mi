@@ -24,7 +24,7 @@ from typing import Optional
 from typing import Tuple
 from voluptuous import Schema
 
-IssueSchema = Schema(
+IssuesSchema = Schema(
     {
         int: Schema(
             {
@@ -52,7 +52,7 @@ PullRequestReviewsSchema = Schema(
     }
 )
 
-PullRequestSchema = Schema(
+PullRequestsSchema = Schema(
     {
         int: Schema(
             {
