@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SrcOpsMetrics
-# Copyright(C) 2020 Dominik Tuchyna
+# Copyright (C) 2020 Dominik Tuchyna
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""GitHub Knowledge Storage handling"""
+"""GitHub Knowledge Storage handling."""
 
 import json
 import logging
@@ -42,13 +42,15 @@ class KnowledgeStorage:
     _BUCKET = os.getenv("CEPH_BUCKET")
 
     _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests"}
-    _ENTITY_SCHEMA = {"Issue": Schemas.Issues, "PullRequest": Schemas.PullRequest}
+    _ENTITY_SCHEMA = {"Issue": Schemas.Issues,
+                      "PullRequest": Schemas.PullRequest}
 
     def __init__(self, is_local: Optional[bool] = False):
         """Initialize to behave as either local or remote storage."""
         self.is_local = is_local
 
-        _LOGGER.debug("Use %s for knowledge loading and storing." % ('local' if is_local else 'Ceph'))
+        _LOGGER.debug("Use %s for knowledge loading and storing." %
+                      ('local' if is_local else 'Ceph'))
 
     def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
         """Save collected knowledge as json.
@@ -62,13 +64,15 @@ class KnowledgeStorage:
         """
         results = {"results": data}
 
-        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+        _LOGGER.info("Saving knowledge file %s of size %d" %
+                     (os.path.basename(file_path), len(data)))
 
         if not self.is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = self.get_ceph_store()
             s3.store_document(results, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+            _LOGGER.info("Saved on CEPH at %s%s%s" %
+                         (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
                 json.dump(results, f)
@@ -104,7 +108,8 @@ class KnowledgeStorage:
             project_path = pwd.joinpath("./" + project_name)
             file_path = project_path.joinpath("./" + filename + ".json")
 
-        results = self.load_remotely(file_path) if not self.is_local else self.load_locally(file_path)
+        results = self.load_remotely(
+            file_path) if not self.is_local else self.load_locally(file_path)
 
         if results is None:
             _LOGGER.info("No previous knowledge found for %s" % project_name)
@@ -112,7 +117,8 @@ class KnowledgeStorage:
             return results
 
         _LOGGER.info(
-            "Found previous knowledge for %s with %d entities of type %s" % (project_name, len(results), knowledge_type)
+            "Found previous knowledge for %s with %d entities of type %s" % (
+                project_name, len(results), knowledge_type)
         )
 
         return results

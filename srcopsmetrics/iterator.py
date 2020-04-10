@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SrcOpsMetrics
-# Copyright(C) 2020 Francesco Murdaca, Dominik Tuchyna
+# Copyright (C) 2020 Francesco Murdaca, Dominik Tuchyna
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Used to iterate through all entities from repository"""
+"""Used to iterate through all entities from repository."""
 
 import json
 import logging
@@ -42,7 +42,8 @@ API_RATE_MINIMAL_REMAINING = 20
 class KnowledgeAnalysis:
     """Context manager that iterates through all entities in repository and collects them."""
 
-    _ENTITY_SCHEMA = {"Issue": Schemas.Issues, "PullRequest": Schemas.PullRequests}
+    _ENTITY_SCHEMA = {"Issue": Schemas.Issues,
+                      "PullRequest": Schemas.PullRequests}
 
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
     _KEY_ID = os.getenv("CEPH_KEY_ID")
@@ -85,14 +86,17 @@ class KnowledgeAnalysis:
                 remaining = github.rate_limiting[0]
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
-                    wait_time = github.rate_limiting_resettime - int(datetime.now().timestamp())
-                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
+                    wait_time = github.rate_limiting_resettime - \
+                        int(datetime.now().timestamp())
+                    _LOGGER.info(
+                        "API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
                     time.sleep(wait_time)
 
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity_type, idx, len(self.new_entities)))
+                _LOGGER.info("Analysing %s no. %d/%d" %
+                             (self.entity_type, idx, len(self.new_entities)))
 
                 self.accumulator_backup = self.accumulator
                 self.store_method(entity, self.accumulator)
