@@ -19,7 +19,9 @@
 
 from voluptuous import Schema, Any
 
+
 class Schemas:
+    """Schemas that describes how knowledge should be analysed and stored."""
 
     Issue = Schema(
         {

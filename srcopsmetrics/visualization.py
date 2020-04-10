@@ -53,7 +53,7 @@ pre_processing = PreProcessing()
 
 
 class Visualization:
-    """"Class for visualizing knowledge collected for the bot."""
+    """Class for visualizing knowledge collected for the bot."""
 
     _DEVELOPER_ACTION = {"Open": "opened", "Close": "closed"}
 

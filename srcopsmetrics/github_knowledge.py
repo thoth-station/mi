@@ -382,7 +382,9 @@ class GitHubKnowledge:
         path = project_path.joinpath("./" + filename + ".json")
 
         storage = KnowledgeStorage(is_local=is_local)
-        prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name, file_path=path, knowledge_type=github_type)
+        prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name,
+                                                         file_path=path,
+                                                         knowledge_type=github_type)
         new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
 
         if new_knowledge is not None:
@@ -390,4 +392,3 @@ class GitHubKnowledge:
             _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
         else:
             _LOGGER.info("\n")
-

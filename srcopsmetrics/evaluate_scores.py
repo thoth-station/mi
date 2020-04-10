@@ -48,7 +48,7 @@ pre_processing = PreProcessing()
 
 
 class ReviewerAssigner:
-    """"Class of methods to analyze bot knowledge for statistics about reviewers."""
+    """Class of methods to analyze bot knowledge for statistics about reviewers."""
 
     @staticmethod
     def evaluate_contributor_technical_score(contributions: List[float], weighting_factors: List[float]) -> float:

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""A base class for collecting bot knowledge from GitHub."""
+"""Used to iterate through all entities from repository"""
 
 import json
 import logging
@@ -38,8 +38,9 @@ _LOGGER = logging.getLogger(__name__)
 
 API_RATE_MINIMAL_REMAINING = 20
 
+
 class KnowledgeAnalysis:
-    """Context manager for entity storage process from GitHub."""
+    """Context manager that iterates through all entities in repository and collects them."""
 
     _ENTITY_SCHEMA = {"Issue": Schemas.Issues, "PullRequest": Schemas.PullRequests}
 
@@ -59,7 +60,6 @@ class KnowledgeAnalysis:
         store_method: Optional[str] = None,
     ):
         """Initialize with previous and new knowledge of an entity."""
-
         self.entity_type = entity_type
         self.new_entities = new_entities
         self.accumulator = accumulator
@@ -81,7 +81,7 @@ class KnowledgeAnalysis:
 
         try:
             for idx, entity in enumerate(self.new_entities, 1):
-                
+
                 remaining = github.rate_limiting[0]
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
@@ -93,7 +93,7 @@ class KnowledgeAnalysis:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
                 _LOGGER.info("Analysing %s no. %d/%d" % (self.entity_type, idx, len(self.new_entities)))
-                
+
                 self.accumulator_backup = self.accumulator
                 self.store_method(entity, self.accumulator)
 
