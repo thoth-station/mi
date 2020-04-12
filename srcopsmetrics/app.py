@@ -117,21 +117,21 @@ def top_x_contributors_activity(issues, prs, x):
 
     fig = go.Figure(data)
     fig.update_layout(barmode='stack', title_text=f'Top {x} active contributors')
-    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+    return fig
 
 def general_section(issues, prs):
     fig = make_subplots(rows=1, cols=2, specs=[[{'type':'domain'}, {'type':'domain'}]], subplot_titles=('Issues', 'Pull Requests'))
     fig.append_trace(entities(issues), row=1, col=1)
     fig.append_trace(entities(prs), row=1, col=2)
     fig.update_layout(title_text='general PR/Issue information')
-    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+    return fig
 
 def in_time_section(issues, prs):
     fig = make_subplots(rows=1, cols=2, subplot_titles=('MTTCI', 'MTTR'))
     fig.append_trace(ttci_in_time(issues), row=1, col=1)
     fig.append_trace(ttr_in_time(prs), row=1, col=2)
     fig.update_layout(title_text='in time stats')
-    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+    return fig
 
 def contributor_section(issues, pr):
     x = 5
@@ -156,15 +156,38 @@ def health_report():
             thoth-station/amun-api
         '''),
 
+        # dcc.Graph(
+        #     id='issues',
+        #     figure=entities(issues)
+        # ),
+
+        # dcc.Graph(
+        #     id='pull requests',
+        #     figure=entities(prs)
+        # ),
+        dcc.RangeSlider(
+                id='my-range-slider',
+                min=0,
+                max=20,
+                step=0.5,
+                value=[5, 15]
+        ),
+        
         dcc.Graph(
-            id='issues',
-            figure=entities(issues)
-        )
+            id='general section',
+            figure=general_section(issues, prs),
+        ),
 
         dcc.Graph(
-            id='pull requests',
-            figure=entities(prs)
-        )
+            id='top contributos',
+            figure=top_x_contributors_activity(issues, prs, 5)
+        ),
+
+        dcc.Graph(
+            id='in time',
+            figure=in_time_section(issues, prs)
+        ),
+
     ])
     return app
  
