@@ -254,11 +254,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-<<<<<<< HEAD
         current_issues = [issue for issue in repository.get_issues(state='all') if issue.pull_request is None]
-=======
-        current_issues = [issue for issue in repository.get_issues() if issue.pull_request is None]
->>>>>>> init commit, raw ideas in code
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -436,11 +432,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-<<<<<<< HEAD
         current_pulls = repository.get_pulls(state='all')
-=======
-        current_pulls = repository.get_pulls()
->>>>>>> init commit, raw ideas in code
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
