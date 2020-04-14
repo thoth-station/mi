@@ -102,6 +102,7 @@ class KnowledgeAnalysis:
                 self.store_method(entity, self.accumulator)
 
         except (GithubException, KeyboardInterrupt):
+            _LOGGER.info('Problem occured, saving cached knowledge')
             try:
                 self._ENTITY_SCHEMA[self.entity_type](self.accumulator)
                 return self.accumulator
