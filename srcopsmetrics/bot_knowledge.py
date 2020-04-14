@@ -20,7 +20,6 @@
 import logging
 import os
 import json
-import base64
 
 from typing import List
 from typing import Tuple
@@ -54,11 +53,11 @@ def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) ->
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        # _LOGGER.info("Issues inspection")
-        # github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
+        _LOGGER.info("Issues inspection")
+        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
 
-        # _LOGGER.info("Pull requests inspection")
-        # github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
+        _LOGGER.info("Pull requests inspection")
+        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
 
         _LOGGER.info("Content Files inspection")
         github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.CONTENT_FILE.value, is_local)

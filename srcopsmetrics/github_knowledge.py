@@ -394,26 +394,26 @@ class GitHubKnowledge:
         # TODO: Add all types of README extensions available
         readme_text = ""
         for content in ["README.md", "README.rst"]:
-            
+
             try:
                 readme = repository.get_contents(content)
                 encoded = readme.decoded_content
                 readme_text = encoded.decode('utf-8')
             except Exception as e:
-                print(e)
+                _LOGGER.info("%r not found for: %r" % (content, repository.full_name))
+                _LOGGER.warning(e)
 
             if readme_text:
                 break
-            
+
         if not readme_text:
             return
 
         with KnowledgeAnalysis(
-            entity_type=EntityTypeEnum.PULL_REQUEST.value,
+            entity_type=EntityTypeEnum.CONTENT_FILE.value,
             new_entities=[readme_text],
             accumulator=prev_knowledge,
             store_method=self.store_content_file,
-            is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
 
