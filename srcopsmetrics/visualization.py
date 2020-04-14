@@ -393,7 +393,7 @@ class Visualization:
         df["authors"] = overall_issue_data.keys()
         df["issues"] = overall_issue_data.values()
         fig = px.bar(df, x="authors", y="issues", title=title, color="authors")
-        fig.show()
+        return fig
 
     @staticmethod
     def _visualize_issue_interactions(overall_issues_interactions: Dict, author_login_id: str):
@@ -411,7 +411,7 @@ class Visualization:
             title=f"Interactions w.r.t. issues between {author_login_id} and the others in repository",
             color="developers",
         )
-        fig.show()
+        return fig
 
     @staticmethod
     def _visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x: int = 5):
@@ -437,13 +437,13 @@ class Visualization:
             title=f"Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>",
             color="developers",
         )
-        fig.show()
+        return fig
 
     @staticmethod
     def _visualize_issues_types_given_developer(overall_types_data: Dict, author_login_id: str, developer_action: str):
         """For given author visualize (categorically by labels) number of opened issues by him."""
         issue_types_data = overall_types_data[author_login_id]
-        action = self._DEVELOPER_ACTION[developer_action]
+        action = Visualization._DEVELOPER_ACTION[developer_action]
 
         df = pd.DataFrame()
         df["labels"] = [label for label in issue_types_data.keys()]
@@ -456,7 +456,7 @@ class Visualization:
             title=f"Overall number of {action} issues for {author_login_id} by their label",
             color="labels",
         )
-        fig.show()
+        return fig
 
     def _visualize_top_x_issues_types_wrt_developers(
         self, overall_types_data: Dict, developer_action: str, top_x: int = 5
@@ -483,7 +483,7 @@ class Visualization:
             title=f"Top {top_x} overall {action} issue types in form of <{developer_action}> -> <issue_label>",
             color="developer_label",
         )
-        fig.show()
+        return fig
 
     def _visualize_top_X_issues_types_wrt_project(
         self, overall_types_data: Dict, developer_action: str, top_x: int = 5
@@ -508,7 +508,7 @@ class Visualization:
         fig = px.bar(
             df, x="label", y="count", title=f"Top {top_x} overall {action} issue types for project", color="label"
         )
-        fig.show()
+        return fig
 
     @staticmethod
     def _visualize_ttci_wrt_pr_length(issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> None:
@@ -535,8 +535,9 @@ class Visualization:
         df["TTCI"] = ttcis
 
         fig = px.scatter(df, x="size", y="TTCI", color="size")
-        fig.show()
+        return fig
 
+    @staticmethod
     def _visualize_ttci_wrt_labels(
         self, issues_data: Schemas.Issues, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
     ) -> None:
@@ -551,7 +552,7 @@ class Visualization:
         for label in issues_labels.keys():
             processed_labels[label] = issues_labels[label][0]
 
-        statistical_method = self._STATISTICAL_FUNCTION_MAP[statistical_quantity]
+        statistical_method = Visualization._STATISTICAL_FUNCTION_MAP[statistical_quantity]
 
         df = pd.DataFrame()
         df["label"] = [label for label in processed_labels.keys()]
@@ -559,4 +560,4 @@ class Visualization:
 
         fig = px.bar(df, x="label", y="TTCI", title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
         fig.update_layout(yaxis_title="Average Time To Close Issue (hrs)", xaxis_title="Label name")
-        fig.show()
+        return fig
