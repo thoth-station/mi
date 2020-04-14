@@ -1,12 +1,27 @@
 [[source]]
-name = "pypi"
-url = "https://pypi.org/simple"
+url = "https://pypi.python.org/simple"
 verify_ssl = true
-
-[dev-packages]
-v = {editable = true,version = "*"}
+name = "pypi"
 
 [packages]
+numpy = "*"
+pygithub = "*"
+matplotlib = "*"
+pandas = "*"
+thoth-storages = "*"
+plotly = "*"
+
+[dev-packages]
+pytest = "*"
+pytest-timeout = "*"
+pytest-cov = "*"
+coala-bears = "*"
+twine = "*"
+autopep8 = "*"
+rope = "*"
 
 [requires]
 python_version = "3.6"
+
+[pipenv]
+allow_prereleases = true
