@@ -25,8 +25,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from github import (Github, GithubObject, Issue, IssueComment, PaginatedList,
-                    PullRequest, PullRequestReview)
+from github import Github
+from github import GithubObject
+from github import Issue
+from github import IssueComment
+from github import PullRequest
+from github import PullRequestReview
+from github import PaginatedList
+from github import ContentFile
 from github.Repository import Repository
 
 from srcopsmetrics.enums import EntityTypeEnum
@@ -45,7 +51,11 @@ STANDALONE_LABELS = {"size"}
 class GitHubKnowledge:
     """Class of methods entity extraction from GitHub."""
 
-    _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests"}
+    _FILENAME_ENTITY = {
+        "Issue": "issues",
+        "PullRequest": "pull_requests",
+        "ContentFile": "content_file"
+    }
 
     def connect_to_source(self, project: Tuple[str, str]) -> Repository:
         """Connect to GitHub.
@@ -352,6 +362,63 @@ class GitHubKnowledge:
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
         }
 
+    def store_content_file(self, file_content: ContentFile, results: Dict[str, Dict[str, Any]]):
+        """Analyse pull request and save its desired features to results.
+
+        Arguments:
+            file_content {ContentFile} -- Content File type to be stored.
+            results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
+                                                PRs are stored and where the given PR
+                                                will be stored.
+        """
+        results["content_files"] = {
+            "readme": file_content,
+        }
+
+    def analyse_content_files(
+        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
+    ) -> Dict[str, Any]:
+        """Analyse content files in repository.
+
+        Arguments:
+            repository {Repository} -- currently the PyGithub lib is used because of its functionality
+                                    ogr unfortunatelly did not provide enough to properly analyze issues
+
+            prev_knowledge {Dict[str, Any]} -- previous knowledge stored.
+
+            is_local -- flag to state if the knowledge should be collected locally or on Ceph.
+        """
+        _LOGGER.info("-------------Content Files Analysis-------------")
+
+        # TODO: Extend to all types of files. Currently only README are considered.
+        # TODO: Add all types of README extensions available
+        readme_text = ""
+        for content in ["README.md", "README.rst"]:
+            
+            try:
+                readme = repository.get_contents(content)
+                encoded = readme.decoded_content
+                readme_text = encoded.decode('utf-8')
+            except Exception as e:
+                print(e)
+
+            if readme_text:
+                break
+            
+        if not readme_text:
+            return
+
+        with KnowledgeAnalysis(
+            entity_type=EntityTypeEnum.PULL_REQUEST.value,
+            new_entities=[readme_text],
+            accumulator=prev_knowledge,
+            store_method=self.store_content_file,
+            is_local=is_local,
+        ) as analysis:
+            accumulated = analysis.store()
+
+        return accumulated
+
     def analyse_pull_requests(
         self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
     ) -> Dict[str, Any]:
@@ -387,11 +454,14 @@ class GitHubKnowledge:
         Arguments:
             github_repo {str} -- Github repo that will be analysed
             project_path {str} -- The main directory where the knowledge will be stored
-            github_type {str} -- Currently can be only "Issue" or "PullRequest"
+            github_type {str} -- Currently can be: "Issue", "PullRequest", "ContentFile"
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
         """
-        _METHOD_ANALYSIS_ENTITY = {"Issue": self.analyse_issues, "PullRequest": self.analyse_pull_requests}
-
+        _METHOD_ANALYSIS_ENTITY = {
+            "Issue": self.analyse_issues,
+            "PullRequest": self.analyse_pull_requests,
+            "ContentFile": self.analyse_content_files
+        }
         filename = self._FILENAME_ENTITY[github_type]
         analyse = _METHOD_ANALYSIS_ENTITY[github_type]
 
