@@ -22,7 +22,6 @@ import dash_html_components as html
 from typing import Dict
 
 import plotly.graph_objects as go
-from flask import Flask, render_template
 from pbr.packaging import append_text_list
 from plotly.graph_objects import Scatter
 from plotly.subplots import make_subplots
@@ -33,10 +32,10 @@ from srcopsmetrics.pre_processing import PreProcessing
 
 pre_process = PreProcessing()
 
-app = Flask(__name__)
-
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app.config.suppress_callback_exceptions = True
 
 def ttr_in_time(analysed_entities):
     for id in list(analysed_entities.keys()):
@@ -141,13 +140,17 @@ def contributor_section(issues, pr):
     # fig.update_layout(title_text='top 5 active contributors')
     return top_x_contributors_activity(issues, pr, x)
 
-def health_report():
+def health_report(app):
     ghs = GitHubKnowledgeStore(is_local=True)
 
     issues = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='Issue')
+
     prs = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='PullRequest')
     
-    app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+    # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+    pr_creators = pre_process.pre_process_issues_creators(prs)
+    issue_creators = pre_process.pre_process_issues_creators(issues)
 
     app.layout = html.Div(children=[
         html.H1(children='Repository Health report'),
@@ -170,7 +173,7 @@ def health_report():
                 min=0,
                 max=20,
                 step=0.5,
-                value=[5, 15]
+                value=[5, 15],
         ),
         
         dcc.Graph(
@@ -188,7 +191,65 @@ def health_report():
             figure=in_time_section(issues, prs)
         ),
 
+        dcc.Graph(
+            figure=visualization._visualize_ttci_wrt_labels(issues_data=issues)
+        ),
+
+        # dcc.Graph(
+        #     visualifrom flask import Flask, render_template
+
+        # ),
+
+
+        dcc.Dropdown(
+            id='demo-dropdown',
+            options=[{'label': i, 'value': i} for i in issue_creators],
+            value=list(issue_creators.keys())[0]
+        ),
+        html.Div(id='dd-output-container'),
+
+        dcc.Graph(
+            id='issue-opener'
+        ),
+        dcc.Graph(
+            id='issue-closer'
+        ),
+        dcc.Graph(
+            id='inter'
+        )
     ])
     return app
  
-health_report().run_server(debug=True)
+@app.callback(
+    dash.dependencies.Output('issue-opener', 'figure'),
+    [dash.dependencies.Input('demo-dropdown', 'value')])
+def update_opener(value):
+    ghs = GitHubKnowledgeStore(is_local=True)
+    issues = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='Issue')
+    overall = pre_process.pre_process_issue_labels_to_issue_creators(
+            issues_data=issues
+    )
+    return visualization._visualize_issues_types_given_developer(overall_types_data=overall, author_login_id=value,developer_action='Open')
+
+@app.callback(
+    dash.dependencies.Output('issue-closer', 'figure'),
+    [dash.dependencies.Input('demo-dropdown', 'value')])
+def update_closer(value):
+    ghs = GitHubKnowledgeStore(is_local=True)
+    issues = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='Issue')
+    overall = pre_process.pre_process_issue_labels_to_issue_creators(
+            issues_data=issues
+    )
+    return visualization._visualize_issues_types_given_developer(overall_types_data=overall, author_login_id=value,developer_action='Close')
+
+@app.callback(
+    dash.dependencies.Output('inter', 'figure'),
+    [dash.dependencies.Input('demo-dropdown', 'value')])
+def update_inter(value):
+    ghs = GitHubKnowledgeStore(is_local=True)
+    issues = ghs.load_previous_knowledge(project_name='AICoE/prometheus-anomaly-detector', knowledge_type='Issue')
+    overall_issues_interactions = pre_process.pre_process_issue_interactions(issues_data=issues)
+    return visualization._visualize_issue_interactions(overall_issues_interactions=overall_issues_interactions, author_login_id=value)
+
+health_report(app)
+app.run_server(debug=True)
