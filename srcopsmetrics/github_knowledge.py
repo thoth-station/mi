@@ -17,34 +17,21 @@
 
 """A base class for collecting bot knowledge from GitHub."""
 
-import os
-import logging
-import time
 import json
+import logging
+import os
+import time
 from datetime import datetime
-
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Set
-from typing import Tuple
-from typing import Union
-
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from github import Github
-from github import GithubObject
-from github import Issue
-from github import IssueComment
-from github import PullRequest
-from github import PullRequestReview
-from github import PaginatedList
+from github import (Github, GithubObject, Issue, IssueComment, PaginatedList,
+                    PullRequest, PullRequestReview)
 from github.Repository import Repository
 
 from srcopsmetrics.enums import EntityTypeEnum
-from srcopsmetrics.github_knowledge_store import GitHubKnowledgeStore
+from srcopsmetrics.iterator import KnowledgeAnalysis
+from srcopsmetrics.storage import KnowledgeStorage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -202,7 +189,7 @@ class GitHubKnowledge:
         if len(only_new_ids) == 0:
             _LOGGER.info("No new knowledge found for update")
         else:
-            _LOGGER.info("Update with %s new IDs" % len(new_knowledge_ids))
+            _LOGGER.info("Updating with %s new IDs" % len(only_new_ids))
             _LOGGER.debug("New ids to be examined are %s" % only_new_ids)
         return [x for x in new_data if x.number in only_new_ids]
 
@@ -232,9 +219,9 @@ class GitHubKnowledge:
 
         data[str(issue.number)] = {
             "created_by": issue.user.login,
-            "created_at": issue.created_at.timestamp(),
-            "closed_by": issue.closed_by.login,
-            "closed_at": issue.closed_at.timestamp(),
+            "created_at": int(issue.created_at.timestamp()),
+            "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
+            "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": self.get_non_standalone_labels(labels),
             "interactions": self.get_interactions(issue.get_comments()),
         }
@@ -262,12 +249,11 @@ class GitHubKnowledge:
         if len(new_issues) == 0:
             return
 
-        with GitHubKnowledgeStore(
+        with KnowledgeAnalysis(
             entity_type=EntityTypeEnum.ISSUE.value,
             new_entities=new_issues,
             accumulator=prev_knowledge,
             store_method=self.store_issue,
-            is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
 
@@ -311,10 +297,10 @@ class GitHubKnowledge:
         results = {}
         for idx, review in enumerate(reviews, 1):
             _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
-            results[review.id] = {
+            results[str(review.id)] = {
                 "author": review.user.login,
                 "words_count": len(review.body.split(" ")),
-                "submitted_at": review.submitted_at.timestamp(),
+                "submitted_at": int(review.submitted_at.timestamp()),
                 "state": review.state,
             }
         return results
@@ -332,16 +318,9 @@ class GitHubKnowledge:
         # TODO: Use commits to extract information.
         # commits = [commit for commit in pull_request.get_commits()]
 
-        created_at = pull_request.created_at.timestamp()
-        closed_at = pull_request.closed_at.timestamp()
-
-        # Get the review approval if it exists
-        # approval = next((review for review in reviews if review.state == 'APPROVED'), None)
-        # pr_approved = approval.submitted_at.timestamp() if approval is not None else None
-        # pr_approved_by = pull_request.approved_by.name if approval is not None else None
-        # time_to_approve = pr_approved - created_at if approval is not None else None
-
-        merged_at = pull_request.merged_at.timestamp() if pull_request.merged_at is not None else None
+        created_at = int(pull_request.created_at.timestamp())
+        closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None
+        merged_at = int(pull_request.merged_at.timestamp()) if pull_request.merged_at is not None else None
 
         labels = [label.name for label in pull_request.get_labels()]
 
@@ -392,12 +371,11 @@ class GitHubKnowledge:
         if len(new_pulls) == 0:
             return
 
-        with GitHubKnowledgeStore(
+        with KnowledgeAnalysis(
             entity_type=EntityTypeEnum.PULL_REQUEST.value,
             new_entities=new_pulls,
             accumulator=prev_knowledge,
             store_method=self.store_pull_request,
-            is_local=is_local,
         ) as analysis:
             accumulated = analysis.store()
 
@@ -419,13 +397,14 @@ class GitHubKnowledge:
 
         path = project_path.joinpath("./" + filename + ".json")
 
-        with GitHubKnowledgeStore(is_local=is_local) as store:
-            prev_knowledge = store.load_previous_knowledge(
-                project_name=github_repo.full_name, file_path=path, knowledge_type=github_type
-            )
-            new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
-            if new_knowledge is not None:
-                store.save_knowledge(path, new_knowledge)
-                _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
-            else:
-                _LOGGER.info("repository has 0 entities of type %s\n" % github_type)
+        storage = KnowledgeStorage(is_local=is_local)
+        prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name,
+                                                         file_path=path,
+                                                         knowledge_type=github_type)
+        new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
+
+        if new_knowledge is not None:
+            storage.save_knowledge(path, new_knowledge)
+            _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
+        else:
+            _LOGGER.info("\n")

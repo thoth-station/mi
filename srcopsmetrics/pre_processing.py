@@ -18,24 +18,15 @@
 """Pre-processing GitHub data."""
 
 import logging
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import Union
-from pathlib import Path
-from datetime import timedelta
-from datetime import datetime
-
-from srcopsmetrics.github_knowledge_store import GitHubKnowledgeStore
-from srcopsmetrics.utils import convert_num2label
-from srcopsmetrics.utils import convert_score2num
-
-from srcopsmetrics.entity_schema import IssueSchema
-from srcopsmetrics.entity_schema import PullRequestSchema
+from srcopsmetrics.entity_schema import Schemas
+from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,11 +40,11 @@ class PreProcessing:
         """Retrieve knowledge (PRs) collected for a project."""
         project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
 
-        with GitHubKnowledgeStore(is_local=is_local) as store:
-            pull_requests_data_path = project_knowledge_path.joinpath(
-                "./" + store._FILENAME_ENTITY[entity_type] + ".json"
-            )
-            data = store.load_previous_knowledge(project, pull_requests_data_path, entity_type)
+        store = KnowledgeStorage(is_local=is_local)
+        pull_requests_data_path = project_knowledge_path.joinpath(
+            "./" + store._FILENAME_ENTITY[entity_type] + ".json"
+        )
+        data = store.load_previous_knowledge(project, pull_requests_data_path, entity_type)
 
         if data:
             return data
@@ -383,7 +374,7 @@ class PreProcessing:
 
         return interactions_data
 
-    def pre_process_issues_creators(self, issues_data: IssueSchema) -> Dict[str, int]:
+    def pre_process_issues_creators(self, issues_data: Schemas.Issues) -> Dict[str, int]:
         """Analyse number of created issues for each contributor that has created issue.
 
         :type issues_data:IssueSchema:
@@ -399,7 +390,7 @@ class PreProcessing:
 
         return creators
 
-    def pre_process_issues_closers(self, issues_data: IssueSchema, pr_data: PullRequestSchema) -> Dict[str, int]:
+    def pre_process_issues_closers(self, issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> Dict[str, int]:
         """Analyse number of closed issues for each contributor that has closed issue.
 
         A closure is also when the contributor's Pull Request closed the issue.
@@ -427,7 +418,7 @@ class PreProcessing:
 
         return closers
 
-    def pre_process_issue_interactions(self, issues_data: IssueSchema) -> Dict[str, Dict[str, int]]:
+    def pre_process_issue_interactions(self, issues_data: Schemas.Issues) -> Dict[str, Dict[str, int]]:
         """Analyse interactions between contributors with respect to closed issues in project.
 
         The interaction is analysed between any issue creator and any person who has ever commented
@@ -452,7 +443,7 @@ class PreProcessing:
         return authors
 
     def pre_process_issue_labels_with_ttci(
-        self, issues_data: IssueSchema
+        self, issues_data: Schemas.Issues
     ) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
         """Analyse Time To Close Issue for any label that labeled closed issue.
 
@@ -470,7 +461,7 @@ class PreProcessing:
                 issues[label][1].append(datetime.fromtimestamp(issues_data[issue_id]["created_at"]))
         return issues
 
-    def pre_process_issue_labels_to_issue_creators(self, issues_data: IssueSchema) -> Dict[str, Dict[str, int]]:
+    def pre_process_issue_labels_to_issue_creators(self, issues_data: Schemas.Issues) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has created an issue.
 
         :param issues_data:IssueSchema:
@@ -488,7 +479,7 @@ class PreProcessing:
         return authors
 
     def pre_process_issue_labels_to_issue_closers(
-        self, issues_data: IssueSchema, pull_requests_data: PullRequestSchema
+        self, issues_data: Schemas.Issues, pull_requests_data: Schemas.PullRequests
     ) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has closed an issue.
 
@@ -525,7 +516,7 @@ class PreProcessing:
         return closers
 
     def pre_process_issues_closed_by_pr_size(
-        self, issues_data: IssueSchema, pr_data: PullRequestSchema
+        self, issues_data: Schemas.Issues, pr_data: Schemas.PullRequests
     ) -> Dict[str, int]:
         """Analyse number of closed issues to every Pull Request size.
 
