@@ -155,8 +155,7 @@ class GitHubKnowledge:
             _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
             yield ref_issue
 
-    @staticmethod
-    def get_referenced_issues(pull_request: PullRequest) -> List[int]:
+    def get_referenced_issues(self, pull_request: PullRequest) -> List[int]:
         """Scan all of the Pull Request comments and get referenced issues.
 
         Arguments:
@@ -169,7 +168,7 @@ class GitHubKnowledge:
         """
         issues_referenced = []
         for comment in pull_request.get_issue_comments():
-            for id in GitHubKnowledge.search_for_references(comment.body):
+            for id in self.search_for_references(comment.body):
                 issues_referenced.append(id)
 
         for id in GitHubKnowledge.search_for_references(pull_request.body):
