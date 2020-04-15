@@ -25,6 +25,7 @@ class EntityTypeEnum(Enum):
 
     PULL_REQUEST = "PullRequest"
     ISSUE = "Issue"
+    CONTENT_FILE = "ContentFile"
 
 
 class DeveloperActionEnum(Enum):
