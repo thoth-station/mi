@@ -117,7 +117,32 @@ class GitHubKnowledge:
         return [label for label in labels if label not in STANDALONE_LABELS]
 
     @staticmethod
-    def get_referenced_issues(pull_request: PullRequest) -> List[int]:
+    def search_for_references(body: str) -> List[int]:
+        """Return generator for iterating through referenced IDs in a comment."""
+        if body is None:
+            return
+
+        message = body.split(" ")
+        for idx, word in enumerate(message):
+            if word.replace(":", "").lower() not in ISSUE_KEYWORDS:
+                return
+
+            _LOGGER.info("      ...found keyword referencing issue")
+            referenced_issue_number = message[idx + 1]
+            if referenced_issue_number.startswith("https"):
+                # last element of url is always the issue number
+                ref_issue = referenced_issue_number.split("/")[-1]
+            elif referenced_issue_number.startswith("#"):
+                ref_issue = referenced_issue_number.replace('#', '')
+            else:
+                _LOGGER.info("      ...referenced issue number absent")
+                _LOGGER.debug("      keyword message: %s" % body)
+                return
+
+            _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
+            yield ref_issue
+
+    def get_referenced_issues(self, pull_request: PullRequest) -> List[int]:
         """Scan all of the Pull Request comments and get referenced issues.
 
         Arguments:
@@ -130,21 +155,12 @@ class GitHubKnowledge:
         """
         issues_referenced = []
         for comment in pull_request.get_issue_comments():
-            message = comment.body.split(" ")
-            for idx, word in enumerate(message):
-                if word.replace(":", "") in ISSUE_KEYWORDS:
-                    try:
-                        _LOGGER.info("      ...found keyword referencing issue")
-                        referenced_issue_number = message[idx + 1]
-                        assert (referenced_issue_number).startswith("https")
-                        # last element of url is always the issue number
-                        issues_referenced.append(referenced_issue_number.split("/")[-1])
-                        _LOGGER.info("      ...referenced issue number present")
-                        # we assure that this was really referenced issue
-                        # and not just a keyword without number
-                    except (IndexError, AssertionError) as e:
-                        _LOGGER.info("      ...referenced issue number absent")
-                        _LOGGER.debug(str(e))
+            for id in self.search_for_references(comment.body):
+                issues_referenced.append(id)
+
+        for id in self.search_for_references(pull_request.body):
+            issues_referenced.append(id)
+
         _LOGGER.debug("      referenced issues: %s" % issues_referenced)
         return issues_referenced
 
