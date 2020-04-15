@@ -158,7 +158,7 @@ class GitHubKnowledge:
             for id in self.search_for_references(comment.body):
                 issues_referenced.append(id)
 
-        for id in GitHubKnowledge.search_for_references(pull_request.body):
+        for id in self.search_for_references(pull_request.body):
             issues_referenced.append(id)
 
         _LOGGER.debug("      referenced issues: %s" % issues_referenced)
