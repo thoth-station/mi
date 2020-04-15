@@ -80,3 +80,18 @@ class Schemas:
             str: PullRequest,
         }
     )
+
+    ContentFile = Schema(
+        {
+            "name": str,
+            "path": str,
+            "content": str # TODO: Adjust content type
+        }
+    )
+
+    ContentFiles = Schema(
+        {
+            str: ContentFile,
+        }
+    )
+

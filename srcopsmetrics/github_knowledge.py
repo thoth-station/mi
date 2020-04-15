@@ -368,11 +368,13 @@ class GitHubKnowledge:
         Arguments:
             file_content {ContentFile} -- Content File type to be stored.
             results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
-                                                PRs are stored and where the given PR
+                                                ContentFiles are stored and where the given ContentFile
                                                 will be stored.
         """
         results["content_files"] = {
-            "readme": file_content,
+            "name": file_content[0],
+            "path": file_content[1],
+            "content": file_content[2],
         }
 
     def analyse_content_files(
@@ -382,7 +384,7 @@ class GitHubKnowledge:
 
         Arguments:
             repository {Repository} -- currently the PyGithub lib is used because of its functionality
-                                    ogr unfortunatelly did not provide enough to properly analyze issues
+                                    ogr unfortunatelly did not provide enough to properly analyze content files
 
             prev_knowledge {Dict[str, Any]} -- previous knowledge stored.
 
@@ -392,30 +394,31 @@ class GitHubKnowledge:
 
         # TODO: Extend to all types of files. Currently only README are considered.
         # TODO: Add all types of README extensions available
-        readme_text = ""
-        for content in ["README.md", "README.rst"]:
+        content_file_text = ""
+        for file_name in ["README.md", "README.rst"]:
 
             try:
-                readme = repository.get_contents(content)
-                encoded = readme.decoded_content
-                readme_text = encoded.decode('utf-8')
+                content_file = repository.get_contents(file_name)
+                file_path = content_file.path
+                encoded = content_file.decoded_content
+                # TODO: Adjust because most of the files are not text
+                content_file_text = encoded.decode('utf-8')
             except Exception as e:
-                _LOGGER.info("%r not found for: %r" % (content, repository.full_name))
+                _LOGGER.info("%r not found for: %r" % (file_name, repository.full_name))
                 _LOGGER.warning(e)
 
-            if readme_text:
+            if content_file_text:
+                with KnowledgeAnalysis(
+                    entity_type=EntityTypeEnum.CONTENT_FILE.value,
+                    new_entities=[[file_name, file_path, content_file_text]],
+                    accumulator=prev_knowledge,
+                    store_method=self.store_content_file,
+                ) as analysis:
+                    accumulated = analysis.store()
                 break
 
-        if not readme_text:
+        if not content_file_text:
             return
-
-        with KnowledgeAnalysis(
-            entity_type=EntityTypeEnum.CONTENT_FILE.value,
-            new_entities=[readme_text],
-            accumulator=prev_knowledge,
-            store_method=self.store_content_file,
-        ) as analysis:
-            accumulated = analysis.store()
 
         return accumulated
 
