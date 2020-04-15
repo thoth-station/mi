@@ -85,7 +85,7 @@ class Schemas:
         {
             "name": str,
             "path": str,
-            "content": str # TODO: Adjust content type
+            "content": str  # TODO: Adjust content type
         }
     )
 
@@ -94,4 +94,3 @@ class Schemas:
             str: ContentFile,
         }
     )
-

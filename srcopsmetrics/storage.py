@@ -46,11 +46,6 @@ class KnowledgeStorage:
         "ContentFile": "content_file"
     }
 
-    _ENTITY_SCHEMA = {
-        "Issue": Schemas.Issues,
-        "PullRequest": Schemas.PullRequest
-    }
-
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
     _KEY_ID = os.getenv("CEPH_KEY_ID")
     _SECRET_KEY = os.getenv("CEPH_SECRET_KEY")
