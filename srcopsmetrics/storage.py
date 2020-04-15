@@ -20,8 +20,14 @@
 import json
 import logging
 import os
+from datetime import datetime
+
+from typing import Any
+from typing import List
+from typing import Dict
+from typing import Optional
+
 from pathlib import Path
-from typing import Any, Dict, Optional
 
 from thoth.storages.ceph import CephStore
 
@@ -34,16 +40,18 @@ _LOGGER = logging.getLogger(__name__)
 class KnowledgeStorage:
     """Context manager for knowledge loading and saving."""
 
+    _FILENAME_ENTITY = {
+        "Issue": "issues",
+        "PullRequest": "pull_requests",
+        "ContentFile": "content_file"
+    }
+
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
     _KEY_ID = os.getenv("CEPH_KEY_ID")
     _SECRET_KEY = os.getenv("CEPH_SECRET_KEY")
     _PREFIX = os.getenv("CEPH_BUCKET_PREFIX")
     _HOST = os.getenv("S3_ENDPOINT_URL")
     _BUCKET = os.getenv("CEPH_BUCKET")
-
-    _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests"}
-    _ENTITY_SCHEMA = {"Issue": Schemas.Issues,
-                      "PullRequest": Schemas.PullRequest}
 
     def __init__(self, is_local: Optional[bool] = False):
         """Initialize to behave as either local or remote storage."""

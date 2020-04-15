@@ -42,8 +42,11 @@ API_RATE_MINIMAL_REMAINING = 20
 class KnowledgeAnalysis:
     """Context manager that iterates through all entities in repository and collects them."""
 
-    _ENTITY_SCHEMA = {"Issue": Schemas.Issues,
-                      "PullRequest": Schemas.PullRequests}
+    _ENTITY_SCHEMA = {
+        "Issue": Schemas.Issues,
+        "PullRequest": Schemas.PullRequests,
+        "ContentFiles": Schemas.ContentFiles
+    }
 
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
     _KEY_ID = os.getenv("CEPH_KEY_ID")

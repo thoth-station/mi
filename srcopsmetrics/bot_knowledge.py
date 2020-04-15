@@ -59,6 +59,9 @@ def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) ->
         _LOGGER.info("Pull requests inspection")
         github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
 
+        _LOGGER.info("Content Files inspection")
+        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.CONTENT_FILE.value, is_local)
+
 
 def visualize_project_results(project: str, is_local: bool = False):
     """Visualize results for a project."""
