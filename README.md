@@ -77,20 +77,18 @@ For each repository is possible to obtain the following plots:
 
 `TTFR-per-PR.png` --> Time to First Review (TTFR) variation after each PR.
 
-Add new entity types to be stored
+Entity criteria
 ====================================
+Throughout the project, the objects with name "entities" are mentioned. Entity is essentialy a repository metadata that is being inspected during the process of analysis (e.g. Issue or Pull Request). Then, specified *features* are extracted from this entity and are saved as knowledge afterwards.
 
-If you want to contribute by adding new entity that will be analysed from GitHub repository and stored as a knowledge, here is the acceptance criteria that should be satisfied for the implementation to work with the SrcOpsMetrics project:
+Any entity satisfies these criteria: 
 
-* if you are not part of the thoth-station or AICoE organization, open new Issue and engage in conversation why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal of SrcOpsMetrics project. 
-* schema for this entity should be available in ```entity_schema.Schemas``` class
-* name of the entity in the ```enums.EntityTypeEnum``` class
-* name of the saved entity knowledge file in ```storage.KnowledgeStorage._FILENAME_ENTITY
-* method named ```analyse_<new_entity_name>()``` implemented in ```github_knowledge.GitHubKnowledge``` class and its 'sub-part' method named ```store_<new_entity_name>``` present in the same class. Feel free to be inspired by the other methods like ```analyse_issues``` and its 'storage method' ```store_issue```. This concept of an ```analyse``` and ```storage``` method is used because of the way the iterating through multiple entities is done in GitHub - pagination. These two methods are used in ```iterator.KnowledgeAnalysis``` context manager for *safe storage* saving, meaning that if any exception of type ```GithubException``` or ```KeyboardInterrupt``` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in ```entity_schema.Schemas```). This saves us time, resources and also the GitHub API rate.
-* method ```analyse_entity``` should be then called in ```bot_knowledge.analyse_projects``` with your new entity enum as a parameter
-* if you created Issue from the first point, reference it in your Pull Request
+* schema for entity is available in ```entity_schema.Schemas``` class
+* name of the entity is in the ```enums.EntityTypeEnum``` class
+* name of the saved entities knowledge file is specified in ```storage.KnowledgeStorage._FILENAME_ENTITY
+* method named ```analyse_<entity_name>()``` and its 'sub-part' method named ```store_<entity_name>``` is implemented in ```github_knowledge.GitHubKnowledge``` class. This concept of an ```analyse``` and ```storage``` method is used because of the GitHub pagination. These two methods are used in ```iterator.KnowledgeAnalysis``` context manager for *safe storage* saving, meaning that if any exception of type ```GithubException``` or ```KeyboardInterrupt``` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in ```entity_schema.Schemas```). This saves time, resources and also the GitHub API rate limit.
+* method ```analyse_entity``` is then called in ```bot_knowledge.analyse_projects``` with entity enum from ```enums.EntityTypeEnum``` passed as a parameter.
 
-Whenever you are not sure what to do, always try to be inspired by the current implementations of analysis methods or feel free to create new Issue with question you are dealing with. 
 
 Usage - Reviewer Reccomender
 ============================
@@ -153,3 +151,10 @@ fridex     0.515152  1.490909  0.22449  0.5   1  0.159314
 
 INFO:reviewer_recommender:Number of reviewers requested: 2
 INFO:reviewer_recommender:Reviewers: ['pacospace' 'fridex']
+
+How to contribute
+===============
+Always feel free to open new Issues or engage in already existing ones!
+
+### I want to add new Entity
+If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge, your implementation has to meet with Entity criteria described above.  Always remember to first create Issue and describe why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal of SrcOpsMetrics project. Do not forget to reference the Issue in your Pull Request.
