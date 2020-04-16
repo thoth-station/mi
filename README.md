@@ -77,6 +77,11 @@ For each repository is possible to obtain the following plots:
 
 `TTFR-per-PR.png` --> Time to First Review (TTFR) variation after each PR.
 
+Add new entity types to be stored
+====================================
+
+TBD
+
 Usage - Reviewer Reccomender
 ============================
 
