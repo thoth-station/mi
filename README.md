@@ -91,10 +91,10 @@ Any entity satisfies these criteria:
 
 Usage - Reviewer Reccomender
 ============================
-KnowledgeStorage
-.. code-block:: consoleKnowledgeStorage
-KnowledgeStorage
-    PYTHONPATH=. pipenv run srcoKnowledgeStoragepsmetrics/cli.py --project <project_name> -r True
+
+.. code-block:: console
+
+    PYTHONPATH=. pipenv run srcopsmetrics/cli.py --project <project_name> -r True
 
 If there are bots in the list of contributors of your project you can add them to the list
 at the beginning of the file. In this way you can receive the percentage of the work
