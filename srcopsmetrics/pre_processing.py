@@ -531,7 +531,7 @@ class PreProcessing:
                 ttci = int(issues_data[issue_id]["closed_at"] - int(issues_data[issue_id]["created_at"]))
                 size = pr_data[pr_id]["size"]
 
-                if pr_data[pr_id][size] not in issues:
+                if size not in issues:
                     issues[size] = []
                 issues[size].append(ttci)
         return issues

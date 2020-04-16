@@ -44,6 +44,7 @@ from srcopsmetrics.pre_processing import PreProcessing
 from srcopsmetrics.entity_schema import Schemas
 
 from plotly.offline import init_notebook_mode, iplot
+from plotly.graph_objects import Figure
 
 USE_NOTEBOOK = os.getenv("JUPYTER")
 
@@ -300,21 +301,23 @@ class Visualization:
             issues_data=issues_data, pull_requests_data=pr_data
         )
 
-        self._visualize_top_x_issues_types_wrt_developers(
-            overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
-        )
-        self._visualize_top_x_issues_types_wrt_developers(
-            overall_types_data=overall_issue_types_closers, developer_action=DeveloperActionEnum.CLOSE.value
-        )
-        self._visualize_top_X_issues_types_wrt_project(
-            overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
-        )
+        graphs = [
+            self._visualize_top_x_issues_types_wrt_developers(
+                overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
+            ),
+            self._visualize_top_x_issues_types_wrt_developers(
+                overall_types_data=overall_issue_types_closers, developer_action=DeveloperActionEnum.CLOSE.value
+            ),
+            self._visualize_top_X_issues_types_wrt_project(
+                overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
+            ),
+            self._visualize_top_x_issue_interactions(overall_issues_interactions),
+            self._visualize_ttci_wrt_labels(issues_data=issues_data),
+            self._visualize_ttci_wrt_pr_length(issues_data=issues_data, pr_data=pr_data),
+        ]
 
-        self._visualize_top_x_issue_interactions(overall_issues_interactions)
-
-        self._visualize_ttci_wrt_labels(issues_data=issues_data)
-
-        self._visualize_ttci_wrt_pr_length(issues_data=issues_data, pr_data=pr_data)
+        for viz in graphs:
+            viz.show()
 
     def visualize_developer_activity(self, project: str, developer: str):
         """Create plots that are focused on a single contributor."""
@@ -335,17 +338,22 @@ class Visualization:
             issues_data=issues_data, pull_requests_data=pr_data
         )
 
-        self._visualize_issue_interactions(
-            overall_issues_interactions=overall_issues_interactions, author_login_id=developer
-        )
-        self._visualize_issues_types_given_developer(
-            overall_issue_types_creators, author_login_id=developer, developer_action=DeveloperActionEnum.OPEN.value
-        )
-        self._visualize_issues_types_given_developer(
-            overall_issue_types_closers, author_login_id=developer, developer_action=DeveloperActionEnum.CLOSE.value
-        )
+        graphs = [
+            self._visualize_issue_interactions(
+                overall_issues_interactions=overall_issues_interactions, author_login_id=developer
+            ),
+            self._visualize_issues_types_given_developer(
+                overall_issue_types_creators, author_login_id=developer, developer_action=DeveloperActionEnum.OPEN.value
+            ),
+            self._visualize_issues_types_given_developer(
+                overall_issue_types_closers, author_login_id=developer, developer_action=DeveloperActionEnum.CLOSE.value
+            ),
+        ]
 
-    def visualize_projects_ttci_comparison(self, projects: List[str], is_local: bool = False):
+        for viz in graphs:
+            viz.show()
+
+    def visualize_projects_ttci_comparison(self, projects: List[str], is_local: bool = False) -> Figure:
         """Visualize TTCI in form of graph for given projects inside one plot."""
         knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
 
@@ -367,10 +375,10 @@ class Visualization:
 
             projects_data.append(ttci_per_issue_processed)
 
-        self.create_ttci_multiple_projects_plot(projects_data=projects_data, projects=projects)
+        return self.create_ttci_multiple_projects_plot(projects_data=projects_data, projects=projects)
 
     @staticmethod
-    def create_ttci_multiple_projects_plot(projects_data: List, projects: List) -> None:
+    def create_ttci_multiple_projects_plot(projects_data: List, projects: List) -> Figure:
         """Create processed data in time per project plot."""
         for project_data, project_name in zip(projects_data, projects):
             x = [el[0] for el in project_data]
@@ -384,19 +392,19 @@ class Visualization:
 
         plt.grid()
         plt.legend()
-        plt.show()
+        return plt
 
     @staticmethod
-    def _visualize_issues_per_developer(overall_issue_data: Dict, title: str):
+    def _visualize_issues_per_developer(overall_issue_data: Dict, title: str) -> Figure:
         """For each author visualize number of issues opened or closed by them."""
         df = pd.DataFrame()
         df["authors"] = overall_issue_data.keys()
         df["issues"] = overall_issue_data.values()
         fig = px.bar(df, x="authors", y="issues", title=title, color="authors")
-        fig.show()
+        return fig
 
     @staticmethod
-    def _visualize_issue_interactions(overall_issues_interactions: Dict, author_login_id: str):
+    def _visualize_issue_interactions(overall_issues_interactions: Dict, author_login_id: str) -> Figure:
         """For given author visualize interactions between him and all of the other authors in repository."""
         author_interactions = overall_issues_interactions[author_login_id]
 
@@ -411,10 +419,10 @@ class Visualization:
             title=f"Interactions w.r.t. issues between {author_login_id} and the others in repository",
             color="developers",
         )
-        fig.show()
+        return fig
 
     @staticmethod
-    def _visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x: int = 5):
+    def _visualize_top_x_issue_interactions(overall_issues_interactions: Dict, top_x: int = 5) -> Figure:
         """Visualze top X most interactions in issues in repository."""
         top_interactions_list = []
         for author in overall_issues_interactions.keys():
@@ -437,13 +445,15 @@ class Visualization:
             title=f"Top {top_x} overall interactions w.r.t. issues in form of <issue_creator>/<issue_commenter>",
             color="developers",
         )
-        fig.show()
+        return fig
 
     @staticmethod
-    def _visualize_issues_types_given_developer(overall_types_data: Dict, author_login_id: str, developer_action: str):
+    def _visualize_issues_types_given_developer(
+        overall_types_data: Dict, author_login_id: str, developer_action: str
+    ) -> Figure:
         """For given author visualize (categorically by labels) number of opened issues by him."""
         issue_types_data = overall_types_data[author_login_id]
-        action = self._DEVELOPER_ACTION[developer_action]
+        action = Visualization._DEVELOPER_ACTION[developer_action]
 
         df = pd.DataFrame()
         df["labels"] = [label for label in issue_types_data.keys()]
@@ -456,11 +466,11 @@ class Visualization:
             title=f"Overall number of {action} issues for {author_login_id} by their label",
             color="labels",
         )
-        fig.show()
+        return fig
 
     def _visualize_top_x_issues_types_wrt_developers(
         self, overall_types_data: Dict, developer_action: str, top_x: int = 5
-    ):
+    ) -> Figure:
         """Visualize top X issue types that had been opened or closed for given repository w.r.t to developer."""
         top_labels_list = []
         for author in overall_types_data.keys():
@@ -483,11 +493,11 @@ class Visualization:
             title=f"Top {top_x} overall {action} issue types in form of <{developer_action}> -> <issue_label>",
             color="developer_label",
         )
-        fig.show()
+        return fig
 
     def _visualize_top_X_issues_types_wrt_project(
         self, overall_types_data: Dict, developer_action: str, top_x: int = 5
-    ):
+    ) -> Figure:
         """Visualize overall top X issue types that had been opened || closed for given repository w.r.t to project."""
         top_labels_list = {}
         for author in overall_types_data.keys():
@@ -508,10 +518,10 @@ class Visualization:
         fig = px.bar(
             df, x="label", y="count", title=f"Top {top_x} overall {action} issue types for project", color="label"
         )
-        fig.show()
+        return fig
 
     @staticmethod
-    def _visualize_ttci_wrt_pr_length(issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> None:
+    def _visualize_ttci_wrt_pr_length(issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> Figure:
         """For each pull request size label visualize its TTCI.
 
         Time To Close Issue is summed with respect to all of the Issues
@@ -535,11 +545,12 @@ class Visualization:
         df["TTCI"] = ttcis
 
         fig = px.scatter(df, x="size", y="TTCI", color="size")
-        fig.show()
+        return fig
 
+    @staticmethod
     def _visualize_ttci_wrt_labels(
-        self, issues_data: Schemas.Issues, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
-    ) -> None:
+        issues_data: Schemas.Issues, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
+    ) -> Figure:
         """For each label visualize its Time To Close Issue.
 
         :param issues_data:IssueSchema:
@@ -551,7 +562,7 @@ class Visualization:
         for label in issues_labels.keys():
             processed_labels[label] = issues_labels[label][0]
 
-        statistical_method = self._STATISTICAL_FUNCTION_MAP[statistical_quantity]
+        statistical_method = Visualization._STATISTICAL_FUNCTION_MAP[statistical_quantity]
 
         df = pd.DataFrame()
         df["label"] = [label for label in processed_labels.keys()]
@@ -559,4 +570,4 @@ class Visualization:
 
         fig = px.bar(df, x="label", y="TTCI", title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
         fig.update_layout(yaxis_title="Average Time To Close Issue (hrs)", xaxis_title="Label name")
-        fig.show()
+        return fig
