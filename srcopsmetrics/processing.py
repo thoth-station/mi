@@ -31,31 +31,18 @@ from srcopsmetrics.utils import convert_num2label, convert_score2num
 _LOGGER = logging.getLogger(__name__)
 
 
-class PreProcessing:
+class Processing:
     """Pre processing functions for entity extracted."""
 
-    def retrieve_knowledge(
-        self, knowledge_path: Path, project: str, entity_type: str, is_local: bool = False
-    ) -> Union[Dict[str, Any], None]:
-        """Retrieve knowledge (PRs) collected for a project."""
-        project_knowledge_path = knowledge_path.joinpath("./" + f"{project}")
+    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests):
+        self.issues = issues
+        self.pull_requests = pull_requests
 
-        store = KnowledgeStorage(is_local=is_local)
-        pull_requests_data_path = project_knowledge_path.joinpath(
-            "./" + store._FILENAME_ENTITY[entity_type] + ".json"
-        )
-        data = store.load_previous_knowledge(project, pull_requests_data_path, entity_type)
-
-        if data:
-            return data
-        else:
-            _LOGGER.error("No previous knowledge found for %s" % project)
-
-    def pre_process_issues_project_data(self, data: Dict[str, Any]):
+    def process_issues_project_data(self):
         """Pre process of data for a given project repository."""
-        if not data:
+        if not self.issues:
             return {}
-        ids = sorted([int(k) for k in data.keys()])
+        ids = sorted([int(k) for k in self.issues.keys()])
 
         project_issues_data = {}
 
@@ -65,7 +52,7 @@ class PreProcessing:
         project_issues_data["created_dts"] = []
 
         for id in ids:
-            issue = data[str(id)]
+            issue = self.issues[str(id)]
 
             if issue["created_by"] not in project_issues_data["contributors"]:
                 project_issues_data["contributors"].append(issue["created_by"])
@@ -87,11 +74,11 @@ class PreProcessing:
 
         return extracted_data
 
-    def pre_process_prs_project_data(self, data: Dict[str, Any]):
+    def pre_process_prs_project_data(self):
         """Pre process of data for a given project repository."""
-        if not data:
+        if not self.pull_requests:
             return {}
-        ids = sorted([int(k) for k in data.keys()])
+        ids = sorted([int(k) for k in self.pull_requests.keys()])
 
         project_reviews_data = {}
 
@@ -113,7 +100,7 @@ class PreProcessing:
         project_reviews_data["encoded_PRs_size"] = []
 
         for id in ids:
-            pr = data[str(id)]
+            pr = self.pull_requests[str(id)]
 
             if pr["created_by"] not in project_reviews_data["contributors"]:
                 project_reviews_data["contributors"].append(pr["created_by"])
@@ -180,9 +167,9 @@ class PreProcessing:
 
         return extracted_data
 
-    def pre_process_contributors_data(self, data: Dict[str, Any], contributors: List[str]):
+    def process_contributors_data(self, contributors: List[str]):
         """Pre process of data for contributors in a project repository."""
-        pr_ids = sorted([int(k) for k in data.keys()])
+        pr_ids = sorted([int(k) for k in self.pull_requests.keys()])
 
         contributors_reviews_data = {}
         contributors_reviews_data["reviewers"] = []
@@ -194,7 +181,7 @@ class PreProcessing:
             interactions[contributor] = contributor_interaction
 
         for pr_id in pr_ids:
-            pr = data[str(pr_id)]
+            pr = self.pull_requests[str(pr_id)]
 
             self._analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
 
@@ -374,51 +361,47 @@ class PreProcessing:
 
         return interactions_data
 
-    def pre_process_issues_creators(self, issues_data: Schemas.Issues) -> Dict[str, int]:
+    def process_issues_creators(self) -> Dict[str, int]:
         """Analyse number of created issues for each contributor that has created issue.
 
-        :type issues_data:IssueSchema:
-        :param issues_data:IssueSchema:
         :rtype: { <contributor> : <number of created issues> }
         """
         creators = {}
-        for issue_id in issues_data.keys():
-            issue_author = issues_data[issue_id]["created_by"]
+        for issue_id in self.issues.keys():
+            issue_author = self.issues[issue_id]["created_by"]
             if issue_author not in creators:
                 creators[issue_author] = 0
             creators[issue_author] += 1
 
         return creators
 
-    def pre_process_issues_closers(self, issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> Dict[str, int]:
+    def process_issues_closers(self) -> Dict[str, int]:
         """Analyse number of closed issues for each contributor that has closed issue.
 
         A closure is also when the contributor's Pull Request closed the issue.
 
-        :param issues_data:IssueSchema:
-        :param pr_data:PullRequestSchema:
         :rtype: { <contributor> : <number of closed issues> }
         """
         closers = {}
-        for issue_id in issues_data.keys():
-            issue_author = issues_data[issue_id]["closed_by"]
+        for issue_id in self.issues.keys():
+            issue_author = self.issues[issue_id]["closed_by"]
             if issue_author not in closers:
                 closers[issue_author] = 0
             closers[issue_author] += 1
 
-        for pr_id in pr_data.keys():
-            if pr_data[pr_id]["merged_at"] is None:
+        for pr_id in self.pull_requests.keys():
+            if self.pull_requests[pr_id]["merged_at"] is None:
                 continue
 
-            pr_author = pr_data[pr_id]["created_by"]
-            for _ in pr_data[pr_id]["referenced_issues"]:
+            pr_author = self.pull_requests[pr_id]["created_by"]
+            for _ in self.pull_requests[pr_id]["referenced_issues"]:
                 if pr_author not in closers:
                     closers[pr_author] = 0
                 closers[pr_author] += 1
 
         return closers
 
-    def pre_process_issue_interactions(self, issues_data: Schemas.Issues) -> Dict[str, Dict[str, int]]:
+    def process_issue_interactions(self) -> Dict[str, Dict[str, int]]:
         """Analyse interactions between contributors with respect to closed issues in project.
 
         The interaction is analysed between any issue creator and any person who has ever commented
@@ -426,110 +409,102 @@ class PreProcessing:
 
         Interaction number is just a sum of all of the words in a comment.
 
-        :param issues_data:IssueSchema:
         :rtype: { <contributor> : { <commenter> : <overall interaction number throughout the project> } }
         """
         authors = {}
-        for issue_id in issues_data.keys():
-            issue_author = issues_data[issue_id]["created_by"]
+        for issue_id in self.issues.keys():
+            issue_author = self.issues[issue_id]["created_by"]
             if issue_author not in authors:
                 authors[issue_author] = {}
-            for interactioner in issues_data[issue_id]["interactions"].keys():
+            for interactioner in self.issues[issue_id]["interactions"].keys():
                 if interactioner == issue_author:
                     continue
                 if interactioner not in authors[issue_author]:
                     authors[issue_author][interactioner] = 0
-                authors[issue_author][interactioner] += issues_data[issue_id]["interactions"][interactioner]
+                authors[issue_author][interactioner] += self.issues[issue_id]["interactions"][interactioner]
         return authors
 
-    def pre_process_issue_labels_with_ttci(
-        self, issues_data: Schemas.Issues
+    def process_issue_labels_with_ttci(
+        self
     ) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
         """Analyse Time To Close Issue for any label that labeled closed issue.
 
-        :param issues_data:Dict:
+        :param self.issues:Dict:
         :rtype: { <label> : [[<closed_issue_ttci>], [<closed_issue_creation_date>]] }
         """
         issues = {}
-        for issue_id in issues_data.keys():
-            issue_labels = issues_data[issue_id]["labels"]
-            ttci = int(issues_data[issue_id]["closed_at"] - int(issues_data[issue_id]["created_at"]))
+        for issue_id in self.issues.keys():
+            issue_labels = self.issues[issue_id]["labels"]
+            ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
             for label in issue_labels:
                 if label not in issues:
                     issues[label] = [[], []]
                 issues[label][0].append(ttci / 3600)
-                issues[label][1].append(datetime.fromtimestamp(issues_data[issue_id]["created_at"]))
+                issues[label][1].append(datetime.fromtimestamp(self.issues[issue_id]["created_at"]))
         return issues
 
-    def pre_process_issue_labels_to_issue_creators(self, issues_data: Schemas.Issues) -> Dict[str, Dict[str, int]]:
+    def process_issue_labels_to_issue_creators(self) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has created an issue.
 
-        :param issues_data:IssueSchema:
         :rtype: { <issue_creator> : { <issue_label> : <label_occurence_in_created_issues> } }
         """
         authors = {}
-        for issue_id in issues_data.keys():
-            issue_author = issues_data[issue_id]["created_by"]
+        for issue_id in self.issues.keys():
+            issue_author = self.issues[issue_id]["created_by"]
             if issue_author not in authors:
                 authors[issue_author] = {}
-            for label in issues_data[issue_id]["labels"]:
+            for label in self.issues[issue_id]["labels"]:
                 if label not in authors[issue_author]:
                     authors[issue_author][label] = 0
                 authors[issue_author][label] += 1
         return authors
 
-    def pre_process_issue_labels_to_issue_closers(
-        self, issues_data: Schemas.Issues, pull_requests_data: Schemas.PullRequests
+    def process_issue_labels_to_issue_closers(
+        self
     ) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has closed an issue.
 
         A issue closer is also a contributor, whose Pull Request closed the issue (by referencing it)
 
-        :param issues_data:IssueSchema:
-        :param pull_requests_data:PullRequestSchema:
         :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
         """
         closers = {}
-        for issue_id in issues_data.keys():
-            issue_closer = issues_data[issue_id]["closed_by"]
+        for issue_id in self.issues.keys():
+            issue_closer = self.issues[issue_id]["closed_by"]
             if issue_closer not in closers:
                 closers[issue_closer] = {}
-            for label in issues_data[issue_id]["labels"]:
+            for label in self.issues[issue_id]["labels"]:
                 if label not in closers[issue_closer]:
                     closers[issue_closer][label] = 0
                 closers[issue_closer][label] += 1
 
-        for pr_id in pull_requests_data.keys():
-            if pull_requests_data[pr_id]["merged_at"] is None:
+        for pr_id in self.pull_requests.keys():
+            if self.pull_requests[pr_id]["merged_at"] is None:
                 continue
 
-            pr_author = pull_requests_data[pr_id]["created_by"]
+            pr_author = self.pull_requests[pr_id]["created_by"]
             if pr_author not in closers:
                 closers[pr_author] = {}
 
-            for ref_issue in pull_requests_data[pr_id]["referenced_issues"]:
-                for label in issues_data[ref_issue]["labels"]:
+            for ref_issue in self.pull_requests[pr_id]["referenced_issues"]:
+                for label in self.issues[ref_issue]["labels"]:
                     if label not in closers[pr_author]:
                         closers[pr_author][label] = 0
                     closers[pr_author][label] += 1
 
         return closers
 
-    def pre_process_issues_closed_by_pr_size(
-        self, issues_data: Schemas.Issues, pr_data: Schemas.PullRequests
-    ) -> Dict[str, int]:
+    def process_issues_closed_by_pr_size(self) -> Dict[str, int]:
         """Analyse number of closed issues to every Pull Request size.
 
-        :param issues_data:Dict:
-        :param pr_data:Dict:
         :rtype: { <pr_size_label> : <number_of_closed_issues> }
         """
         issues = {}
-        for pr_id in pr_data.keys():
-            for issue_id in pr_data[pr_id]["referenced_issues"]:
+        for pr_id in self.pull_requests.keys():
+            for issue_id in self.pull_requests[pr_id]["referenced_issues"]:
 
-                ttci = int(issues_data[issue_id]["closed_at"] - int(issues_data[issue_id]["created_at"]))
-                size = pr_data[pr_id]["size"]
+                ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
+                size = self.pull_requests[pr_id]["size"]
 
                 if size not in issues:
                     issues[size] = []

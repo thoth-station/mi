@@ -40,7 +40,7 @@ from srcopsmetrics.utils import convert_score2num
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.enums import DeveloperActionEnum
 from srcopsmetrics.enums import StatisticalQuantityEnum
-from srcopsmetrics.pre_processing import PreProcessing
+from srcopsmetrics.processing import Processing
 from srcopsmetrics.entity_schema import Schemas
 
 from plotly.offline import init_notebook_mode, iplot
@@ -49,9 +49,6 @@ from plotly.graph_objects import Figure
 USE_NOTEBOOK = os.getenv("JUPYTER")
 
 _LOGGER = logging.getLogger(__name__)
-
-pre_processing = PreProcessing()
-
 
 class Visualization:
     """Class for visualizing knowledge collected for the bot."""
@@ -62,6 +59,8 @@ class Visualization:
 
     def __init__(self, *, use_notebook: Optional[str] = None):
         """Initialize Visualization class for bot."""
+        self.processing = Processing()
+        
         self.use_notebook = use_notebook or os.getenv("JUPYTER")
         if self.use_notebook:
             _LOGGER.info("Initiate notebook for offline plot")
@@ -144,7 +143,7 @@ class Visualization:
 
     def visualize_pr_data(self, project: str, result_path: Path, pr_data: Dict[str, Any]):
         """Visualize results from Pull Requests for a project."""
-        projects_reviews_data = pre_processing.pre_process_prs_project_data(data=pr_data)
+        projects_reviews_data = self.processing.process_prs_project_data(data=pr_data)
         prs_ids = projects_reviews_data["ids"]
         prs_created_dts = projects_reviews_data["created_dts"]
         prs_lengths = projects_reviews_data["PRs_size"]
@@ -269,7 +268,7 @@ class Visualization:
         self, project: str, result_path: Path, issues_data: Dict[str, Any], pr_data: Dict[str, Any]
     ):
         """Visualize results from Issues for a project."""
-        project_issues_data = pre_processing.pre_process_issues_project_data(data=issues_data)
+        project_issues_data = self.processing.process_issues_project_data(data=issues_data)
         issues_created_dts = project_issues_data["created_dts"]
         issues_ttci = project_issues_data["TTCI"]
 
@@ -287,17 +286,17 @@ class Visualization:
             output_name="TTCI-in-time",
         )
 
-        overall_opened_issues = pre_processing.pre_process_issues_creators(issues_data=issues_data)
+        overall_opened_issues = self.processing.process_issues_creators(issues_data=issues_data)
         self._visualize_issues_per_developer(overall_opened_issues, title="Number of opened issues per each developer")
 
-        overall_closed_issues = pre_processing.pre_process_issues_closers(issues_data=issues_data, pr_data=pr_data)
+        overall_closed_issues = self.processing.process_issues_closers(issues_data=issues_data, pr_data=pr_data)
         self._visualize_issues_per_developer(overall_closed_issues, title="Number of closed issues per each developer")
 
-        overall_issues_interactions = pre_processing.pre_process_issue_interactions(issues_data=issues_data)
-        overall_issue_types_creators = pre_processing.pre_process_issue_labels_to_issue_creators(
+        overall_issues_interactions = self.processing.process_issue_interactions(issues_data=issues_data)
+        overall_issue_types_creators = self.processing.process_issue_labels_to_issue_creators(
             issues_data=issues_data
         )
-        overall_issue_types_closers = pre_processing.pre_process_issue_labels_to_issue_closers(
+        overall_issue_types_closers = self.processing.process_issue_labels_to_issue_closers(
             issues_data=issues_data, pull_requests_data=pr_data
         )
 
@@ -323,18 +322,18 @@ class Visualization:
         """Create plots that are focused on a single contributor."""
         knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
 
-        pr_data = pre_processing.retrieve_knowledge(
+        pr_data = self.processing.retrieve_knowledge(
             knowledge_path=knowledge_path, project=project, entity_type=EntityTypeEnum.PULL_REQUEST.value
         )
-        issues_data = pre_processing.retrieve_knowledge(
+        issues_data = self.processing.retrieve_knowledge(
             knowledge_path=knowledge_path, project=project, entity_type=EntityTypeEnum.ISSUE.value
         )
 
-        overall_issues_interactions = pre_processing.pre_process_issue_interactions(issues_data=issues_data)
-        overall_issue_types_creators = pre_processing.pre_process_issue_labels_to_issue_creators(
+        overall_issues_interactions = self.processing.process_issue_interactions(issues_data=issues_data)
+        overall_issue_types_creators = self.processing.process_issue_labels_to_issue_creators(
             issues_data=issues_data
         )
-        overall_issue_types_closers = pre_processing.pre_process_issue_labels_to_issue_closers(
+        overall_issue_types_closers = self.processing.process_issue_labels_to_issue_closers(
             issues_data=issues_data, pull_requests_data=pr_data
         )
 
@@ -359,14 +358,14 @@ class Visualization:
 
         projects_data = []
         for project in projects:
-            issues_data = pre_processing.retrieve_knowledge(
+            issues_data = self.processing.retrieve_knowledge(
                 knowledge_path=knowledge_path,
                 project=project,
                 entity_type=EntityTypeEnum.ISSUE.value,
                 is_local=is_local,
             )
 
-            project_issues_data = pre_processing.pre_process_issues_project_data(data=issues_data)
+            project_issues_data = self.processing.process_issues_project_data(data=issues_data)
             issues_created_dts = project_issues_data["created_dts"]
             issues_ttci = project_issues_data["TTCI"]
 
@@ -531,7 +530,7 @@ class Visualization:
         :param pr_data:PullRequestSchema:
         :rtype: None
         """
-        pr_size_issues = pre_processing.pre_process_issues_closed_by_pr_size(issues_data=issues_data, pr_data=pr_data)
+        pr_size_issues = self.processing.process_issues_closed_by_pr_size(issues_data=issues_data, pr_data=pr_data)
         df = pd.DataFrame()
 
         sizes = []
@@ -557,7 +556,7 @@ class Visualization:
         :param statistical_quantity:str: Either 'Median' or 'Average'
         :rtype: None
         """
-        issues_labels = pre_processing.pre_process_issue_labels_with_ttci(issues_data=issues_data)
+        issues_labels = self.processing.process_issue_labels_with_ttci(issues_data=issues_data)
         processed_labels = {}
         for label in issues_labels.keys():
             processed_labels[label] = issues_labels[label][0]
