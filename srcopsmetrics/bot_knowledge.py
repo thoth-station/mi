@@ -17,20 +17,17 @@
 
 """Create, Visualize, Use bot knowledge from different Software Development Platforms."""
 
+import json
 import logging
 import os
-import json
-
-from typing import List
-from typing import Tuple
-
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.pre_processing import PreProcessing
-from srcopsmetrics.visualization import Visualization
 from srcopsmetrics.utils import check_directory
+from srcopsmetrics.visualization import Visualization
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +36,9 @@ pre_processing = PreProcessing()
 visualization = Visualization()
 
 
-def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) -> None:
+def analyse_projects(
+    projects: List[Tuple[str, str]], is_local: bool = False, entities: Optional[List[str]] = None
+) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
@@ -52,6 +51,12 @@ def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) ->
 
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
+
+        if entities is not None:
+            for entity in entities:
+                _LOGGER.info("%s inspection" % entity)
+                github_knowledge.analyse_entity(github_repo, project_path, entity, is_local)
+            continue
 
         _LOGGER.info("Issues inspection")
         github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
