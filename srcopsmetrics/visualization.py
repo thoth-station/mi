@@ -278,8 +278,7 @@ class Visualization:
         self, project: str, result_path: Path
     ):
         """Visualize results from Issues for a project."""
-        project_issues_data = self.processing.process_issues_project_data(
-            data=issues_data)
+        project_issues_data = self.processing.process_issues_project_data()
         issues_created_dts = project_issues_data["created_dts"]
         issues_ttci = project_issues_data["TTCI"]
 
@@ -298,7 +297,7 @@ class Visualization:
             output_name="TTCI-in-time",
         )
 
-        overall_opened_issues = self.processing.process_issues_creators(i)
+        overall_opened_issues = self.processing.process_issues_creators()
         self._visualize_issues_per_developer(
             overall_opened_issues, title="Number of opened issues per each developer")
 

@@ -17,34 +17,29 @@
 
 """Reviewer Technical and Social Score."""
 
+import itertools
+import json
 import logging
 import os
-import json
 import time
-import itertools
-from datetime import timedelta
-from datetime import datetime
+from collections import Counter
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import List, Tuple
 
-from typing import Tuple, List
 import numpy as np
 import pandas as pd
 
-from pathlib import Path
-from collections import Counter
-
-from srcopsmetrics.pre_processing import PreProcessing
-from srcopsmetrics.utils import convert_num2label
-from srcopsmetrics.utils import convert_score2num
 from srcopsmetrics.enums import EntityTypeEnum
-
+from srcopsmetrics.processing import Processing
+from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
 
 BOTS_NAMES = ["sesheta", "dependencies[bot]", "dependabot[bot]", "review-notebook-app[bot]"]
 
 pd.set_option("display.max_columns", 500)
-
-pre_processing = PreProcessing()
 
 
 class ReviewerAssigner:
@@ -65,11 +60,9 @@ class ReviewerAssigner:
         :param number_reviewer: number of reviewers to select
         """
         knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-        data = pre_processing.retrieve_knowledge(
-            knowledge_path=knowledge_path,
+        data = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
             project=project,
-            entity_type=EntityTypeEnum.PULL_REQUEST.value,
-            is_local=is_local,
+            knowledge_type=EntityTypeEnum.PULL_REQUEST.value,
         )
         if not data:
             return {}

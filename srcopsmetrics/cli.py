@@ -80,6 +80,8 @@ def cli(
     reviewer_reccomender: bool
 ):
     """Command Line Interface for SrcOpsMetrics."""
+    os.environ['IS_LOCAL'] = 'True' if is_local else 'False'
+
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
     if create_knowledge:
         analyse_projects(
@@ -88,6 +90,8 @@ def cli(
         )
 
     for project in repos:
+        os.environ['PROJECT'] = project
+        
         if visualize_statistics:
             visualize_project_results(project=project, is_local=is_local)
 

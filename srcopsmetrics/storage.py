@@ -21,29 +21,50 @@ import json
 import logging
 import os
 from datetime import datetime
-
-from typing import Any
-from typing import List
-from typing import Dict
-from typing import Optional
-
+from functools import partial
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from thoth.storages.ceph import CephStore
+from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics.entity_schema import Schemas
-from thoth.storages.exceptions import NotFoundError
+from srcopsmetrics.enums import EntityTypeEnum
 
 _LOGGER = logging.getLogger(__name__)
 
+class ProcessedKnowledge:
+
+    def __init__(self, f):
+        self.func = f
+
+    def __call__(self, *args, **kwargs):
+        def wrapper():
+            return self.func(*args, **kwargs)
+
+        project = os.getenv('PROJECT')
+        total_path = Path(f'./srcopsmetrics/bot_knowledge/{project}/{self.func.__name__ }.json')
+        storage = KnowledgeStorage(os.getenv('IS_LOCAL'))
+
+        knowledge = storage.load_previous_knowledge(file_path=total_path, knowledge_type='Processed Knowledge')
+
+        if knowledge is None or knowledge == {}:
+            knowledge = wrapper()
+            storage.save_knowledge(file_path=total_path, data=knowledge)
+
+        return knowledge
+
+    def __get__(self, instance, owner):
+        return partial(self.__call__, instance)
+
 
 class KnowledgeStorage:
-    """Context manager for knowledge loading and saving."""
+    """Class for knowledge loading and saving."""
 
     _FILENAME_ENTITY = {
         "Issue": "issues",
         "PullRequest": "pull_requests",
-        "ContentFile": "content_file"
+        "ContentFile": "content_file",
     }
 
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -98,37 +119,35 @@ class KnowledgeStorage:
         s3.connect()
         return s3
 
-    def load_previous_knowledge(self, project_name: str, file_path: Path, knowledge_type: str) -> Dict[str, Any]:
+    def load_previous_knowledge(self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
-            repo_path {Path} -- path of the inspected github repository
+            file_ath {Path} -- path of the inspected github repository
 
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
                             Empty dict if the knowledge does not exist.
 
         """
-        filename = self._FILENAME_ENTITY[knowledge_type]
 
         if file_path is None:
+            filename = self._FILENAME_ENTITY[knowledge_type]
             pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
             project_path = pwd.joinpath("./" + project_name)
             file_path = project_path.joinpath("./" + filename + ".json")
 
-        results = self.load_remotely(
-            file_path) if not self.is_local else self.load_locally(file_path)
+        results = self.load_locally(
+            file_path) if self.is_local else self.load_remotely(file_path)
 
         if results is None:
             _LOGGER.info("No previous knowledge found for %s" % project_name)
             results = {}
-            return results
-
-        _LOGGER.info(
-            "Found previous knowledge for %s with %d entities of type %s" % (
-                project_name, len(results), knowledge_type)
-        )
-
+        else:
+            _LOGGER.info(
+                "Found previous knowledge for %s with %d entities of type %s" % (
+                    project_name, len(results), knowledge_type)
+            )
         return results
 
     @staticmethod
