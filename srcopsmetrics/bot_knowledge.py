@@ -43,6 +43,8 @@ def analyse_projects(
 
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
+        is_local {bool} -- if set to False, Ceph will be used
+        entities {Optional[List[str]]} -- entities that will be analysed. If not specified, all are used.
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
