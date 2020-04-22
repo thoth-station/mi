@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class Processing:
     """Pre processing functions for entity extracted."""
 
-    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests, project: str):
+    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests):
         self.issues = issues
         self.pull_requests = pull_requests
 
@@ -74,7 +74,7 @@ class Processing:
 
         return extracted_data
 
-    def pre_process_prs_project_data(self):
+    def process_prs_project_data(self):
         """Pre process of data for a given project repository."""
         if not self.pull_requests:
             return {}
@@ -444,7 +444,7 @@ class Processing:
                 if label not in issues:
                     issues[label] = [[], []]
                 issues[label][0].append(ttci / 3600)
-                issues[label][1].append(datetime.fromtimestamp(self.issues[issue_id]["created_at"]))
+                issues[label][1].append(int(self.issues[issue_id]["created_at"]))
         return issues
 
     @ProcessedKnowledge
@@ -513,7 +513,7 @@ class Processing:
                 ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
                 size = self.pull_requests[pr_id]["size"]
 
-                if self.pull_requests[pr_id][size] not in issues:
+                if size not in issues:
                     issues[size] = []
                 issues[size].append(ttci)
         return issues

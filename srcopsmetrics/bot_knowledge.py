@@ -74,8 +74,8 @@ def visualize_project_results(project: str, is_local: bool = False):
     pr_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
     issues_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value)
 
-    processing = Processing(issues=issues_data, pull_requests=pr_data, project=project)
+    processing = Processing(issues=issues_data, pull_requests=pr_data)
     viz = Visualization(processing=processing)
 
-    visualization.visualize_pr_data(project=project, result_path=result_path, pr_data=pr_data)
-    visualization.visualize_issue_data(project=project, result_path=result_path)
+    viz.visualize_pr_data(project=project, result_path=result_path, pr_data=pr_data)
+    viz.visualize_issue_data(project=project, result_path=result_path)

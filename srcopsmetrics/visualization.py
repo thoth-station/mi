@@ -146,8 +146,7 @@ class Visualization:
 
     def visualize_pr_data(self, project: str, result_path: Path, pr_data: Dict[str, Any]):
         """Visualize results from Pull Requests for a project."""
-        projects_reviews_data = self.processing.process_prs_project_data(
-            data=pr_data)
+        projects_reviews_data = self.processing.process_prs_project_data()
         prs_ids = projects_reviews_data["ids"]
         prs_created_dts = projects_reviews_data["created_dts"]
         prs_lengths = projects_reviews_data["PRs_size"]
