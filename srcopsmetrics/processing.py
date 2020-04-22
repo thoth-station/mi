@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Tuple, Union
 import numpy as np
 
 from srcopsmetrics.entity_schema import Schemas
-from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.storage import KnowledgeStorage, ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class Processing:
     """Pre processing functions for entity extracted."""
 
-    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests):
+    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests, project: str):
         self.issues = issues
         self.pull_requests = pull_requests
 
@@ -361,6 +361,7 @@ class Processing:
 
         return interactions_data
 
+    @ProcessedKnowledge
     def process_issues_creators(self) -> Dict[str, int]:
         """Analyse number of created issues for each contributor that has created issue.
 
@@ -375,6 +376,7 @@ class Processing:
 
         return creators
 
+    @ProcessedKnowledge
     def process_issues_closers(self) -> Dict[str, int]:
         """Analyse number of closed issues for each contributor that has closed issue.
 
@@ -401,6 +403,7 @@ class Processing:
 
         return closers
 
+    @ProcessedKnowledge
     def process_issue_interactions(self) -> Dict[str, Dict[str, int]]:
         """Analyse interactions between contributors with respect to closed issues in project.
 
@@ -424,6 +427,7 @@ class Processing:
                 authors[issue_author][interactioner] += self.issues[issue_id]["interactions"][interactioner]
         return authors
 
+    @ProcessedKnowledge
     def process_issue_labels_with_ttci(
         self
     ) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
@@ -443,6 +447,7 @@ class Processing:
                 issues[label][1].append(datetime.fromtimestamp(self.issues[issue_id]["created_at"]))
         return issues
 
+    @ProcessedKnowledge
     def process_issue_labels_to_issue_creators(self) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has created an issue.
 
@@ -459,6 +464,7 @@ class Processing:
                 authors[issue_author][label] += 1
         return authors
 
+    @ProcessedKnowledge
     def process_issue_labels_to_issue_closers(
         self
     ) -> Dict[str, Dict[str, int]]:
@@ -494,6 +500,7 @@ class Processing:
 
         return closers
 
+    @ProcessedKnowledge
     def process_issues_closed_by_pr_size(self) -> Dict[str, int]:
         """Analyse number of closed issues to every Pull Request size.
 
