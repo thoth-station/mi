@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
+from srcopsmetrics import utils
 from srcopsmetrics.entity_schema import Schemas
 from srcopsmetrics.enums import EntityTypeEnum
 
@@ -43,7 +44,11 @@ class ProcessedKnowledge:
             return self.func(*args, **kwargs)
 
         project = os.getenv('PROJECT')
-        total_path = Path(f'./srcopsmetrics/bot_knowledge/{project}/{self.func.__name__ }.json')
+
+        preprocessed_dir = Path(f'./srcopsmetrics/preprocessed/{project}')
+        utils.check_directory(preprocessed_dir)
+        total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
+        
         storage = KnowledgeStorage(os.getenv('IS_LOCAL'))
 
         knowledge = storage.load_previous_knowledge(file_path=total_path, knowledge_type='Processed Knowledge')
@@ -170,3 +175,5 @@ class KnowledgeStorage:
             return self.get_ceph_store().retrieve_document(ceph_filename)["results"]
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
+
+from os.path import join

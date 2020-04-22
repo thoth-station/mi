@@ -59,17 +59,17 @@ class ReviewerAssigner:
         :project: repository to be analyzed (e.g. (thoth-station, performance))
         :param number_reviewer: number of reviewers to select
         """
-        knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
         data = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-            project=project,
+            project_name=project,
             knowledge_type=EntityTypeEnum.PULL_REQUEST.value,
         )
         if not data:
             return {}
+        processing = Processing(issues=None, pull_requests=data)
 
         now_time = datetime.now()
 
-        projects_reviews_data = pre_processing.pre_process_prs_project_data(data=data)
+        projects_reviews_data = processing.pre_process_prs_project_data(data=data)
 
         # Project statistics
         project_commits_number = sum([pr["commits_number"] for pr in data.values()])
@@ -111,7 +111,7 @@ class ReviewerAssigner:
         scores_data = []
 
         # Contributors that reviewed and that didn't reviewed
-        contributors_reviews_data = pre_processing.pre_process_contributors_data(
+        contributors_reviews_data = processing.pre_process_contributors_data(
             data=data, contributors=[c for c in contributors if c not in BOTS_NAMES]
         )
 
