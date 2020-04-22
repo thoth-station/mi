@@ -319,7 +319,8 @@ class Visualization:
             self._visualize_top_X_issues_types_wrt_project(
                 overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
             ),
-            self._visualize_top_x_issue_interactions(overall_issues_interactions),
+            self._visualize_top_x_issue_interactions(
+                overall_issues_interactions),
             self._visualize_ttci_wrt_labels(),
             self._visualize_ttci_wrt_pr_length(),
         ]
@@ -329,7 +330,6 @@ class Visualization:
 
     def visualize_developer_activity(self, developer: str):
         """Create plots that are focused on a single contributor."""
-
         overall_issues_interactions = self.processing.process_issue_interactions()
         overall_issue_types_creators = self.processing.process_issue_labels_to_issue_creators()
         overall_issue_types_closers = self.processing.process_issue_labels_to_issue_closers()
@@ -556,7 +556,7 @@ class Visualization:
         return fig
 
     def _visualize_ttci_wrt_labels(self, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
-    ) -> Figure:
+                                   ) -> Figure:
         """For each label visualize its Time To Close Issue.
 
         :param issues_data:IssueSchema:

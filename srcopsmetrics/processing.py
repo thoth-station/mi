@@ -35,6 +35,11 @@ class Processing:
     """Pre processing functions for entity extracted."""
 
     def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests):
+        """Initialize with issues and pull requests knowledge.
+
+        If any of the entities is not specified, the behaviour
+        of corresponding process function is undefined.
+        """
         self.issues = issues
         self.pull_requests = pull_requests
 
@@ -57,7 +62,8 @@ class Processing:
             if issue["created_by"] not in project_issues_data["contributors"]:
                 project_issues_data["contributors"].append(issue["created_by"])
 
-            self._analyze_issue_for_project_data(issue_id=id, issue=issue, extracted_data=project_issues_data)
+            self._analyze_issue_for_project_data(
+                issue_id=id, issue=issue, extracted_data=project_issues_data)
 
         return project_issues_data
 
@@ -105,9 +111,11 @@ class Processing:
             if pr["created_by"] not in project_reviews_data["contributors"]:
                 project_reviews_data["contributors"].append(pr["created_by"])
 
-            self._analyze_pr_for_project_data(pr_id=id, pr=pr, extracted_data=project_reviews_data)
+            self._analyze_pr_for_project_data(
+                pr_id=id, pr=pr, extracted_data=project_reviews_data)
 
-        project_reviews_data["last_review_time"] = max(project_reviews_data["reviews_dts"])
+        project_reviews_data["last_review_time"] = max(
+            project_reviews_data["reviews_dts"])
 
         # Encode Pull Request sizes for the contributor
         project_pr_median_size, project_length_score = convert_num2label(
@@ -141,7 +149,8 @@ class Processing:
         extracted_data["created_dts"].append(pr_created_dt)
 
         # PR first review timestamp (no matter the contributor)
-        pr_first_review_dt = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
+        pr_first_review_dt = datetime.fromtimestamp(
+            [r for r in pr["reviews"].values()][0]["submitted_at"])
 
         ttfr = (pr_first_review_dt - pr_created_dt).total_seconds() / 3600
         extracted_data["TTFR"].append(ttfr)
@@ -151,7 +160,8 @@ class Processing:
 
         project_prs_size = pr["size"]
         extracted_data["PRs_size"].append(project_prs_size)
-        extracted_data["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+        extracted_data["encoded_PRs_size"].append(
+            convert_score2num(label=project_prs_size))
 
         # Take maximum to consider last approved if more than one contributor has to approve
         pr_approved_dt = max(pr_approved_dt)
@@ -163,7 +173,8 @@ class Processing:
         extracted_data["MTTR"].append(mttr)
 
         # PR reviews timestamps
-        extracted_data["reviews_dts"] += [r["submitted_at"] for r in pr["reviews"].values()]
+        extracted_data["reviews_dts"] += [r["submitted_at"]
+                                          for r in pr["reviews"].values()]
 
         return extracted_data
 
@@ -183,7 +194,8 @@ class Processing:
         for pr_id in pr_ids:
             pr = self.pull_requests[str(pr_id)]
 
-            self._analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
+            self._analyze_pr_for_contributor_data(
+                pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
 
             self._analyze_contributors_interaction(
                 pr_interactions=pr["interactions"], pr_author=pr["created_by"], interactions_data=interactions
@@ -207,7 +219,8 @@ class Processing:
             last_review_dt = max(time_reviews)
 
             contributors_reviews_data[reviewer]["number_reviews"] = number_reviews
-            contributors_reviews_data[reviewer]["median_review_length"] = np.median(reviews_length)
+            contributors_reviews_data[reviewer]["median_review_length"] = np.median(
+                reviews_length)
             contributors_reviews_data[reviewer]["last_review_time"] = last_review_dt
 
             # Encode Pull Request sizes for the contributor
@@ -216,7 +229,8 @@ class Processing:
                     convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
                 ]
             else:
-                contributor_prs_size_encoded = convert_score2num(label=contributors_reviews_data[reviewer]["PRs_size"])
+                contributor_prs_size_encoded = convert_score2num(
+                    label=contributors_reviews_data[reviewer]["PRs_size"])
 
             contributor_pr_median_size, contributor_relative_score = convert_num2label(
                 score=np.median(contributor_prs_size_encoded)
@@ -271,12 +285,17 @@ class Processing:
             extracted_data[contributor_review["author"]]["ids"] = []
             # Time to First Review (TTFR) [hr]
             extracted_data[contributor_review["author"]]["TTFR"] = []
-            extracted_data[contributor_review["author"]]["MTTFR"] = []  # Median TTFR [hr]
-            extracted_data[contributor_review["author"]]["TTR"] = []  # Time to Review (TTR) [hr]
-            extracted_data[contributor_review["author"]]["MTTR"] = []  # Median TTR [hr]
-            extracted_data[contributor_review["author"]]["PRs_size"] = []  # Pull Request length
+            extracted_data[contributor_review["author"]
+                           ]["MTTFR"] = []  # Median TTFR [hr]
+            extracted_data[contributor_review["author"]
+                           ]["TTR"] = []  # Time to Review (TTR) [hr]
+            extracted_data[contributor_review["author"]
+                           ]["MTTR"] = []  # Median TTR [hr]
+            extracted_data[contributor_review["author"]
+                           ]["PRs_size"] = []  # Pull Request length
             # Pull Request length encoded
-            extracted_data[contributor_review["author"]]["encoded_PRs_size"] = []
+            extracted_data[contributor_review["author"]
+                           ]["encoded_PRs_size"] = []
 
         if pr_id not in extracted_data[contributor_review["author"]]["reviews"].keys():
             extracted_data[contributor_review["author"]]["reviews"][pr_id] = [
@@ -296,9 +315,11 @@ class Processing:
             )
 
         if contributor_review["author"] not in reviews_submitted_dts_per_reviewer.keys():
-            reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [contributor_review["submitted_at"]]
+            reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [
+                contributor_review["submitted_at"]]
         else:
-            reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(contributor_review["submitted_at"])
+            reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(
+                contributor_review["submitted_at"])
 
         return extracted_data
 
@@ -332,7 +353,8 @@ class Processing:
 
         project_prs_size = pr["size"]
         extracted_data[reviewer]["PRs_size"].append(project_prs_size)
-        extracted_data[reviewer]["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
+        extracted_data[reviewer]["encoded_PRs_size"].append(
+            convert_score2num(label=project_prs_size))
 
         # Take maximum to consider last approved if more than one contributor has to approve
         pr_approved_dt = max(dt_approved)
@@ -439,12 +461,14 @@ class Processing:
         issues = {}
         for issue_id in self.issues.keys():
             issue_labels = self.issues[issue_id]["labels"]
-            ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
+            ttci = int(self.issues[issue_id]["closed_at"]
+                       - int(self.issues[issue_id]["created_at"]))
             for label in issue_labels:
                 if label not in issues:
                     issues[label] = [[], []]
                 issues[label][0].append(ttci / 3600)
-                issues[label][1].append(int(self.issues[issue_id]["created_at"]))
+                issues[label][1].append(
+                    int(self.issues[issue_id]["created_at"]))
         return issues
 
     @ProcessedKnowledge
@@ -510,7 +534,8 @@ class Processing:
         for pr_id in self.pull_requests.keys():
             for issue_id in self.pull_requests[pr_id]["referenced_issues"]:
 
-                ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
+                ttci = int(self.issues[issue_id]["closed_at"]
+                           - int(self.issues[issue_id]["created_at"]))
                 size = self.pull_requests[pr_id]["size"]
 
                 if size not in issues:

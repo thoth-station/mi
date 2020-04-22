@@ -91,7 +91,7 @@ def cli(
 
     for project in repos:
         os.environ['PROJECT'] = project
-        
+
         if visualize_statistics:
             visualize_project_results(project=project, is_local=is_local)
 

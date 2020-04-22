@@ -17,6 +17,7 @@
 
 """GitHub Knowledge Storage handling."""
 
+from os.path import join
 import json
 import logging
 import os
@@ -34,12 +35,22 @@ from srcopsmetrics.enums import EntityTypeEnum
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class ProcessedKnowledge:
+    """Decorator for Processing() methods implemented as a descriptor.
+
+    Decorator tries to first find if processed knowledge was stored before,
+    if yes it loads it and returns it,
+    if not it calls the processing function, stores the processed information
+    and returns it
+    """
 
     def __init__(self, f):
+        """Initialize with function the decorator is decorating."""
         self.func = f
 
     def __call__(self, *args, **kwargs):
+        """Load or process knowledge and save it."""
         def wrapper():
             return self.func(*args, **kwargs)
 
@@ -48,10 +59,11 @@ class ProcessedKnowledge:
         preprocessed_dir = Path(f'./srcopsmetrics/preprocessed/{project}')
         utils.check_directory(preprocessed_dir)
         total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
-        
+
         storage = KnowledgeStorage(os.getenv('IS_LOCAL'))
 
-        knowledge = storage.load_previous_knowledge(file_path=total_path, knowledge_type='Processed Knowledge')
+        knowledge = storage.load_previous_knowledge(
+            file_path=total_path, knowledge_type='Processed Knowledge')
 
         if knowledge is None or knowledge == {}:
             knowledge = wrapper()
@@ -60,6 +72,7 @@ class ProcessedKnowledge:
         return knowledge
 
     def __get__(self, instance, owner):
+        """Return __call__ when accessed during runtime."""
         return partial(self.__call__, instance)
 
 
@@ -124,7 +137,9 @@ class KnowledgeStorage:
         s3.connect()
         return s3
 
-    def load_previous_knowledge(self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None) -> Dict[str, Any]:
+    def load_previous_knowledge(
+        self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None
+    ) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
@@ -135,7 +150,6 @@ class KnowledgeStorage:
                             Empty dict if the knowledge does not exist.
 
         """
-
         if file_path is None:
             filename = self._FILENAME_ENTITY[knowledge_type]
             pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
@@ -175,5 +189,3 @@ class KnowledgeStorage:
             return self.get_ceph_store().retrieve_document(ceph_filename)["results"]
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
-
-from os.path import join
