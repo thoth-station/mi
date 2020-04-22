@@ -320,8 +320,8 @@ class Visualization:
                 overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
             ),
             self._visualize_top_x_issue_interactions(overall_issues_interactions),
-            self._visualize_ttci_wrt_labels(issues_data=issues_data),
-            self._visualize_ttci_wrt_pr_length(issues_data=issues_data, pr_data=pr_data),
+            self._visualize_ttci_wrt_labels(),
+            self._visualize_ttci_wrt_pr_length(),
         ]
 
         for viz in graphs:
@@ -529,8 +529,7 @@ class Visualization:
         )
         return fig
 
-    @staticmethod
-    def _visualize_ttci_wrt_pr_length(issues_data: Schemas.Issues, pr_data: Schemas.PullRequests) -> Figure:
+    def _visualize_ttci_wrt_pr_length(self) -> Figure:
         """For each pull request size label visualize its TTCI.
 
         Time To Close Issue is summed with respect to all of the Issues
@@ -556,9 +555,7 @@ class Visualization:
         fig = px.scatter(df, x="size", y="TTCI", color="size")
         return fig
 
-    @staticmethod
-    def _visualize_ttci_wrt_labels(
-        issues_data: Schemas.Issues, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
+    def _visualize_ttci_wrt_labels(self, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
     ) -> Figure:
         """For each label visualize its Time To Close Issue.
 
