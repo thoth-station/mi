@@ -18,16 +18,16 @@
 """This is the CLI for SrcOpsMetrics to create, visualize, use bot knowledge."""
 
 import logging
-import click
 import os
+from typing import List, Optional
 
-from typing import Optional
+import click
 
-from srcopsmetrics.bot_knowledge import analyse_projects
-from srcopsmetrics.bot_knowledge import visualize_project_results
-from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.bot_knowledge import (analyse_projects,
+                                         visualize_project_results)
+from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
-
+from srcopsmetrics.github_knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +51,6 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--create-knowledge",
     "-c",
-    envvar="CREATE_KNOWLEDGE",
     is_flag=True,
     help="Create knowledge from a project repository.",
 )
@@ -61,7 +60,17 @@ logging.basicConfig(level=logging.INFO)
     is_flag=True,
     help="Use local for knowledge loading and storing.",
 )
-@click.option("--create-knowledge", "-c", is_flag=True, help="Create knowledge from a project repository.")
+@click.option(
+    "--entities",
+    "-e",
+    multiple=True,
+    type=str,
+    required=False,
+    help="""Entities to be analysed for a repository.
+            If not specified, all entities will be analysed.
+            Current entities available are:
+            """ + "\n".join([entity.value for entity in EntityTypeEnum]),
+)
 @click.option(
     "--visualize-statistics",
     "-v",
@@ -76,15 +85,17 @@ def cli(
     organization: Optional[str],
     create_knowledge: bool,
     is_local: bool,
+    entities: Optional[List[str]],
     visualize_statistics: bool,
-    reviewer_reccomender: bool
+    reviewer_reccomender: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
     if create_knowledge:
         analyse_projects(
             projects=[repo.split("/") for repo in repos],
-            is_local=is_local
+            is_local=is_local,
+            entities=entities
         )
 
     for project in repos:
