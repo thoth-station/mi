@@ -19,4 +19,8 @@
 
 
 class MissingPreviousKnowledge(Exception):
-    """A base exception when no previous knowledge has been extracted for a project."""
+    """An exception when no previous knowledge has been extracted for a project."""
+
+
+class NotKnownEntities(Exception):
+    """An exception when Entities requested are not known."""
