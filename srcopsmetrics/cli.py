@@ -66,8 +66,10 @@ logging.basicConfig(level=logging.INFO)
     multiple=True,
     type=str,
     required=False,
-    help="""Entities to be analysed (e.g thoth-station/performance)
-            If not specified, all entities will be analysed""",
+    help="""Entities to be analysed for a repository.
+            If not specified, all entities will be analysed.
+            Current entities available are:
+            """ + "\n".join([entity.value for entity in EntityTypeEnum]),
 )
 @click.option(
     "--visualize-statistics",

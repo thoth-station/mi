@@ -29,6 +29,8 @@ from srcopsmetrics.pre_processing import PreProcessing
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
 
+from srcopsmetrics.exceptions import NotKnownEntities
+
 _LOGGER = logging.getLogger(__name__)
 
 github_knowledge = GitHubKnowledge()
@@ -54,20 +56,18 @@ def analyse_projects(
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        if entities is not None:
-            for entity in entities:
-                _LOGGER.info("%s inspection" % entity)
-                github_knowledge.analyse_entity(github_repo, project_path, entity, is_local)
-            continue
+        allowed_entities = [e.value for e in EntityTypeEnum]
 
-        _LOGGER.info("Issues inspection")
-        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
+        if entities:
+            check_entities = [i for i in entities if i not in allowed_entities]
+            if check_entities:
+                raise NotKnownEntities(f"There are Entities requested which are not known: {check_entities}")
 
-        _LOGGER.info("Pull requests inspection")
-        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
+        entities = entities or allowed_entities
 
-        _LOGGER.info("Content Files inspection")
-        github_knowledge.analyse_entity(github_repo, project_path, EntityTypeEnum.CONTENT_FILE.value, is_local)
+        for entity in entities:
+            _LOGGER.info("%s inspection" % entity)
+            github_knowledge.analyse_entity(github_repo, project_path, entity, is_local)
 
 
 def visualize_project_results(project: str, is_local: bool = False):
