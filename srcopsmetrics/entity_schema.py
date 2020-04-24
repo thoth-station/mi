@@ -19,21 +19,6 @@
 
 from voluptuous import Schema, Any
 
-IssueSchema = Schema(
-    {
-        int: Schema(
-            {
-                "created_by": str,
-                "created_at": int,
-                "closed_by": str,
-                "closed_at": int,
-                "labels": List[str],
-                "interactions": Dict[str, int],
-                "state": str,
-            }
-        )
-    }
-)
 
 class Schemas:
     """Schemas that describes how knowledge should be analysed and stored."""
