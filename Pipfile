@@ -10,8 +10,7 @@ matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
 plotly = "*"
-jinja2 = "*"
-flask = "*"
+dash = "*"
 
 [dev-packages]
 pytest = "*"
