@@ -118,7 +118,7 @@ class KnowledgeStorage:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = self.get_ceph_store()
             s3.store_document(results, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s%s%s" %
+            _LOGGER.info("Saved on CEPH at %s/%s%s" %
                          (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
