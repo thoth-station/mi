@@ -56,7 +56,8 @@ logging.basicConfig(level=logging.INFO)
     "-c",
     is_flag=True,
     help=f"""Create knowledge from a project repository.
-            Storage location is {StoragePath.KNOWLEDGE.value}""",
+            Storage location is {StoragePath.KNOWLEDGE.value}
+            Removes all previously processed storage""",
 )
 @click.option(
     "--process-knowledge",
