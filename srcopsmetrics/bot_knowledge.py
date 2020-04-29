@@ -21,27 +21,30 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Tuple
-
-from github.PullRequest import PullRequest
+from typing import List, Optional, Tuple
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.processing import Processing
-from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.pre_processing import PreProcessing
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
+
+from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
 
 github_knowledge = GitHubKnowledge()
 
 
-def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) -> None:
+def analyse_projects(
+    projects: List[Tuple[str, str]], is_local: bool = False, entities: Optional[List[str]] = None
+) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
+        is_local {bool} -- if set to False, Ceph will be used
+        entities {Optional[List[str]]} -- entities that will be analysed. If not specified, all are used.
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
@@ -52,17 +55,18 @@ def analyse_projects(projects: List[Tuple[str, str]], is_local: bool = False) ->
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        _LOGGER.info("Issues inspection")
-        github_knowledge.analyse_entity(
-            github_repo, project_path, EntityTypeEnum.ISSUE.value, is_local)
+        allowed_entities = [e.value for e in EntityTypeEnum]
 
-        _LOGGER.info("Pull requests inspection")
-        github_knowledge.analyse_entity(
-            github_repo, project_path, EntityTypeEnum.PULL_REQUEST.value, is_local)
+        if entities:
+            check_entities = [i for i in entities if i not in allowed_entities]
+            if check_entities:
+                raise NotKnownEntities(f"There are Entities requested which are not known: {check_entities}")
 
-        _LOGGER.info("Content Files inspection")
-        github_knowledge.analyse_entity(
-            github_repo, project_path, EntityTypeEnum.CONTENT_FILE.value, is_local)
+        entities = entities or allowed_entities
+
+        for entity in entities:
+            _LOGGER.info("%s inspection" % entity)
+            github_knowledge.analyse_entity(github_repo, project_path, entity, is_local)
 
 
 def visualize_project_results(project: str, is_local: bool = False):
