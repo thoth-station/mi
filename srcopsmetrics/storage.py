@@ -21,7 +21,7 @@ from os.path import join
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, date
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -65,7 +65,7 @@ class ProcessedKnowledge:
         knowledge = storage.load_previous_knowledge(
             file_path=total_path, knowledge_type='Processed Knowledge')
 
-        if knowledge is None or knowledge == {}:
+        if knowledge is None or knowledge == {} or os.getenv('PROCESS_KNOWLEDGE') is 'True':
             knowledge = wrapper()
             storage.save_knowledge(file_path=total_path, data=knowledge)
 
@@ -160,7 +160,7 @@ class KnowledgeStorage:
             file_path) if self.is_local else self.load_remotely(file_path)
 
         if results is None:
-            _LOGGER.info("No previous knowledge found for %s" % project_name)
+            _LOGGER.info("No previous knowledge of type %s found" % knowledge_type)
             results = {}
         else:
             _LOGGER.info(

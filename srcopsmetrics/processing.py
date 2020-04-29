@@ -24,6 +24,8 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
+import os
+
 from srcopsmetrics.entity_schema import Schemas
 from srcopsmetrics.storage import KnowledgeStorage, ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
@@ -42,6 +44,17 @@ class Processing:
         """
         self.issues = issues
         self.pull_requests = pull_requests
+
+    def regenerate(self):
+        """Process stored knowledge and save it."""
+        os.environ['PROCESS_KNOWLEDGE'] = 'True'
+        self.process_issues_creators()
+        self.process_issues_closers()
+        self.process_issues_closed_by_pr_size()
+        self.process_issue_interactions()
+        self.process_issue_labels_to_issue_closers()
+        self.process_issue_labels_to_issue_creators()
+        _LOGGER.info('Processed knowledge generated')
 
     def process_issues_project_data(self):
         """Pre process of data for a given project repository."""

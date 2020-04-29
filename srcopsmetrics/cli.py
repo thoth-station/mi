@@ -25,9 +25,12 @@ import click
 
 from srcopsmetrics.bot_knowledge import (analyse_projects,
                                          visualize_project_results)
-from srcopsmetrics.enums import EntityTypeEnum
+from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.processing import Processing
+from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.utils import remove_previously_processed
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +55,15 @@ logging.basicConfig(level=logging.INFO)
     "--create-knowledge",
     "-c",
     is_flag=True,
-    help="Create knowledge from a project repository.",
+    help=f"""Create knowledge from a project repository.
+            Storage location is {StoragePath.KNOWLEDGE.value}""",
+)
+@click.option(
+    "--process-knowledge",
+    "-p",
+    is_flag=True,
+    help=f"""Process knowledge into more explicit information from collected knowledge.
+            Storage location is {StoragePath.PROCESSED.value}""",
 )
 @click.option(
     "--is-local",
@@ -84,6 +95,7 @@ def cli(
     repository: Optional[str],
     organization: Optional[str],
     create_knowledge: bool,
+    process_knowledge: bool,
     is_local: bool,
     entities: Optional[List[str]],
     visualize_statistics: bool,
@@ -92,7 +104,8 @@ def cli(
     """Command Line Interface for SrcOpsMetrics."""
     os.environ['IS_LOCAL'] = 'True' if is_local else 'False'
 
-    repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
+    repos = GitHubKnowledge.get_repositories(
+        repository=repository, organization=organization)
     if create_knowledge:
         analyse_projects(
             projects=[repo.split("/") for repo in repos],
@@ -100,15 +113,27 @@ def cli(
             entities=entities
         )
 
+        for repo in repos:
+            remove_previously_processed(repo)
+
     for project in repos:
         os.environ['PROJECT'] = project
+
+        if process_knowledge:
+            remove_previously_processed(project)
+            issues = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
+                project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value)
+            prs = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
+                project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
+            Processing(issues=issues, pull_requests=prs).regenerate()
 
         if visualize_statistics:
             visualize_project_results(project=project, is_local=is_local)
 
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
-            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+            reviewer_assigner.evaluate_reviewers_scores(
+                project=project, is_local=is_local)
 
 
 if __name__ == "__main__":

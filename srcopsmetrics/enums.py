@@ -40,3 +40,10 @@ class StatisticalQuantityEnum(Enum):
 
     AVERAGE = "Average"
     MEDIAN = "Median"
+
+
+class StoragePath(Enum):
+    """Enum with predefined storage locations."""
+
+    KNOWLEDGE = "./srcopsmetrics/bot_knowledge/"
+    PROCESSED = "./srcopsmetrics/processed/"
