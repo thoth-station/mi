@@ -21,7 +21,10 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Tuple
+
+from typing import List, Tuple, Optional
+
+from github.PullRequest import PullRequest
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
@@ -30,7 +33,6 @@ from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
 from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.report import Report
-
 from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)

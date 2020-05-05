@@ -25,6 +25,8 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
+import os
+
 from srcopsmetrics.entity_schema import Schemas
 from srcopsmetrics.storage import KnowledgeStorage, ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
@@ -44,14 +46,25 @@ class Processing:
         self.issues = issues
         self.pull_requests = pull_requests
 
+    def regenerate(self):
+        """Process stored knowledge and save it."""
+        os.environ['PROCESS_KNOWLEDGE'] = 'True'
+        self.process_issues_creators()
+        self.process_issues_closers()
+        self.process_issues_closed_by_pr_size()
+        self.process_issue_interactions()
+        self.process_issue_labels_to_issue_closers()
+        self.process_issue_labels_to_issue_creators()
+        _LOGGER.info('Processed knowledge generated')
+
     def process_issues_project_data(self):
         """Pre process of data for a given project repository."""
         if not self.issues:
             return {}
+
         ids = sorted([k for k in self.issues.keys()])
 
         project_issues_data = {}
-
         project_issues_data["contributors"] = []
         project_issues_data["ids"] = []
         project_issues_data["TTCI"] = []
@@ -88,10 +101,10 @@ class Processing:
         """Pre process of data for a given project repository."""
         if not self.pull_requests:
             return {}
+
         ids = sorted([k for k in self.pull_requests.keys()])
 
         project_reviews_data = {}
-
         project_reviews_data["contributors"] = []
         project_reviews_data["ids"] = []
         project_reviews_data["created_dts"] = []
@@ -112,7 +125,6 @@ class Processing:
         for id in ids:
             if self.pull_requests[id]['closed_at'] is None:
                 continue
-
             pr = self.pull_requests[str(id)]
 
             if pr["created_by"] not in project_reviews_data["contributors"]:
@@ -468,8 +480,8 @@ class Processing:
         issues = {}
         for issue_id in (i for i in self.issues.keys() if self.issues[i]["closed_at"]):
             issue_labels = self.issues[issue_id]["labels"]
-            ttci = int(self.issues[issue_id]["closed_at"]) - \
-                int(self.issues[issue_id]["created_at"])
+            ttci = int(self.issues[issue_id]["closed_at"]) - int(self.issues[issue_id]["created_at"])
+
             for label in issue_labels:
                 if label not in issues:
                     issues[label] = [[], []]
@@ -505,7 +517,8 @@ class Processing:
 
         :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
         """
-        closers = {}
+        closers = {}SK
+
         for issue_id in self.issues.keys():
             issue_closer = self.issues[issue_id]["closed_by"]
             if issue_closer not in closers:
@@ -527,6 +540,7 @@ class Processing:
                 if ref_issue not in self.issues.keys():
                     # TODO: re-implement extracting referenced issues by event @mentioned
                     continue
+
                 for label in self.issues[ref_issue]["labels"]:
                     if label not in closers[pr_author]:
                         closers[pr_author][label] = 0
@@ -544,6 +558,7 @@ class Processing:
         for pr_id in (i for i in self.pull_requests.keys() if self.pull_requests[i]["closed_at"]):
             for issue_id in (i for i in self.pull_requests[pr_id]["referenced_issues"] if self.issues[i]["closed_at"]):
                 ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
+
                 size = self.pull_requests[pr_id]["size"]
 
                 if size not in issues:

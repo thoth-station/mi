@@ -21,13 +21,11 @@ from os.path import join
 import json
 import logging
 import os
-from datetime import datetime
+
+from datetime import datetime, date
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
-from srcopsmetrics import utils
-from srcopsmetrics.entity_schema import Schemas
 
 import time
 
@@ -35,7 +33,7 @@ from github import Github
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
-from srcopsmetrics.enums import EntityTypeEnum
+from srcopsmetrics import utils
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +67,7 @@ class ProcessedKnowledge:
         knowledge = storage.load_previous_knowledge(
             file_path=total_path, knowledge_type='Processed Knowledge')
 
-        if knowledge is None or knowledge == {}:
+        if knowledge is None or knowledge == {} or os.getenv('PROCESS_KNOWLEDGE') is 'True':
             knowledge = wrapper()
             storage.save_knowledge(file_path=total_path, data=knowledge)
 
@@ -122,7 +120,7 @@ class KnowledgeStorage:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = self.get_ceph_store()
             s3.store_document(results, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s%s%s" %
+            _LOGGER.info("Saved on CEPH at %s/%s%s" %
                          (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
@@ -164,7 +162,7 @@ class KnowledgeStorage:
             file_path) if self.is_local else self.load_remotely(file_path)
 
         if results is None:
-            _LOGGER.info("No previous knowledge found for %s" % project_name)
+            _LOGGER.info("No previous knowledge of type %s found" % knowledge_type)
             results = {}
         else:
             _LOGGER.info(
