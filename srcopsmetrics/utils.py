@@ -19,8 +19,11 @@
 
 import logging
 import os
+import shutil
 
 import numpy as np
+
+from srcopsmetrics.enums import StoragePath
 
 from typing import Tuple
 from pathlib import Path
@@ -34,6 +37,17 @@ def check_directory(knowledge_dir: Path):
         _LOGGER.info(
             "No repo identified, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
+
+
+def remove_previously_processed(project_name: str):
+    """Remove processed information for whole project."""
+    print(project_name)
+    path = Path(StoragePath.PROCESSED.value).joinpath(project_name)
+    _LOGGER.info("Cleaning processed knowledge at %s" % project_name)
+    if os.path.isdir(path) and not os.path.islink(path):
+        shutil.rmtree(path)
+    elif os.path.exists(path):
+        os.remove(path)
 
 
 def convert_score2num(label: str) -> float:

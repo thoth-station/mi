@@ -21,21 +21,22 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Tuple
+
+from typing import List, Tuple, Optional
+
+from github.PullRequest import PullRequest
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.pre_processing import PreProcessing
+from srcopsmetrics.processing import Processing
+from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
-
 from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
 
 github_knowledge = GitHubKnowledge()
-pre_processing = PreProcessing()
-visualization = Visualization()
 
 
 def analyse_projects(
@@ -50,7 +51,8 @@ def analyse_projects(
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
-        _LOGGER.info("######################## Analysing %s ########################\n" % "/".join(project))
+        _LOGGER.info(
+            "######################## Analysing %s ########################\n" % "/".join(project))
         github_repo = github_knowledge.connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
@@ -72,19 +74,15 @@ def analyse_projects(
 
 def visualize_project_results(project: str, is_local: bool = False):
     """Visualize results for a project."""
-    knowledge_path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
 
-    pr_data = pre_processing.retrieve_knowledge(
-        knowledge_path=knowledge_path, project=project, entity_type=EntityTypeEnum.PULL_REQUEST.value, is_local=is_local
-    )
-    if pr_data:
-        visualization.visualize_pr_data(project=project, result_path=result_path, pr_data=pr_data)
+    storage = KnowledgeStorage(is_local=is_local)
 
-        issues_data = pre_processing.retrieve_knowledge(
-            knowledge_path=knowledge_path, project=project, entity_type=EntityTypeEnum.ISSUE.value, is_local=is_local
-        )
-        if issues_data:
-            visualization.visualize_issue_data(
-                project=project, result_path=result_path, issues_data=issues_data, pr_data=pr_data
-            )
+    pr_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
+    issues_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value)
+
+    processing = Processing(issues=issues_data, pull_requests=pr_data)
+    viz = Visualization(processing=processing)
+
+    viz.visualize_pr_data(project=project, result_path=result_path, pr_data=pr_data)
+    viz.visualize_issue_data(project=project, result_path=result_path)
