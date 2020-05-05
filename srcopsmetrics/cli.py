@@ -75,7 +75,8 @@ logging.basicConfig(level=logging.INFO)
     "--visualize-statistics",
     "-v",
     is_flag=True,
-    help="Visualize statistics on the project repository knowledge collected.",
+    help="""Visualize statistics on the project repository knowledge collected.
+            Dash application is launched and can be accesed at http://127.0.0.1:8050/""",
 )
 @click.option(
     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
@@ -103,12 +104,15 @@ def cli(
     for project in repos:
         os.environ['PROJECT'] = project
 
-        if visualize_statistics:
-            visualize_project_results(project=project, is_local=is_local)
-
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+
+    if visualize_statistics and repository is not None:
+        visualize_project_results(project=repository, is_local=is_local)
+    elif visualize_statistics and organization is not None:
+        # TODO: maybe implemnet specific visualization for organization?
+        pass
 
 
 if __name__ == "__main__":

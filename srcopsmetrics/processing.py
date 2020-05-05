@@ -48,7 +48,7 @@ class Processing:
         """Pre process of data for a given project repository."""
         if not self.issues:
             return {}
-        ids = sorted([int(k) for k in self.issues.keys()])
+        ids = sorted([k for k in self.issues.keys()])
 
         project_issues_data = {}
 
@@ -58,6 +58,9 @@ class Processing:
         project_issues_data["created_dts"] = []
 
         for id in ids:
+            if self.issues[id]['closed_at'] is None:
+                continue
+
             issue = self.issues[str(id)]
 
             if issue["created_by"] not in project_issues_data["contributors"]:
@@ -85,7 +88,7 @@ class Processing:
         """Pre process of data for a given project repository."""
         if not self.pull_requests:
             return {}
-        ids = sorted([int(k) for k in self.pull_requests.keys()])
+        ids = sorted([k for k in self.pull_requests.keys()])
 
         project_reviews_data = {}
 
@@ -107,6 +110,9 @@ class Processing:
         project_reviews_data["encoded_PRs_size"] = []
 
         for id in ids:
+            if self.pull_requests[id]['closed_at'] is None:
+                continue
+
             pr = self.pull_requests[str(id)]
 
             if pr["created_by"] not in project_reviews_data["contributors"]:
@@ -460,10 +466,10 @@ class Processing:
         :rtype: { <label> : [[<closed_issue_ttci>], [<closed_issue_creation_date>]] }
         """
         issues = {}
-        for issue_id in self.issues.keys():
+        for issue_id in (i for i in self.issues.keys() if self.issues[i]["closed_at"]):
             issue_labels = self.issues[issue_id]["labels"]
-            ttci = int(self.issues[issue_id]["closed_at"]
-                       - int(self.issues[issue_id]["created_at"]))
+            ttci = int(self.issues[issue_id]["closed_at"]) - \
+                int(self.issues[issue_id]["created_at"])
             for label in issue_labels:
                 if label not in issues:
                     issues[label] = [[], []]
@@ -518,6 +524,9 @@ class Processing:
                 closers[pr_author] = {}
 
             for ref_issue in self.pull_requests[pr_id]["referenced_issues"]:
+                if ref_issue not in self.issues.keys():
+                    # TODO: re-implement extracting referenced issues by event @mentioned
+                    continue
                 for label in self.issues[ref_issue]["labels"]:
                     if label not in closers[pr_author]:
                         closers[pr_author][label] = 0
@@ -532,11 +541,9 @@ class Processing:
         :rtype: { <pr_size_label> : <number_of_closed_issues> }
         """
         issues = {}
-        for pr_id in self.pull_requests.keys():
-            for issue_id in self.pull_requests[pr_id]["referenced_issues"]:
-
-                ttci = int(self.issues[issue_id]["closed_at"]
-                           - int(self.issues[issue_id]["created_at"]))
+        for pr_id in (i for i in self.pull_requests.keys() if self.pull_requests[i]["closed_at"]):
+            for issue_id in (i for i in self.pull_requests[pr_id]["referenced_issues"] if self.issues[i]["closed_at"]):
+                ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))
                 size = self.pull_requests[pr_id]["size"]
 
                 if size not in issues:
@@ -544,16 +551,31 @@ class Processing:
                 issues[size].append(ttci)
         return issues
 
-    # def issues_active_closed(issues_data: IssueSchema) -> Dict[str, int]:
-    #     issues = {}
-    #     for issue in issues_data:
-    #         issues[issue]
-    #         prs['closed'] = 
-    #     return prs
+    @ProcessedKnowledge
+    def overall_issues_status(self) -> Dict[str, int]:
+        """Analyse current statuses of issues.
 
-    # def pull_requests_active_merged_rejected(pr_data: PullRequestSchema) -> Dict[str, int]:
-    #     prs = {}
-    #     prs['active'] =
-    #     prs['merged'] = 
-    #     prs['rejected'] = 
-        # return prs
+        :rtype: { <issue_status> : <num_of_corresponding_entities> }
+        """
+        statuses = {'active': 0,
+                    'closed': 0, }
+        for id in self.issues.keys():
+            status = 'active' if self.issues[id]['closed_at'] is None else 'closed'
+            statuses[status] += 1
+        return statuses
+
+    @ProcessedKnowledge
+    def overall_prs_status(self) -> Dict[str, int]:
+        """Analyse current statuses of pull requests.
+
+        :rtype: { <pull_request_status> : <num_of_corresponding_entities> }
+        """
+        statuses = {'active': 0,
+                    'merged': 0,
+                    'rejected': 0, }
+        for id in self.pull_requests.keys():
+            status = ('merged' if self.pull_requests[id]['merged_at'] else
+                      'rejected' if self.pull_requests[id]['closed_at'] else
+                      'active')
+            statuses[status] += 1
+        return statuses
