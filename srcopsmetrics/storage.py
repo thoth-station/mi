@@ -145,7 +145,7 @@ class KnowledgeStorage:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
-            file_ath {Optional[Path]} -- path to where was stored previous knowledge from
+            file_path {Optional[Path]} -- path to where was stored previous knowledge from
                                inspected github repository
 
         Returns:
