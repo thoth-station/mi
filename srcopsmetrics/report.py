@@ -23,8 +23,8 @@ from typing import Dict
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+
 import plotly.graph_objects as go
-from pbr.packaging import append_text_list
 from plotly.graph_objects import Scatter
 from plotly.subplots import make_subplots
 

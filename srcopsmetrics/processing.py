@@ -517,8 +517,7 @@ class Processing:
 
         :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
         """
-        closers = {}SK
-
+        closers = {}
         for issue_id in self.issues.keys():
             issue_closer = self.issues[issue_id]["closed_by"]
             if issue_closer not in closers:
