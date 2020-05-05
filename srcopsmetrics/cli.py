@@ -140,8 +140,8 @@ def cli(
     if visualize_statistics and repository is not None:
         visualize_project_results(project=repository, is_local=is_local)
     elif visualize_statistics and organization is not None:
-        # TODO: maybe implemnet specific visualization for organization?
-        pass
+        # TODO
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
