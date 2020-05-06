@@ -81,17 +81,17 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:91b34fac764c908f2e9553607fb0f2c56adc6b9df76e1f313dc190af512849c8",
-                "sha256:fc8511eda662d7b4b10bce55153cf65b89c41d86b65162bc0d15b89547d3d837"
+                "sha256:989ede38b9f69743e2536ccf371941354e77103b47b37d5ba90f77718368a248",
+                "sha256:dc4d17a9b0bd6fb03b2650a0f7c7b6a458583fe7bebbcd6bbefd299d7169fb5b"
             ],
-            "version": "==1.13.2"
+            "version": "==1.13.3"
         },
         "botocore": {
             "hashes": [
-                "sha256:102534a1d98a70bf6ecacf51c3cef2ef09587039aef064ad076bd2e36dd4c441",
-                "sha256:8ef5b178b76920f6f11169ad69ff30e297044aab4c34d1e92f26221faaa033ed"
+                "sha256:d291035e643c353029df8985cbc0bbdcdf9117fff81c715dd688aadd51816f41",
+                "sha256:e2c384f378d96c09079d9fa44be4f6a849c4d5295de68c9c8afc8783f7a5a2a2"
             ],
-            "version": "==1.16.2"
+            "version": "==1.16.3"
         },
         "cachetools": {
             "hashes": [
@@ -433,11 +433,11 @@
         },
         "plotly": {
             "hashes": [
-                "sha256:61f34955f04201a1ebcd59feaafa7eae7c16ef9b3f439870be01fb85a949292f",
-                "sha256:ac0ca0854350bfcd833f3a8eb08aa50e184660502bb46fe907701f896ff349bd"
+                "sha256:1f19b790217460df5274268a8261ed797f323e605c94a6644ca510a1e96e9467",
+                "sha256:87a35041cbc8d33c8a9aa002c37db78084a39cbba54a0a038fd93d5eb845f055"
             ],
             "index": "pypi",
-            "version": "==4.6.0"
+            "version": "==4.7.0"
         },
         "psycopg2-binary": {
             "hashes": [
@@ -865,11 +865,9 @@
         },
         "bitstring": {
             "hashes": [
-                "sha256:7b60b0c300d0d3d0a24ec84abfda4b0eaed3dc56dc90f6cbfe497166c9ad8443",
-                "sha256:c97a8e2a136e99b523b27da420736ae5cb68f83519d633794a6a11192f69f8bf",
-                "sha256:e392819965e7e0246e3cf6a51d5a54e731890ae03ebbfa3cd0e4f74909072096"
+                "sha256:fdf3eb72b229d2864fb507f8f42b1b2c57af7ce5fec035972f9566de440a864a"
             ],
-            "version": "==3.1.6"
+            "version": "==3.1.7"
         },
         "bleach": {
             "hashes": [
