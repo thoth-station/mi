@@ -62,7 +62,7 @@ class Processing:
         if not self.issues:
             return {}
 
-        ids = sorted([k for k in self.issues.keys()])
+        ids = sorted([int(k) for k in self.issues.keys()])
 
         project_issues_data = {}
         project_issues_data["contributors"] = []
@@ -71,6 +71,7 @@ class Processing:
         project_issues_data["created_dts"] = []
 
         for id in ids:
+            id = str(id)
             if self.issues[id]['closed_at'] is None:
                 continue
 
@@ -102,7 +103,7 @@ class Processing:
         if not self.pull_requests:
             return {}
 
-        ids = sorted([k for k in self.pull_requests.keys()])
+        ids = sorted([int(k) for k in self.pull_requests.keys()])
 
         project_reviews_data = {}
         project_reviews_data["contributors"] = []
@@ -123,6 +124,7 @@ class Processing:
         project_reviews_data["encoded_PRs_size"] = []
 
         for id in ids:
+            id = str(id)
             if self.pull_requests[id]['closed_at'] is None:
                 continue
             pr = self.pull_requests[str(id)]
