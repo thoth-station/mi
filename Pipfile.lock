@@ -433,11 +433,11 @@
         },
         "plotly": {
             "hashes": [
-                "sha256:1f19b790217460df5274268a8261ed797f323e605c94a6644ca510a1e96e9467",
-                "sha256:87a35041cbc8d33c8a9aa002c37db78084a39cbba54a0a038fd93d5eb845f055"
+                "sha256:7a48cdedd13cef6745de5527d26928791f1b911b88c435667b74eadd427a10e8",
+                "sha256:ad0adf659ae88caf09d94a97b7ae1272b0868b30147cccf43caae7fae49a6f45"
             ],
             "index": "pypi",
-            "version": "==4.7.0"
+            "version": "==4.7.1"
         },
         "psycopg2-binary": {
             "hashes": [
