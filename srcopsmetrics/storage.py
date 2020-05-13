@@ -17,23 +17,22 @@
 
 """GitHub Knowledge Storage handling."""
 
-from os.path import join
 import json
 import logging
 import os
-
-from datetime import datetime, date
+import time
+from datetime import date, datetime
 from functools import partial
+from os.path import join
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
-import time
 
 from github import Github
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics import utils
+from srcopsmetrics.enums import StoragePath
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ class ProcessedKnowledge:
 
         project = os.getenv('PROJECT')
 
-        preprocessed_dir = Path(f'./srcopsmetrics/preprocessed/{project}')
+        preprocessed_dir = Path(StoragePath.PROCESSED.value).joinpath(project)
         utils.check_directory(preprocessed_dir)
         total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
 

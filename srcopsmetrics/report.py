@@ -105,24 +105,41 @@ class Report:
             #     # value=[5, 15],
             # ),
 
+            html.Center(
+                html.H2(children=f'General PR/Issue information')
+            ),
             dcc.Graph(
                 id='general section',
                 figure=self.general_section(),
             ),
 
-            dcc.Graph(
-                id='contributos',
-                figure=self.contributor_section(5)
-            ),
 
+            html.Center(
+                html.H2(children=f'Repository in time')
+            ),
             dcc.Graph(
                 id='in time',
                 figure=self.in_time_section()
             ),
 
+
+            html.Center(
+                html.H2(children=f'Label correlations')
+            ),
             dcc.Graph(
+                id='labels',
                 figure=self.viz._visualize_ttci_wrt_labels()
             ),
+
+
+            html.Center(
+                html.H2(children=f'What about contributors?')
+            ),
+            dcc.Graph(
+                id='contributos',
+                figure=self.contributor_section(5)
+            ),
+
 
             dcc.Dropdown(
                 id='demo-dropdown',
@@ -151,7 +168,6 @@ class Report:
         fig.append_trace(self.viz.pie_chart_entities(
             'PullRequest'), row=1, col=2)
 
-        fig.update_layout(title_text='general PR/Issue information')
         return fig
 
     def in_time_section(self):
@@ -160,8 +176,8 @@ class Report:
 
         fig.append_trace(self.viz.scatter_ttci_in_time(), row=1, col=1)
         fig.append_trace(self.viz.scatter_ttr_in_time(), row=1, col=2)
+        fig.update_layout(yaxis_title='hours')
 
-        fig.update_layout(title_text='in time stats')
         return fig
 
     def contributor_section(self, x: int):

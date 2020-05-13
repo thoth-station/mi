@@ -405,6 +405,37 @@ class Processing:
         return interactions_data
 
     @ProcessedKnowledge
+    def process_pr_creators(self) -> Dict[str, int]:
+        """Analyse number of created pull requests for each contributor that has created pr.
+
+        :rtype: { <contributor> : <number of created pull requrests> }
+        """
+        creators = {}
+        for pr_id in self.pull_requests.keys():
+            pr_author = self.pull_requests[pr_id]["created_by"]
+            if pr_author not in creators:
+                creators[pr_author] = 0
+            creators[pr_author] += 1
+
+        return creators
+
+    @ProcessedKnowledge
+    def process_pr_reviewers(self) -> Dict[str, int]:
+        """Analyse number of reviewed pull requests for each contributor that has reviewed pr.
+
+        :rtype: { <contributor> : <number of reviews> }
+        """
+        reviewers = {}
+        for pr_id in self.pull_requests.keys():
+            for review in self.pull_requests[pr_id]["reviews"].values():
+                reviewer = review["author"]
+                if reviewer not in reviewers:
+                    reviewers[reviewer] = 0
+                reviewers[reviewer] += 1
+
+        return reviewers
+
+    @ProcessedKnowledge
     def process_issues_creators(self) -> Dict[str, int]:
         """Analyse number of created issues for each contributor that has created issue.
 
@@ -430,6 +461,9 @@ class Processing:
         closers = {}
         for issue_id in self.issues.keys():
             issue_author = self.issues[issue_id]["closed_by"]
+            if issue_author is None:
+                continue
+
             if issue_author not in closers:
                 closers[issue_author] = 0
             closers[issue_author] += 1
