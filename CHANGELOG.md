@@ -294,3 +294,111 @@ all the things that you see...
 * Remove loggers in the guards
 * Refactor gathering pull request code to be more readable
 * Collect and analyze stastistics on Project repositories from GitHub
+
+## Release 2.0.0 (2020-05-14T21:08:01)
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.9 to 0.22.10
+* Fix processing, add more labels
+* :pushpin: Automatic update of dependency plotly from 4.7.0 to 4.7.1
+* :pushpin: Automatic update of dependency pytest from 5.4.1 to 5.4.2
+* :pushpin: Automatic update of dependency plotly from 4.6.0 to 4.7.0
+* Fix in time stats
+* Fix my code weirdness!
+* correct typo
+* :pushpin: Automatic update of dependency rope from 0.16.0 to 0.17.0
+* change doc
+* Raise error for org viz
+* remove html render
+* remove unnecessary file
+* Implement working dash report page.
+* :pushpin: Automatic update of dependency numpy from 1.18.3 to 1.18.4
+* :pushpin: Automatic update of dependency pygithub from 1.50 to 1.51
+* add doc
+* Make -c flag remove processed knowledge
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.8 to 0.22.9
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.7 to 0.22.8
+* :pushpin: Automatic update of dependency pygithub from 1.47 to 1.50
+* remove old app
+* Add new pipfiles
+* rename app to report
+* Remove old Flask report
+* Missing character
+* complete basic dash report
+* add dash app demo
+* Add in time section
+* add general pr/issue info section
+* init commit, raw ideas in code
+* add contributor section
+* complete basic dash report
+* remove generated report file
+* add dash app demo
+* Add topx active contbrs to report
+* Add in time section
+* add general pr/issue info section
+* add basic report
+* init commit, raw ideas in code
+* Add newline to exceptions
+* Add docstring to help
+* Add docstring to help
+* Add doc
+* Implement feature
+* Format and add doc
+* remove prepocessed dir
+* Rebase
+* Fix loading&storing issues
+* Implement and use ProcessedStorage decorator
+* Refactor viz partially
+* Partially refactore pre_processing
+* Fix loading&storing issues
+* Implement and use ProcessedStorage decorator
+* :pushpin: Automatic update of dependency autopep8 from 1.5.1 to 1.5.2
+* :pushpin: Automatic update of dependency numpy from 1.18.2 to 1.18.3
+* Fix unintended text
+* Refactor viz partially
+* Make section entity
+* Add How to contribute section
+* Partially refactore pre_processing
+* Fix viz error
+* Add tutorial on how to add new entity
+* satisfy coala
+* Remove unusued variable
+* Add schema for entity
+* Adjust enums type
+* Introduce ContentFile entity to collect README files initially
+* Change main viz functions to behave as before
+* Fix visualization api
+* add one self reference to get_referenced_issues
+* Recover prev pipfiles
+* Undo Pipfile removal
+* Add problem occured log
+* remove static from get_referenced_issues
+* Add dots
+* satisfy coala
+* Rename occurences in other modules
+* remove old github_knowledge_store
+* Change GithubKnowledgeStore to contain only iterting thru analysis
+* Make standalone class for storage handling
+* Fix schemas to work
+* change schema names
+* Fix issue linking with pr body
+* remove unnecessary quotes
+* :pushpin: Automatic update of dependency autopep8 from 1.5 to 1.5.1
+* Add missing plots list to README
+* Update README
+* Follow standards
+* :pushpin: Automatic update of dependency plotly from 4.5.4 to 4.6.0
+* store issue ids as str in dict
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.6 to 0.22.7
+* satisfy coala
+* Make logger pretty again, fix unknown bug
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.5 to 0.22.6
+* fix secrets and config name + fix cli call
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.3 to 0.22.5
+* :pushpin: Automatic update of dependency pandas from 1.0.2 to 1.0.3
+* :pushpin: Automatic update of dependency matplotlib from 3.2.0 to 3.2.1
+* :pushpin: Automatic update of dependency numpy from 1.18.1 to 1.18.2
+* :pushpin: Automatic update of dependency pandas from 1.0.1 to 1.0.2
+* :pushpin: Automatic update of dependency pygithub from 1.46 to 1.47
+* :pushpin: Automatic update of dependency pytest from 5.4.0 to 5.4.1
+* :pushpin: Automatic update of dependency pytest from 5.3.5 to 5.4.0
+* :pushpin: Automatic update of dependency plotly from 4.5.3 to 4.5.4
+* :pushpin: Automatic update of dependency plotly from 4.5.2 to 4.5.3
