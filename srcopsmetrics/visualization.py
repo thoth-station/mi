@@ -46,6 +46,8 @@ from srcopsmetrics.entity_schema import Schemas
 from plotly.offline import init_notebook_mode, iplot
 from plotly.graph_objects import Figure
 
+import plotly.graph_objects as go
+
 USE_NOTEBOOK = os.getenv("JUPYTER")
 
 _LOGGER = logging.getLogger(__name__)
@@ -330,19 +332,15 @@ class Visualization:
 
     def visualize_developer_activity(self, developer: str):
         """Create plots that are focused on a single contributor."""
-        overall_issues_interactions = self.processing.process_issue_interactions()
-        overall_issue_types_creators = self.processing.process_issue_labels_to_issue_creators()
-        overall_issue_types_closers = self.processing.process_issue_labels_to_issue_closers()
-
         graphs = [
             self._visualize_issue_interactions(
-                overall_issues_interactions=overall_issues_interactions, author_login_id=developer
+                author_login_id=developer
             ),
             self._visualize_issues_types_given_developer(
-                overall_issue_types_creators, author_login_id=developer, developer_action=DeveloperActionEnum.OPEN.value
+                author_login_id=developer, developer_action=DeveloperActionEnum.OPEN.value
             ),
             self._visualize_issues_types_given_developer(
-                overall_issue_types_closers, author_login_id=developer, developer_action=DeveloperActionEnum.CLOSE.value
+                author_login_id=developer, developer_action=DeveloperActionEnum.CLOSE.value
             ),
         ]
 
@@ -401,9 +399,10 @@ class Visualization:
         fig = px.bar(df, x="authors", y="issues", title=title, color="authors")
         return fig
 
-    @staticmethod
-    def _visualize_issue_interactions(overall_issues_interactions: Dict, author_login_id: str) -> Figure:
+    def _visualize_issue_interactions(self, author_login_id: str) -> Figure:
         """For given author visualize interactions between him and all of the other authors in repository."""
+        overall_issues_interactions = self.processing.process_issue_interactions()
+
         author_interactions = overall_issues_interactions[author_login_id]
 
         df = pd.DataFrame()
@@ -451,11 +450,12 @@ class Visualization:
         )
         return fig
 
-    @staticmethod
     def _visualize_issues_types_given_developer(
-        overall_types_data: Dict, author_login_id: str, developer_action: str
+        self, author_login_id: str, developer_action: str
     ) -> Figure:
         """For given author visualize (categorically by labels) number of opened issues by him."""
+        overall_types_data = self.processing.process_issue_labels_to_issue_creators()
+
         issue_types_data = overall_types_data[author_login_id]
         action = Visualization._DEVELOPER_ACTION[developer_action]
 
@@ -561,7 +561,7 @@ class Visualization:
 
         :param issues_data:IssueSchema:
         :param statistical_quantity:str: Either 'Median' or 'Average'
-        :rtype: None
+        :rtype: Figure
         """
         issues_labels = self.processing.process_issue_labels_with_ttci()
         processed_labels = {}
@@ -578,5 +578,93 @@ class Visualization:
         fig = px.bar(df, x="label", y="TTCI",
                      title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
         fig.update_layout(
-            yaxis_title="Average Time To Close Issue (hrs)", xaxis_title="Label name")
+            yaxis_title=f"{statistical_quantity} Time To Close Issue (hrs)", xaxis_title="Label name")
         return fig
+
+    def pie_chart_entities(self, entity: str) -> Figure:
+        """Generate pie chart with all of entity statuses.
+
+        :param entity:str: currently supported 'Issue' or 'PullRequest'
+        :rtype: plotly pie chart in form of donut
+        """
+        processed = (self.processing.overall_issues_status() if entity is 'Issue' else
+                     self.processing.overall_prs_status())
+        labels = list(processed.keys())
+        values = list(processed.values())
+
+        return go.Pie(labels=labels, values=values, hole=.3)
+
+    def stack_chart_top_x_contributors_activity(self, x: int) -> Figure:
+        """Generate stack chart for top x active contributors."""
+        issue_creators = self.processing.process_issues_creators()
+        pr_creators = self.processing.process_pr_creators()
+        issue_closers = self.processing.process_issues_closers()
+        pr_reviews = self.processing.process_pr_reviewers()
+
+        overall_stats = {}
+        for issue_creator, pr_creator, issue_closer, reviewer in zip(issue_creators.keys(),
+                                                                     pr_creators.keys(),
+                                                                     issue_closers.keys(),
+                                                                     pr_reviews.keys()):
+            if issue_creator not in overall_stats.keys():
+                overall_stats[issue_creator] = 0
+            if issue_closer not in overall_stats.keys():
+                overall_stats[issue_closer] = 0
+            if pr_creator not in overall_stats.keys():
+                overall_stats[pr_creator] = 0
+            if reviewer not in overall_stats.keys():
+                overall_stats[reviewer] = 0
+
+            overall_stats[issue_creator] += issue_creators[issue_creator]
+            overall_stats[issue_closer] += issue_closers[issue_closer]
+            overall_stats[pr_creator] += pr_creators[pr_creator]
+            overall_stats[reviewer] += pr_reviews[reviewer]
+
+        overall_stats = sorted(list(overall_stats.items()),
+                               key=lambda contributor: contributor[1], reverse=True)
+        top_x_contributors = [el[0] for el in overall_stats[:x]]
+        data = []
+
+        data.append(go.Bar(name='issues created', x=top_x_contributors, y=[
+                    issue_creators[creator] for creator in top_x_contributors if creator in issue_creators.keys()]))
+        data.append(go.Bar(name='issues closed', x=top_x_contributors, y=[
+                    issue_closers[closer] for closer in top_x_contributors if closer in issue_closers.keys()]))
+        data.append(go.Bar(name='pull requests created', x=top_x_contributors, y=[
+                    pr_creators[creator] for creator in top_x_contributors if creator in pr_creators.keys()]))
+        data.append(go.Bar(name='reviews given', x=top_x_contributors, y=[
+                    pr_reviews[reviewer] for reviewer in top_x_contributors if reviewer in pr_creators.keys()]))
+
+        fig = go.Figure(data)
+        fig.update_layout(
+            barmode='stack', title_text=f'Top {x} active contributors')
+        return fig
+
+    def scatter_ttr_in_time(self) -> Figure:
+        """Generate scatter plot for Time To Review PR stats."""
+        projects_reviews_data = self.processing.process_prs_project_data()
+
+        prs_created_dts = projects_reviews_data["created_dts"]
+        mttr = projects_reviews_data["MTTR"]
+
+        data = {"created_dts": prs_created_dts, "MTTR": mttr}
+        mttr_in_time_processed = self.analyze_outliers(
+            quantity="MTTR", data=data)
+
+        return go.Scatter(x=[el[0] for el in mttr_in_time_processed],
+                          y=[el[1] for el in mttr_in_time_processed],
+                          name='mean ttr in time', mode='lines+markers')
+
+    def scatter_ttci_in_time(self) -> Figure:
+        """Generate scatter plot for Time To Close Issue stats."""
+        project_issues_data = self.processing.process_issues_project_data()
+
+        issues_created_dts = project_issues_data["created_dts"]
+        issues_ttci = project_issues_data["TTCI"]
+
+        data = {"created_dts": issues_created_dts, "TTCI": issues_ttci}
+        ttci_per_issue_processed = self.analyze_outliers(
+            quantity="TTCI", data=data)
+
+        return go.Scatter(x=[el[0] for el in ttci_per_issue_processed],
+                          y=[el[1] for el in ttci_per_issue_processed],
+                          name='mean ttci in time', mode='lines+markers')

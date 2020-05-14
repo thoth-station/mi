@@ -25,15 +25,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from github import Github
-from github import GithubObject
-from github import Issue
-from github import IssueComment
-from github import PullRequest
-from github import PullRequestReview
-from github import PaginatedList
-from github import ContentFile
+from github import (ContentFile, Github, GithubObject, Issue, IssueComment,
+                    PaginatedList, PullRequest, PullRequestReview)
 from github.Repository import Repository
+from numpy.core.defchararray import isnumeric
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.iterator import KnowledgeAnalysis
@@ -149,6 +144,10 @@ class GitHubKnowledge:
                 _LOGGER.debug("      keyword message: %s" % body)
                 return
 
+            if not referenced_issue_number.isnumeric():
+                _LOGGER.info("      ...referenced issue number in incorrect format")
+                return
+
             _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
             yield ref_issue
 
@@ -253,7 +252,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in repository.get_issues(state="closed") if issue.pull_request is None]
+        current_issues = [issue for issue in repository.get_issues(state='all') if issue.pull_request is None]
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -332,11 +331,12 @@ class GitHubKnowledge:
         closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None
         merged_at = int(pull_request.merged_at.timestamp()) if pull_request.merged_at is not None else None
 
+        closed_by = pull_request.as_issue().closed_by.login if pull_request.as_issue().closed_by is not None else None
+
         labels = [label.name for label in pull_request.get_labels()]
 
         # Evaluate size of PR
         pull_request_size = None
-
         if labels:
             pull_request_size = self.get_labeled_size(labels)
 
@@ -349,11 +349,8 @@ class GitHubKnowledge:
             "labels": self.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
             "created_at": created_at,
-            # "approved_at": pr_approved,
-            # "approved_by": pr_approved_by,
-            # "time_to_approve": time_to_approve,
             "closed_at": closed_at,
-            "closed_by": pull_request.as_issue().closed_by.login,
+            "closed_by": closed_by,
             "merged_at": merged_at,
             "commits_number": commits,
             "referenced_issues": self.get_referenced_issues(pull_request),
@@ -435,7 +432,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-        current_pulls = repository.get_pulls(state="closed")
+        current_pulls = repository.get_pulls(state='all')
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:

@@ -17,21 +17,22 @@
 
 """GitHub Knowledge Storage handling."""
 
-from os.path import join
 import json
 import logging
 import os
-from datetime import datetime, date
+import time
+from datetime import date, datetime
 from functools import partial
+from os.path import join
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from github import Github
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics import utils
-from srcopsmetrics.entity_schema import Schemas
-from srcopsmetrics.enums import EntityTypeEnum
+from srcopsmetrics.enums import StoragePath
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class ProcessedKnowledge:
 
         project = os.getenv('PROJECT')
 
-        preprocessed_dir = Path(f'./srcopsmetrics/preprocessed/{project}')
+        preprocessed_dir = Path(StoragePath.PROCESSED.value).joinpath(project)
         utils.check_directory(preprocessed_dir)
         total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
 
@@ -143,7 +144,8 @@ class KnowledgeStorage:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
-            file_ath {Path} -- path of the inspected github repository
+            file_path {Optional[Path]} -- path to where was stored previous knowledge from
+                               inspected github repository
 
         Returns:
             Dict[str, Any] -- previusly collected knowledge.

@@ -87,7 +87,8 @@ logging.basicConfig(level=logging.INFO)
     "--visualize-statistics",
     "-v",
     is_flag=True,
-    help="Visualize statistics on the project repository knowledge collected.",
+    help="""Visualize statistics on the project repository knowledge collected.
+            Dash application is launched and can be accesed at http://127.0.0.1:8050/""",
 )
 @click.option(
     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
@@ -105,8 +106,8 @@ def cli(
     """Command Line Interface for SrcOpsMetrics."""
     os.environ['IS_LOCAL'] = 'True' if is_local else 'False'
 
-    repos = GitHubKnowledge.get_repositories(
-        repository=repository, organization=organization)
+    repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
+
     if create_knowledge:
         analyse_projects(
             projects=[repo.split("/") for repo in repos],
@@ -135,6 +136,12 @@ def cli(
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(
                 project=project, is_local=is_local)
+
+    if visualize_statistics and repository is not None:
+        visualize_project_results(project=repository, is_local=is_local)
+    elif visualize_statistics and organization is not None:
+        # TODO
+        raise NotImplementedError
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
 plotly = "*"
+dash = "*"
 
 [dev-packages]
 pytest = "*"

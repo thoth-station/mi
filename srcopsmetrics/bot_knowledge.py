@@ -29,9 +29,10 @@ from github.PullRequest import PullRequest
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.processing import Processing
-from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
+from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.report import Report
 from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,15 +75,6 @@ def analyse_projects(
 
 def visualize_project_results(project: str, is_local: bool = False):
     """Visualize results for a project."""
-    result_path = Path.cwd().joinpath("./srcopsmetrics/knowledge_statistics")
-
-    storage = KnowledgeStorage(is_local=is_local)
-
-    pr_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
-    issues_data = storage.load_previous_knowledge(project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value)
-
-    processing = Processing(issues=issues_data, pull_requests=pr_data)
-    viz = Visualization(processing=processing)
-
-    viz.visualize_pr_data(project=project, result_path=result_path, pr_data=pr_data)
-    viz.visualize_issue_data(project=project, result_path=result_path)
+    report = Report(project_name=project)
+    report.generate_health_report()
+    report.launch()
