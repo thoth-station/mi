@@ -24,7 +24,7 @@ setup(
     twidescription='Source code metrics functionalities for analysing Python GitHub repositories',
     packages=find_packages(),
     long_description=README,
-    long_description_content_type='text/markdown',
+    long_description_content_type='text/x-rst',
     author='Francesco Murdaca, Dominik Tuchyna',
     author_email='fmurdaca@redhat.com, xtuchyna@redhat.com',
     license='GPLv3+',
