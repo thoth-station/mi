@@ -1,0 +1,81 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: srcopsmetrics
+  annotations:
+    thoth-station.ninja/template-version: 0.1.0
+  labels:
+    app: srcopsmetrics
+spec:
+  templates:
+    - name: analyse
+      inputs:
+        parameters:
+          - name: GITHUB_ACCESS_TOKEN
+          - name: CEPH_BUCKET
+          - name: CEPH_BUCKET_PREFIX
+          - name: CEPH_SECRET_KEY
+          - name: CEPH_KEY_ID
+          - name: PYTHONPATH
+      outputs:
+        artifacts:
+          - name: outputdocument
+            path: "/mnt/workdir/{{inputs.parameters.THOTH_SOLVER_DOCUMENT_ID}}"
+            archive:
+              none: {}
+            s3:
+              key: "{{inputs.parameters.THOTH_CEPH_BUCKET_PREFIX}}/\
+              {{inputs.parameters.THOTH_DEPLOYMENT_NAME}}/\
+              solver/{{inputs.parameters.THOTH_SOLVER_DOCUMENT_ID}}"
+              endpoint: "{{inputs.parameters.THOTH_S3_ENDPOINT_URL}}"
+              bucket: "{{inputs.parameters.THOTH_CEPH_BUCKET_NAME}}"
+              insecure: true
+              accessKeySecret:
+                name: argo-artifact-repository-secrets
+                key: accessKey
+              secretKeySecret:
+                name: argo-artifact-repository-secrets
+                key: secretKey
+      container:
+        name: srcopsmetrics
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/\
+        {{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/\
+        {{inputs.parameters.THOTH_SOLVER_NAME}}:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        env:
+          - name: GITHUB_ACCESS_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: srcopsmetrics
+                key: github-access-token
+          - name: S3_ENDPOINT_URL
+            valueFrom:
+              configMapKeyRef:
+                name: srcopsmetrics
+                key: host
+          - name: CEPH_BUCKET
+            valueFrom:
+              configMapKeyRef:
+                name: srcopsmetrics
+                key: bucket
+          - name: CEPH_BUCKET_PREFIX
+            valueFrom:
+              configMapKeyRef:
+                name: srcopsmetrics
+                key: prefix
+          - name: CEPH_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: srcopsmetrics
+                key: ceph-secret-key
+          - name: CEPH_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: srcopsmetrics
+                key: ceph-key-id
+          - name: PYTHONPATH
+            value: "."
+        volumeMounts:
+          - name: workdir
+            mountPath: /mnt/workdir
+        activeDeadlineSeconds: 1800
