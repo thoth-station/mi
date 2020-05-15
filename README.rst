@@ -139,21 +139,21 @@ Example results
 
 .. code-block:: console
 
-               Repository  PullRequest n.  Commits n.  PullRequestRev n.           MTTFR     MTTR
+                    Repository  PullRequest n.  Commits n.  PullRequestRev n.           MTTFR     MTTR
 
-thoth-station/performance              33          38                 20  0:17:30.500000  0:46:28
-INFO:reviewer_recommender:-------------------------------------------------------------------------------
+    thoth-station/performance              33          38                 20  0:17:30.500000  0:46:28
+    INFO:reviewer_recommender:-------------------------------------------------------------------------------
 
-Contrib  PR n.      PR %  PRRev n.  PRRev % MPRLen  Rev n.  MRL    MTTFR     MTTR                     TLR  Comm n.  Comm %    Bot
-fridex     17  0.515152        13     0.65      S      21  3.0  0:02:44  0:31:10 40 days 00:08:36.857380       19     0.5  False
-pacospace  16  0.484848         7     0.35      M       9  1.0  1:01:46  1:01:46 40 days 05:00:39.857380       19     0.5  False
+    Contrib  PR n.      PR %  PRRev n.  PRRev % MPRLen  Rev n.  MRL    MTTFR     MTTR                     TLR  Comm n.  Comm %    Bot
+    fridex     17  0.515152        13     0.65      S      21  3.0  0:02:44  0:31:10 40 days 00:08:36.857380       19     0.5  False
+    pacospace  16  0.484848         7     0.35      M       9  1.0  1:01:46  1:01:46 40 days 05:00:39.857380       19     0.5  False
 
-Contrib        C1        C2       C3   C4  C5     Score
-pacospace  0.484848  0.752294  1.00000  0.5   1  0.337028
-fridex     0.515152  1.490909  0.22449  0.5   1  0.159314
+    Contrib        C1        C2       C3   C4  C5     Score
+    pacospace  0.484848  0.752294  1.00000  0.5   1  0.337028
+    fridex     0.515152  1.490909  0.22449  0.5   1  0.159314
 
-INFO:reviewer_recommender:Number of reviewers requested: 2
-INFO:reviewer_recommender:Reviewers: ['pacospace' 'fridex']
+    INFO:reviewer_recommender:Number of reviewers requested: 2
+    INFO:reviewer_recommender:Reviewers: ['pacospace' 'fridex']
 
 How to contribute
 =================
