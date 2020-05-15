@@ -12,36 +12,21 @@ spec:
     - name: analyse
       inputs:
         parameters:
+          - name: "IMAGE_STREAM_REGISTRY"
+          - name: "IMAGE_STREAM_NAMESPACE"
+          - name: "IMAGE_STREAM_TAG"
+          - name: GITHUB_REPOSITORY
           - name: GITHUB_ACCESS_TOKEN
           - name: CEPH_BUCKET
           - name: CEPH_BUCKET_PREFIX
           - name: CEPH_SECRET_KEY
           - name: CEPH_KEY_ID
           - name: PYTHONPATH
-      outputs:
-        artifacts:
-          - name: outputdocument
-            path: "/mnt/workdir/{{inputs.parameters.THOTH_SOLVER_DOCUMENT_ID}}"
-            archive:
-              none: {}
-            s3:
-              key: "{{inputs.parameters.THOTH_CEPH_BUCKET_PREFIX}}/\
-              {{inputs.parameters.THOTH_DEPLOYMENT_NAME}}/\
-              solver/{{inputs.parameters.THOTH_SOLVER_DOCUMENT_ID}}"
-              endpoint: "{{inputs.parameters.THOTH_S3_ENDPOINT_URL}}"
-              bucket: "{{inputs.parameters.THOTH_CEPH_BUCKET_NAME}}"
-              insecure: true
-              accessKeySecret:
-                name: argo-artifact-repository-secrets
-                key: accessKey
-              secretKeySecret:
-                name: argo-artifact-repository-secrets
-                key: secretKey
       container:
         name: srcopsmetrics
         image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/\
         {{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/\
-        {{inputs.parameters.THOTH_SOLVER_NAME}}:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        {{inputs.parameters.GITHUB_REPOSITORY}}:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         env:
           - name: GITHUB_ACCESS_TOKEN
             valueFrom:
@@ -75,7 +60,4 @@ spec:
                 key: ceph-key-id
           - name: PYTHONPATH
             value: "."
-        volumeMounts:
-          - name: workdir
-            mountPath: /mnt/workdir
         activeDeadlineSeconds: 1800
