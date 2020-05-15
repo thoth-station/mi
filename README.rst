@@ -86,11 +86,12 @@ Entity Criteria
 ---------------
 
 Any entity satisfies these criteria:
-- schema for entity is available in ```entity_schema.Schemas``` class
-- name of the entity is in the ```enums.EntityTypeEnum``` class
-- name of the saved entities knowledge file is specified in ```storage.KnowledgeStorage._FILENAME_ENTITY
-- method named ```analyse_<entity_name>()``` and its 'sub-part' method named ```store_<entity_name>``` is implemented in ```github_knowledge.GitHubKnowledge``` class. This concept of an ```analyse``` and ```storage``` method is used because of the GitHub pagination. These two methods are used in ```iterator.KnowledgeAnalysis``` context manager for *safe storage* saving, meaning that if any exception of type ```GithubException``` or ```KeyboardInterrupt``` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in ```entity_schema.Schemas```). This saves time, resources and also the GitHub API rate limit.
-- method ```analyse_entity``` is then called in ```bot_knowledge.analyse_projects``` with entity enum from ```enums.EntityTypeEnum``` passed as a parameter.
+
+- schema for entity is available in `entity_schema.Schemas` class
+- name of the entity is in the `enums.EntityTypeEnum` class
+- name of the saved entities knowledge file is specified in `storage.KnowledgeStorage._FILENAME_ENTITY`
+- method named `analyse_<entity_name>()` and its 'sub-part' method named `store_<entity_name>` is implemented in `github_knowledge.GitHubKnowledge` class. This concept of an `analyse` and `storage` method is used because of the GitHub pagination. These two methods are used in `iterator.KnowledgeAnalysis` context manager for *safe storage* saving, meaning that if any exception of type `GithubException` or `KeyboardInterrupt` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in `entity_schema.Schemas`). This saves time, resources and also the GitHub API rate limit.
+- method `analyse_entity` is then called in `bot_knowledge.analyse_projects` with entity enum from `enums.EntityTypeEnum` passed as a parameter.
 
 Usage - Reviewer Reccomender
 ============================
