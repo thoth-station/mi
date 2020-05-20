@@ -1,4 +1,3 @@
----
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
@@ -8,25 +7,30 @@ metadata:
   labels:
     app: srcopsmetrics
 spec:
+  serviceAccountName: argo
   templates:
-    - name: analyse
+    - name: srcopsmetrics-workflow
       inputs:
         parameters:
-          - name: "IMAGE_STREAM_REGISTRY"
-          - name: "IMAGE_STREAM_NAMESPACE"
-          - name: "IMAGE_STREAM_TAG"
-          - name: GITHUB_REPOSITORY
-          - name: GITHUB_ACCESS_TOKEN
-          - name: CEPH_BUCKET
-          - name: CEPH_BUCKET_PREFIX
-          - name: CEPH_SECRET_KEY
-          - name: CEPH_KEY_ID
-          - name: PYTHONPATH
+          - name: "GITHUB_ACCESS_TOKEN"
+          - name: "S3_ENDPOINT_URL"
+          - name: "CEPH_BUCKET"
+          - name: "CEPH_BUCKET_PREFIX"
+          - name: "CEPH_SECRET_KEY"
+          - name: "CEPH_KEY_ID"
+          - name: "PYTHONPATH"
+      steps:
+      - - name: collect-knowledge
+          template: analyse
+      - - name: process-information
+          template: process
+      - - name: run-dash-viz
+          template: visualize
       container:
         name: srcopsmetrics
-        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/\
-        {{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/\
-        {{inputs.parameters.GITHUB_REPOSITORY}}:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        command: ["srcopsmetrics/cli.py"]
+        args: ["-co", GITHUB_REPOSITORY]
         env:
           - name: GITHUB_ACCESS_TOKEN
             valueFrom:
@@ -60,4 +64,15 @@ spec:
                 key: ceph-key-id
           - name: PYTHONPATH
             value: "."
-        activeDeadlineSeconds: 1800
+    - name: analyse
+      script:
+        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        command:
+    - name: process
+      script:
+        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        command:
+    - name: visualize
+      script:
+        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        command:
