@@ -17,52 +17,51 @@ objects:
   - apiVersion: argoproj.io/v1alpha1
     kind: Workflow
     metadata:
-      name: "${THOTH_ADVISER_JOB_ID}"
+      name: srcopsmetrics-workflow
       annotations:
         thoth-station.ninja/template-version: 0.1.0
       labels:
         app: scropsmetrics
     spec:
       serviceAccountName: argo
-      entrypoint: srcopsmetrics-workflow
-      arguments:
-        parameters:
-          - name: THOTH_ADVISER_JOB_ID
-            value: "${THOTH_ADVISER_JOB_ID}"
+      entrypoint: run-srcopsmetrics
       templates:
-        - name: "srcopsmetrics-workflow"
-          templateRef:
-            name: "srcopsmetrics-workflow"
-            template: "srcopsmetrics-workflow"
-          arguments:
-            parameters:
-              - name: GITHUB_ACCESS_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics
-                    key: github-access-token
-              - name: S3_ENDPOINT_URL
-                valueFrom:
-                  configMapKeyRef:
-                    name: srcopsmetrics
-                    key: host
-              - name: CEPH_BUCKET
-                valueFrom:
-                  configMapKeyRef:
-                    name: srcopsmetrics
-                    key: bucket
-              - name: CEPH_BUCKET_PREFIX
-                valueFrom:
-                  configMapKeyRef:
-                    name: srcopsmetrics
-                    key: prefix
-              - name: CEPH_SECRET_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics
-                    key: ceph-secret-key
-              - name: CEPH_KEY_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: srcopsmetrics
-                    key: ceph-key-id
+        - name: "run-srcopsmetrics"
+          dag:
+            tasks:
+              - name: "srcopsmetrics-workflow"
+                templateRef:
+                  name: "srcopsmetrics-workflow"
+                  template: "srcopsmetrics-workflow"
+                arguments:
+                  parameters:
+                    - name: GITHUB_ACCESS_TOKEN
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics
+                          key: github-access-token
+                    - name: S3_ENDPOINT_URL
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics
+                          key: host
+                    - name: CEPH_BUCKET
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics
+                          key: bucket
+                    - name: CEPH_BUCKET_PREFIX
+                      valueFrom:
+                        configMapKeyRef:
+                          name: srcopsmetrics
+                          key: prefix
+                    - name: CEPH_SECRET_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics
+                          key: ceph-secret-key
+                    - name: CEPH_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: srcopsmetrics
+                          key: ceph-key-id
