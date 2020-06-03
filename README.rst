@@ -1,5 +1,6 @@
-SrcOpsMtrcs
-------------
+=============
+SrcOpsMetrics
+=============
 
 This repository contains functions to store knowledge for the bot,
 to use the knowledge stored by the bot to evaluate some statistics.
@@ -78,16 +79,19 @@ For each repository is possible to obtain the following plots:
 `TTFR-per-PR.png` --> Time to First Review (TTFR) variation after each PR.
 
 Entity
-====================================
+======
 Throughout the project, the objects with name "entities" are mentioned. Entity is essentialy a repository metadata that is being inspected during the process of analysis (e.g. Issue or Pull Request). Then, specified *features* are extracted from this entity and are saved as knowledge afterwards.
 
-### Entity Criteria
+Entity Criteria
+---------------
+
 Any entity satisfies these criteria:
-* schema for entity is available in ```entity_schema.Schemas``` class
-* name of the entity is in the ```enums.EntityTypeEnum``` class
-* name of the saved entities knowledge file is specified in ```storage.KnowledgeStorage._FILENAME_ENTITY
-* method named ```analyse_<entity_name>()``` and its 'sub-part' method named ```store_<entity_name>``` is implemented in ```github_knowledge.GitHubKnowledge``` class. This concept of an ```analyse``` and ```storage``` method is used because of the GitHub pagination. These two methods are used in ```iterator.KnowledgeAnalysis``` context manager for *safe storage* saving, meaning that if any exception of type ```GithubException``` or ```KeyboardInterrupt``` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in ```entity_schema.Schemas```). This saves time, resources and also the GitHub API rate limit.
-* method ```analyse_entity``` is then called in ```bot_knowledge.analyse_projects``` with entity enum from ```enums.EntityTypeEnum``` passed as a parameter.
+
+- schema for entity is available in `entity_schema.Schemas` class
+- name of the entity is in the `enums.EntityTypeEnum` class
+- name of the saved entities knowledge file is specified in `storage.KnowledgeStorage._FILENAME_ENTITY`
+- method named `analyse_<entity_name>()` and its 'sub-part' method named `store_<entity_name>` is implemented in `github_knowledge.GitHubKnowledge` class. This concept of an `analyse` and `storage` method is used because of the GitHub pagination. These two methods are used in `iterator.KnowledgeAnalysis` context manager for *safe storage* saving, meaning that if any exception of type `GithubException` or `KeyboardInterrupt` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in `entity_schema.Schemas`). This saves time, resources and also the GitHub API rate limit.
+- method `analyse_entity` is then called in `bot_knowledge.analyse_projects` with entity enum from `enums.EntityTypeEnum` passed as a parameter.
 
 Usage - Reviewer Reccomender
 ============================
@@ -135,25 +139,29 @@ Example results
 
 .. code-block:: console
 
-               Repository  PullRequest n.  Commits n.  PullRequestRev n.           MTTFR     MTTR
+                    Repository  PullRequest n.  Commits n.  PullRequestRev n.           MTTFR     MTTR
 
-thoth-station/performance              33          38                 20  0:17:30.500000  0:46:28
-INFO:reviewer_recommender:-------------------------------------------------------------------------------
+    thoth-station/performance              33          38                 20  0:17:30.500000  0:46:28
+    INFO:reviewer_recommender:-------------------------------------------------------------------------------
 
-Contrib  PR n.      PR %  PRRev n.  PRRev % MPRLen  Rev n.  MRL    MTTFR     MTTR                     TLR  Comm n.  Comm %    Bot
-fridex     17  0.515152        13     0.65      S      21  3.0  0:02:44  0:31:10 40 days 00:08:36.857380       19     0.5  False
-pacospace  16  0.484848         7     0.35      M       9  1.0  1:01:46  1:01:46 40 days 05:00:39.857380       19     0.5  False
+    Contrib  PR n.      PR %  PRRev n.  PRRev % MPRLen  Rev n.  MRL    MTTFR     MTTR                     TLR  Comm n.  Comm %    Bot
+    fridex     17  0.515152        13     0.65      S      21  3.0  0:02:44  0:31:10 40 days 00:08:36.857380       19     0.5  False
+    pacospace  16  0.484848         7     0.35      M       9  1.0  1:01:46  1:01:46 40 days 05:00:39.857380       19     0.5  False
 
-Contrib        C1        C2       C3   C4  C5     Score
-pacospace  0.484848  0.752294  1.00000  0.5   1  0.337028
-fridex     0.515152  1.490909  0.22449  0.5   1  0.159314
+    Contrib        C1        C2       C3   C4  C5     Score
+    pacospace  0.484848  0.752294  1.00000  0.5   1  0.337028
+    fridex     0.515152  1.490909  0.22449  0.5   1  0.159314
 
-INFO:reviewer_recommender:Number of reviewers requested: 2
-INFO:reviewer_recommender:Reviewers: ['pacospace' 'fridex']
+    INFO:reviewer_recommender:Number of reviewers requested: 2
+    INFO:reviewer_recommender:Reviewers: ['pacospace' 'fridex']
 
 How to contribute
-===============
+=================
 Always feel free to open new Issues or engage in already existing ones!
 
-### I want to add new Entity
-If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge, your implementation has to meet with Entity criteria described above.  Always remember to first create Issue and describe why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal of SrcOpsMetrics project. Do not forget to reference the Issue in your Pull Request.
+I want to add new Entity
+------------------------
+If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge,
+your implementation has to meet with Entity criteria described above. Always remember to first create Issue and describe 
+why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal
+of SrcOpsMetrics project. Do not forget to reference the Issue in your Pull Request.
