@@ -7,30 +7,6 @@ metadata:
   labels:
     app: srcopsmetrics
 
-parameters:
-  - name: REPOSITORY
-    required: true
-    description: GitHub repository whose Health Indicator will be computed
-    displayName: inspected GitHub repository
-
-  - description: Registry the ImageStream to be use lives in
-    displayName: ImageStream Registry
-    required: true
-    name: IMAGE_STREAM_REGISTRY
-    value: "docker-registry.default.svc:5000"
-
-  - description: Project the ImageStream to be use lives in
-    displayName: ImageStream Project
-    required: true
-    name: IMAGE_STREAM_NAMESPACE
-    value: "dtuchyna-thoth-dev"
-
-  - description: Tag of the ImageStream to be use
-    displayName: ImageStream Tag
-    required: true
-    name: IMAGE_STREAM_TAG
-    value: "latest"
-
 spec:
   serviceAccountName: argo
   entrypoint: srcopsmetrics-workflow
@@ -45,6 +21,9 @@ spec:
       - name: CEPH_SECRET_KEY
       - name: CEPH_KEY_ID
       - name: PYTHONPATH
+      - name: IMAGE_STREAM_REGISTRY
+      - name: IMAGE_STREAM_NAMESPACE
+      - name: IMAGE_STREAM_NAMESPACE
 
   templates:
     - name: srcopsmetrics-workflow
@@ -57,7 +36,7 @@ spec:
 
     - name: analyse
       container:
-        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
         args: ["-c", "{{inputs.parameters.REPOSITORY}}"]
         env:
@@ -68,7 +47,7 @@ spec:
           - name: CEPH_BUCKET
             value: "{{inputs.parameters.CEPH_BUCKET}}"
           - name: CEPH_BUCKET_PREFIX
-            value: "{{inputs.parameters}.CEPH_BUCKET_PREFIX}"
+            value: "{{inputs.parameters.CEPH_BUCKET_PREFIX}}"
           - name: CEPH_SECRET_KEY
             value: "{{inputs.parameters.CEPH_SECRET_KEY}}"
           - name: CEPH_KEY_ID
@@ -78,7 +57,7 @@ spec:
 
     - name: process
       container:
-        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
         args: ["-p", "{{inputs.parameters.REPOSITORY}}"]
         env:
