@@ -49,20 +49,17 @@ spec:
   templates:
     - name: srcopsmetrics-workflow
       steps:
-      - - name: collect-knowledge
-          template: analyse
+        - - name: collect-knowledge
+            template: analyse
 
-      - - name: process-information
-          template: process
-
-      - - name: run-dash-viz
-          template: visualize
+        - - name: process-information
+            template: process
 
     - name: analyse
       container:
         image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
         command: ["srcopsmetrics/cli.py"]
-        args: ["-c",  "{{inputs.parameters.REPOSITORY}}"]
+        args: ["-c", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
             value: "{{inputs.parameters.GITHUB_ACCESS_TOKEN}}"
@@ -84,27 +81,6 @@ spec:
         image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
         command: ["srcopsmetrics/cli.py"]
         args: ["-p", "{{inputs.parameters.REPOSITORY}}"]
-        env:
-          - name: GITHUB_ACCESS_TOKEN
-            value: "{{inputs.parameters.GITHUB_ACCESS_TOKEN}}"
-          - name: S3_ENDPOINT_URL
-            value: "{{inputs.parameters.S3_ENDPOINT_URL}}"
-          - name: CEPH_BUCKET
-            value: "{{inputs.parameters.CEPH_BUCKET}}"
-          - name: CEPH_BUCKET_PREFIX
-            value: "{{inputs.parameters}.CEPH_BUCKET_PREFIX}"
-          - name: CEPH_SECRET_KEY
-            value: "{{inputs.parameters.CEPH_SECRET_KEY}}"
-          - name: CEPH_KEY_ID
-            value: "{{inputs.parameters.CEPH_KEY_ID}}"
-          - name: PYTHONPATH
-            value: "."
-
-    - name: visualize
-      container:
-        image: "${IMAGE_STREAM_REGISTRY}/${IMAGE_STREAM_NAMESPACE}/srcopsmetrics:${IMAGE_STREAM_TAG}"
-        command: ["srcopsmetrics/cli.py"]
-        args: ["-v", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
             value: "{{inputs.parameters.GITHUB_ACCESS_TOKEN}}"
