@@ -29,7 +29,7 @@ parameters:
     displayName: ImageStream Project
     required: true
     name: IMAGE_STREAM_NAMESPACE
-    value: "dtuchyna-thoth-dev"
+    value: "thoth-test-core"
 
   - description: Tag of the ImageStream to be use
     displayName: ImageStream Tag
@@ -49,15 +49,15 @@ objects:
         app: scropsmetrics
     spec:
       serviceAccountName: argo
-      entrypoint: run-srcopsmetrics
+      entrypoint: srcopsmetrics
       templates:
-        - name: "run-srcopsmetrics"
+        - name: "srcopsmetrics"
           dag:
             tasks:
-              - name: "srcopsmetrics-workflow"
+              - name: "srcopsmetrics"
                 templateRef:
-                  name: "srcopsmetrics-workflow"
-                  template: "srcopsmetrics-workflow"
+                  name: "srcopsmetrics"
+                  template: "srcopsmetrics"
                 arguments:
                   parameters:
                     - name: REPOSITORY
@@ -98,4 +98,3 @@ objects:
                       value: ${IMAGE_STREAM_REGISTRY}
                     - name: IMAGE_STREAM_NAMESPACE
                       value: ${IMAGE_STREAM_NAMESPACE}
-

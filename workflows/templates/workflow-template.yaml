@@ -11,67 +11,131 @@ spec:
   serviceAccountName: argo
   entrypoint: srcopsmetrics-workflow
 
-  inputs:
-    parameters:
-      - name: REPOSITORY
-      - name: GITHUB_ACCESS_TOKEN
-      - name: S3_ENDPOINT_URL
-      - name: CEPH_BUCKET
-      - name: CEPH_BUCKET_PREFIX
-      - name: CEPH_SECRET_KEY
-      - name: CEPH_KEY_ID
-      - name: PYTHONPATH
-      - name: IMAGE_STREAM_REGISTRY
-      - name: IMAGE_STREAM_NAMESPACE
-      - name: IMAGE_STREAM_NAMESPACE
-
   templates:
     - name: srcopsmetrics-workflow
+      inputs:
+        parameters:
+          - name: REPOSITORY
+          - name: IMAGE_STREAM_REGISTRY
+          - name: IMAGE_STREAM_NAMESPACE
+          - name: IMAGE_STREAM_TAG
       steps:
         - - name: collect-knowledge
             template: analyse
+            arguments:
+              parameters:
+                - name: REPOSITORY
+                  value: "{{inputs.parameters.REPOSITORY}}"
+                - name: IMAGE_STREAM_REGISTRY
+                  value: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}"
+                - name: IMAGE_STREAM_NAMESPACE
+                  value: "{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}"
+                - name: IMAGE_STREAM_TAG
+                  value: "{{inputs.parameters.IMAGE_STREAM_TAG}}"
 
         - - name: process-information
             template: process
+            arguments:
+              parameters:
+                - name: REPOSITORY
+                  value: "{{inputs.parameters.REPOSITORY}}"
+                - name: IMAGE_STREAM_REGISTRY
+                  value: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}"
+                - name: IMAGE_STREAM_NAMESPACE
+                  value: "{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}"
+                - name: IMAGE_STREAM_TAG
+                  value: "{{inputs.parameters.IMAGE_STREAM_TAG}}"
 
     - name: analyse
+      inputs:
+        parameters:
+          - name: REPOSITORY
+          - name: IMAGE_STREAM_REGISTRY
+          - name: IMAGE_STREAM_NAMESPACE
+          - name: IMAGE_STREAM_TAG
       container:
-        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}
+                /{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}
+                /srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
         args: ["-c", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
-            value: "{{inputs.parameters.GITHUB_ACCESS_TOKEN}}"
+            valueFrom:
+              secretKeyRef:
+                name: sesheta-srcops
+                key: github-access-token
           - name: S3_ENDPOINT_URL
-            value: "{{inputs.parameters.S3_ENDPOINT_URL}}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-host
           - name: CEPH_BUCKET
-            value: "{{inputs.parameters.CEPH_BUCKET}}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-bucket
           - name: CEPH_BUCKET_PREFIX
-            value: "{{inputs.parameters.CEPH_BUCKET_PREFIX}}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-prefix
           - name: CEPH_SECRET_KEY
-            value: "{{inputs.parameters.CEPH_SECRET_KEY}}"
+            valueFrom:
+              secretKeyRef:
+                name: thoth
+                key: ceph-secret-key
           - name: CEPH_KEY_ID
-            value: "{{inputs.parameters.CEPH_KEY_ID}}"
+            valueFrom:
+              secretKeyRef:
+                name: thoth
+                key: ceph-key-id
           - name: PYTHONPATH
             value: "."
 
     - name: process
+      inputs:
+        parameters:
+          - name: REPOSITORY
+          - name: IMAGE_STREAM_REGISTRY
+          - name: IMAGE_STREAM_NAMESPACE
+          - name: IMAGE_STREAM_TAG
       container:
-        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}
+                /{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}
+                /srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
         args: ["-p", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
-            value: "{{inputs.parameters.GITHUB_ACCESS_TOKEN}}"
+            valueFrom:
+              secretKeyRef:
+                name: sesheta-srcops
+                key: github-access-token
           - name: S3_ENDPOINT_URL
-            value: "{{inputs.parameters.S3_ENDPOINT_URL}}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-host
           - name: CEPH_BUCKET
-            value: "{{inputs.parameters.CEPH_BUCKET}}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-bucket
           - name: CEPH_BUCKET_PREFIX
-            value: "{{inputs.parameters}.CEPH_BUCKET_PREFIX}"
+            valueFrom:
+              configMapKeyRef:
+                name: thoth
+                key: ceph-prefix
           - name: CEPH_SECRET_KEY
-            value: "{{inputs.parameters.CEPH_SECRET_KEY}}"
+            valueFrom:
+              secretKeyRef:
+                name: thoth
+                key: ceph-secret-key
           - name: CEPH_KEY_ID
-            value: "{{inputs.parameters.CEPH_KEY_ID}}"
+            valueFrom:
+              secretKeyRef:
+                name: thoth
+                key: ceph-key-id
           - name: PYTHONPATH
             value: "."
