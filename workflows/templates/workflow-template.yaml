@@ -54,11 +54,11 @@ spec:
           - name: IMAGE_STREAM_NAMESPACE
           - name: IMAGE_STREAM_TAG
       container:
-        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}
-                /{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}
-                /srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/\
+        {{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/\
+        srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
-        args: ["-c", "{{inputs.parameters.REPOSITORY}}"]
+        args: ["-cr", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
             valueFrom:
@@ -74,12 +74,12 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: thoth
-                key: ceph-bucket
+                key: ceph-bucket-name
           - name: CEPH_BUCKET_PREFIX
             valueFrom:
               configMapKeyRef:
                 name: thoth
-                key: ceph-prefix
+                key: ceph-bucket-prefix
           - name: CEPH_SECRET_KEY
             valueFrom:
               secretKeyRef:
@@ -101,11 +101,11 @@ spec:
           - name: IMAGE_STREAM_NAMESPACE
           - name: IMAGE_STREAM_TAG
       container:
-        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}
-                /{{inputs.parameters.IMAGE_STREAM_NAMESPACE}}
-                /srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
+        image: "{{inputs.parameters.IMAGE_STREAM_REGISTRY}}/\
+        {{inputs.parameters.IMAGE_STREAM_NAMESPACE}}/\
+        srcopsmetrics:{{inputs.parameters.IMAGE_STREAM_TAG}}"
         command: ["srcopsmetrics/cli.py"]
-        args: ["-p", "{{inputs.parameters.REPOSITORY}}"]
+        args: ["-pr", "{{inputs.parameters.REPOSITORY}}"]
         env:
           - name: GITHUB_ACCESS_TOKEN
             valueFrom:
@@ -121,12 +121,12 @@ spec:
             valueFrom:
               configMapKeyRef:
                 name: thoth
-                key: ceph-bucket
+                key: ceph-bucket-name
           - name: CEPH_BUCKET_PREFIX
             valueFrom:
               configMapKeyRef:
                 name: thoth
-                key: ceph-prefix
+                key: ceph-bucket-prefix
           - name: CEPH_SECRET_KEY
             valueFrom:
               secretKeyRef:
