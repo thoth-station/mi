@@ -16,7 +16,7 @@ def get_version():
 VERSION = get_version()
 
 HERE = Path(__file__).parent
-README: str = Path(HERE, "README.md").read_text(encoding="utf-8")
+README: str = Path(HERE, "README.rst").read_text(encoding="utf-8")
 
 setup(
     name='srcopsmetrics',
