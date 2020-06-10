@@ -42,7 +42,7 @@ objects:
   - apiVersion: argoproj.io/v1alpha1
     kind: Workflow
     metadata:
-      name: srcopsmetrics-workflow
+      generateName: srcopsmetrics-analysis-
       annotations:
         thoth-station.ninja/template-version: 0.1.0
       labels:
@@ -50,6 +50,9 @@ objects:
     spec:
       serviceAccountName: argo
       entrypoint: srcopsmetrics
+      ttlStrategy:
+        secondsAfterCompletion: 10
+        secondsAfterSuccess: 10
       templates:
         - name: "srcopsmetrics"
           dag:
