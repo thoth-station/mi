@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
   name: srcopsmetrics
@@ -42,6 +42,12 @@ parameters:
     name: THOTH_ADVISE
     value: "0"
 
+  - description: Thoth provenance check setup tag value
+    displayName: THOTH_PROVENANCE_CHECK
+    required: true
+    name: THOTH_PROVENANCE_CHECK
+    value: "0"
+
   - description: Thamos Advise setup tag value
     displayName: ENABLE_PIPENV
     required: true
@@ -74,6 +80,8 @@ objects:
               value: ${ENABLE_PIPENV}
             - name: THOTH_ADVISE
               value: ${THOTH_ADVISE}
+            - name: THOTH_PROVENANCE_CHECK
+              value: ${THOTH_PROVENANCE_CHECK}
           from:
             kind: ImageStreamTag
             name: 's2i-thoth-ubi8-py36:latest'

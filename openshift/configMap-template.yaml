@@ -34,6 +34,12 @@ parameters:
     name: CEPH_BUCKET_PREFIX
     value: data/thoth/dtuchyna
 
+  - description: Ceph Prefix where knowledge is stored.
+    displayName: Ceph Prefix
+    required: true
+    name: CEPH_BUCKET_PREFIX
+    value: data/thoth/dtuchyna
+
 objects:
   - kind: ConfigMap
     apiVersion: v1
