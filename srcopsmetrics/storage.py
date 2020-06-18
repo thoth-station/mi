@@ -61,7 +61,8 @@ class ProcessedKnowledge:
         utils.check_directory(preprocessed_dir)
         total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
 
-        storage = KnowledgeStorage(os.getenv('IS_LOCAL'))
+        is_local = os.getenv('IS_LOCAL') == "True"
+        storage = KnowledgeStorage(is_local)
 
         knowledge = storage.load_previous_knowledge(
             file_path=total_path, knowledge_type='Processed Knowledge')
