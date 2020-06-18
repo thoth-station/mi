@@ -105,3 +105,4 @@ venv.bak/
 
 srcopsmetrics/knowledge_statistics/
 srcopsmetrics/bot_knowledge/
+srcopsmetrics/processed/
