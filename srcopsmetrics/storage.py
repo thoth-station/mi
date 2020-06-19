@@ -34,6 +34,8 @@ from thoth.storages.exceptions import NotFoundError
 from srcopsmetrics import utils
 from srcopsmetrics.enums import StoragePath
 
+import pandas as pd
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -125,6 +127,31 @@ class KnowledgeStorage:
         else:
             with open(file_path, "w") as f:
                 json.dump(results, f)
+            _LOGGER.info("Saved locally at %s" % file_path)
+
+    def save_csv(self, file_path: Path, data: Dict[str, Any], github_type):
+        """Save collected knowledge as csv.
+
+        Arguments:
+            file_path {Path} -- where the knowledge should be saved
+            data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+        """
+        results = pd.DataFrame.from_dict(data, orient='index')
+        results['repository'] =  os.getenv('PROJECT')
+        results['type'] = github_type
+
+        _LOGGER.info("Saving CSV knowledge file %s of size %d" %
+                     (os.path.basename(file_path), len(data)))
+
+        if not self.is_local:
+            ceph_filename = os.path.relpath(file_path).replace("./", "")
+            s3 = self.get_ceph_store()
+            csv = results.to_csv(index=False)
+            s3.store_blob(str.encode(csv), ceph_filename)
+            _LOGGER.info("Saved on CEPH at %s/%s%s" %
+                         (s3.bucket, s3.prefix, ceph_filename))
+        else:
+            results.to_csv(file_path, index=False)
             _LOGGER.info("Saved locally at %s" % file_path)
 
     def get_ceph_store(self) -> CephStore:
