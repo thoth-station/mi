@@ -17,23 +17,25 @@
 
 """Create, Visualize, Use bot knowledge from different Software Development Platforms."""
 
+import glob
 import json
 import logging
 import os
 from pathlib import Path
-
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
+import pandas as pd
 
 from github.PullRequest import PullRequest
 
+from srcopsmetrics import bot_knowledge
 from srcopsmetrics.enums import EntityTypeEnum
+from srcopsmetrics.exceptions import NotKnownEntities
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.processing import Processing
+from srcopsmetrics.report import Report
+from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.visualization import Visualization
-from srcopsmetrics.storage import KnowledgeStorage
-from srcopsmetrics.report import Report
-from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +54,7 @@ def analyse_projects(
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
+        os.environ['PROJECT'] = '/'.join(project)
         _LOGGER.info(
             "######################## Analysing %s ########################\n" % "/".join(project))
         github_repo = github_knowledge.connect_to_source(project=project)
@@ -78,3 +81,4 @@ def visualize_project_results(project: str, is_local: bool = False):
     report = Report(project_name=project)
     report.generate_health_report()
     report.launch()
+
