@@ -20,6 +20,8 @@
 import logging
 import os
 from typing import List, Optional
+import glob
+import pandas as pd
 
 import click
 
@@ -129,20 +131,34 @@ def cli(
                 project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
             Processing(issues=issues, pull_requests=prs).regenerate()
 
-        if visualize_statistics:
-            visualize_project_results(project=project, is_local=is_local)
+        # if visualize_statistics:
+        #     visualize_project_results(project=project, is_local=is_local)
 
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(
                 project=project, is_local=is_local)
 
-    if visualize_statistics and repository is not None:
-        visualize_project_results(project=repository, is_local=is_local)
-    elif visualize_statistics and organization is not None:
-        # TODO
-        raise NotImplementedError
+    # if visualize_statistics and repository is not None:
+    #     visualize_project_results(project=repository, is_local=is_local)
+    # elif visualize_statistics and organization is not None:
+    #     # TODO
+    #     raise NotImplementedError
+    if visualize_statistics:
+        merge_script()
 
+def merge_script():
+    _LOGGER.info('merging script launched')
+    csv_files = glob.glob(pathname='./srcopsmetrics/bot_knowledge/**/*s.csv',recursive=True)
+    merge = pd.DataFrame()
+    for f in csv_files:
+        _LOGGER.info('merging %s' % f)
+        df = pd.read_csv(f)
+        for i,val in df.itercols():
+            
+        merge = merge.append(pd.read_csv(f))
+    merge.to_csv('./srcopsmetrics/health_table.csv')
+    print(pd.io.sql.get_schema(merge.reset_index(), 'data'))
 
 if __name__ == "__main__":
     cli()
