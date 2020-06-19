@@ -84,17 +84,17 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:6a9cdab2db28330ffa3e6f08bb2bc07bc757d2019e4acf0c8376b72c63e7cc6b",
-                "sha256:f02c0c02f632285da124e560934145de64690000bf6348df8f1eb45239f0e9df"
+                "sha256:4856c8cb4150b900cc7dccbdf16f542fb8c12e97b17639979e58760847f7cf35",
+                "sha256:fe6f7f58fa53c4dd86432315717c989a65a5a8748e6219a53725be1041c4a113"
             ],
-            "version": "==1.14.6"
+            "version": "==1.14.7"
         },
         "botocore": {
             "hashes": [
-                "sha256:a5737a5215f9db23344752a4d2a43646c104e6d500a2d6f9409624d2e58c92f1",
-                "sha256:c8b5143e2eaac20ce0d7238fd8ef33f7969139ccd616edb54fd3a482cdfd0e6c"
+                "sha256:cce790e65368d28dfd715558daea6890922716efa69d3a4c76d80348a71ad460",
+                "sha256:e582e3ba61d812e8dd0939c0455c6f68cf41587506a3a30deafc54825087de01"
             ],
-            "version": "==1.17.6"
+            "version": "==1.17.7"
         },
         "brotli": {
             "hashes": [
@@ -178,10 +178,10 @@
         },
         "dash": {
             "hashes": [
-                "sha256:67b2760e82560514d8e987379ed1588898e559a82f7405216c504fea5afd792f"
+                "sha256:6449cfdd67b9ec03ffed566b38ee510fae2d8540e69b7424879c63f711b201cd"
             ],
             "index": "pypi",
-            "version": "==1.13.2"
+            "version": "==1.13.3"
         },
         "dash-core-components": {
             "hashes": [
@@ -203,9 +203,9 @@
         },
         "dash-table": {
             "hashes": [
-                "sha256:32a7bb2497533e76dfabd77f9e755108e3c2c04bb669ce4a59ff4a72a1eaaf66"
+                "sha256:b21ff5283df96aa1881b1c7f12424b80593bff26b7c450eea99dd2165d6a009b"
             ],
-            "version": "==4.8.0"
+            "version": "==4.8.1"
         },
         "delegator.py": {
             "hashes": [
