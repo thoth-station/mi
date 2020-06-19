@@ -33,6 +33,7 @@ from numpy.core.defchararray import isnumeric
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.iterator import KnowledgeAnalysis
 from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.utils import check_directory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -448,12 +449,12 @@ class GitHubKnowledge:
 
         return accumulated
 
-    def analyse_entity(self, github_repo: str, project_path: str, github_type: str, is_local: bool = False):
+    def analyse_entity(self, github_repo: str, project_path: Path, github_type: str, is_local: bool = False):
         """Load old knowledge and update it with the newly analysed one and save it.
 
         Arguments:
             github_repo {str} -- Github repo that will be analysed
-            project_path {str} -- The main directory where the knowledge will be stored
+            project_path {Path} -- The main directory where the knowledge will be stored
             github_type {str} -- Currently can be: "Issue", "PullRequest", "ContentFile"
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
         """
@@ -467,6 +468,9 @@ class GitHubKnowledge:
 
         path = project_path.joinpath("./" + filename + ".json")
 
+        check_directory(project_path.joinpath(filename))
+        csv_path = project_path.joinpath(f'./{filename}/{filename}.csv') # because of hive
+
         storage = KnowledgeStorage(is_local=is_local)
         prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name,
                                                          file_path=path,
@@ -475,6 +479,8 @@ class GitHubKnowledge:
 
         if new_knowledge is not None:
             storage.save_knowledge(path, new_knowledge)
+            _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
+            storage.save_csv(csv_path, new_knowledge, github_type)
             _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
         else:
             _LOGGER.info("\n")
