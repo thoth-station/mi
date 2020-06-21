@@ -469,7 +469,7 @@ class GitHubKnowledge:
         path = project_path.joinpath("./" + filename + ".json")
 
         check_directory(project_path.joinpath(filename))
-        csv_path = project_path.joinpath(f'./{filename}/{filename}.csv') # because of hive
+        csv_path = project_path.joinpath(f'./{filename}/{filename}.csv')  # because of apache hive
 
         storage = KnowledgeStorage(is_local=is_local)
         prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name,

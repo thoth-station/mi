@@ -147,18 +147,22 @@ def cli(
     if visualize_statistics:
         merge_script()
 
+
 def merge_script():
+    """Merge all of available (collected) knowledge.
+
+    Merged file will be present as ./srcopsmetrics/health_table.csv
+    """
     _LOGGER.info('merging script launched')
-    csv_files = glob.glob(pathname='./srcopsmetrics/bot_knowledge/**/*s.csv',recursive=True)
+    csv_files = glob.glob(pathname='./srcopsmetrics/bot_knowledge/**/*s.csv', recursive=True)
     merge = pd.DataFrame()
     for f in csv_files:
         _LOGGER.info('merging %s' % f)
-        df = pd.read_csv(f)
-        for i,val in df.itercols():
-            
         merge = merge.append(pd.read_csv(f))
+
     merge.to_csv('./srcopsmetrics/health_table.csv')
     print(pd.io.sql.get_schema(merge.reset_index(), 'data'))
+
 
 if __name__ == "__main__":
     cli()

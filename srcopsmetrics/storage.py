@@ -137,7 +137,7 @@ class KnowledgeStorage:
             data {Dict[str, Any]} -- collected knowledge. Should be json compatible
         """
         results = pd.DataFrame.from_dict(data, orient='index')
-        results['repository'] =  os.getenv('PROJECT')
+        results['repository'] = os.getenv('PROJECT')
         results['type'] = github_type
 
         _LOGGER.info("Saving CSV knowledge file %s of size %d" %

@@ -81,4 +81,3 @@ def visualize_project_results(project: str, is_local: bool = False):
     report = Report(project_name=project)
     report.generate_health_report()
     report.launch()
-
