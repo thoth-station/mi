@@ -60,8 +60,7 @@ class ReviewerAssigner:
         :param number_reviewer: number of reviewers to select
         """
         data = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-            project_name=project,
-            knowledge_type=EntityTypeEnum.PULL_REQUEST.value,
+            project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value,
         )
         if not data:
             return {}

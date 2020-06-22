@@ -45,7 +45,7 @@ class KnowledgeAnalysis:
     _ENTITY_SCHEMA = {
         "Issue": Schemas.Issues,
         "PullRequest": Schemas.PullRequests,
-        "ContentFiles": Schemas.ContentFiles
+        "ContentFiles": Schemas.ContentFiles,
     }
 
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -77,7 +77,7 @@ class KnowledgeAnalysis:
     def __exit__(self, exc_type, exc_value, traceback):
         """Context manager exit method."""
         if exc_type is not None:
-            _LOGGER.info('Cached knowledge could not be saved')
+            _LOGGER.info("Cached knowledge could not be saved")
 
     def store(self):
         """Iterate through entities of given repository and accumulate them."""
@@ -89,23 +89,20 @@ class KnowledgeAnalysis:
                 remaining = github.rate_limiting[0]
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
-                    wait_time = github.rate_limiting_resettime - \
-                        int(datetime.now().timestamp())
-                    _LOGGER.info(
-                        "API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
+                    wait_time = github.rate_limiting_resettime - int(datetime.now().timestamp())
+                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
                     time.sleep(wait_time)
 
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" %
-                             (self.entity_type, idx, len(self.new_entities)))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity_type, idx, len(self.new_entities)))
 
                 self.accumulator_backup = self.accumulator
                 self.store_method(entity, self.accumulator)
 
         except (GithubException, KeyboardInterrupt):
-            _LOGGER.info('Problem occured, saving cached knowledge')
+            _LOGGER.info("Problem occured, saving cached knowledge")
             try:
                 self._ENTITY_SCHEMA[self.entity_type](self.accumulator)
                 return self.accumulator

@@ -34,8 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 def check_directory(knowledge_dir: Path):
     """Check if directory exists. If not, create one."""
     if not knowledge_dir.exists():
-        _LOGGER.info(
-            "No repo identified, creating new directory at %s" % knowledge_dir)
+        _LOGGER.info("No repo identified, creating new directory at %s" % knowledge_dir)
         os.makedirs(knowledge_dir)
 
 

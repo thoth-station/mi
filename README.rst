@@ -162,6 +162,6 @@ Always feel free to open new Issues or engage in already existing ones!
 I want to add new Entity
 ------------------------
 If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge,
-your implementation has to meet with Entity criteria described above. Always remember to first create Issue and describe 
+your implementation has to meet with Entity criteria described above. Always remember to first create Issue and describe
 why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal
 of SrcOpsMetrics project. Do not forget to reference the Issue in your Pull Request.

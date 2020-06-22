@@ -48,14 +48,14 @@ class Processing:
 
     def regenerate(self):
         """Process stored knowledge and save it."""
-        os.environ['PROCESS_KNOWLEDGE'] = 'True'
+        os.environ["PROCESS_KNOWLEDGE"] = "True"
         self.process_issues_creators()
         self.process_issues_closers()
         self.process_issues_closed_by_pr_size()
         self.process_issue_interactions()
         self.process_issue_labels_to_issue_closers()
         self.process_issue_labels_to_issue_creators()
-        _LOGGER.info('Processed knowledge generated')
+        _LOGGER.info("Processed knowledge generated")
 
     def process_issues_project_data(self):
         """Pre process of data for a given project repository."""
@@ -72,7 +72,7 @@ class Processing:
 
         for id in ids:
             id = str(id)
-            if self.issues[id]['closed_at'] is None:
+            if self.issues[id]["closed_at"] is None:
                 continue
 
             issue = self.issues[str(id)]
@@ -80,8 +80,7 @@ class Processing:
             if issue["created_by"] not in project_issues_data["contributors"]:
                 project_issues_data["contributors"].append(issue["created_by"])
 
-            self._analyze_issue_for_project_data(
-                issue_id=id, issue=issue, extracted_data=project_issues_data)
+            self._analyze_issue_for_project_data(issue_id=id, issue=issue, extracted_data=project_issues_data)
 
         return project_issues_data
 
@@ -125,18 +124,16 @@ class Processing:
 
         for id in ids:
             id = str(id)
-            if self.pull_requests[id]['closed_at'] is None:
+            if self.pull_requests[id]["closed_at"] is None:
                 continue
             pr = self.pull_requests[str(id)]
 
             if pr["created_by"] not in project_reviews_data["contributors"]:
                 project_reviews_data["contributors"].append(pr["created_by"])
 
-            self._analyze_pr_for_project_data(
-                pr_id=id, pr=pr, extracted_data=project_reviews_data)
+            self._analyze_pr_for_project_data(pr_id=id, pr=pr, extracted_data=project_reviews_data)
 
-        project_reviews_data["last_review_time"] = max(
-            project_reviews_data["reviews_dts"])
+        project_reviews_data["last_review_time"] = max(project_reviews_data["reviews_dts"])
 
         # Encode Pull Request sizes for the contributor
         project_pr_median_size, project_length_score = convert_num2label(
@@ -170,8 +167,7 @@ class Processing:
         extracted_data["created_dts"].append(pr_created_dt)
 
         # PR first review timestamp (no matter the contributor)
-        pr_first_review_dt = datetime.fromtimestamp(
-            [r for r in pr["reviews"].values()][0]["submitted_at"])
+        pr_first_review_dt = datetime.fromtimestamp([r for r in pr["reviews"].values()][0]["submitted_at"])
 
         ttfr = (pr_first_review_dt - pr_created_dt).total_seconds() / 3600
         extracted_data["TTFR"].append(ttfr)
@@ -181,8 +177,7 @@ class Processing:
 
         project_prs_size = pr["size"]
         extracted_data["PRs_size"].append(project_prs_size)
-        extracted_data["encoded_PRs_size"].append(
-            convert_score2num(label=project_prs_size))
+        extracted_data["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
 
         # Take maximum to consider last approved if more than one contributor has to approve
         pr_approved_dt = max(pr_approved_dt)
@@ -194,8 +189,7 @@ class Processing:
         extracted_data["MTTR"].append(mttr)
 
         # PR reviews timestamps
-        extracted_data["reviews_dts"] += [r["submitted_at"]
-                                          for r in pr["reviews"].values()]
+        extracted_data["reviews_dts"] += [r["submitted_at"] for r in pr["reviews"].values()]
 
         return extracted_data
 
@@ -215,8 +209,7 @@ class Processing:
         for pr_id in pr_ids:
             pr = self.pull_requests[str(pr_id)]
 
-            self._analyze_pr_for_contributor_data(
-                pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
+            self._analyze_pr_for_contributor_data(pr_id=pr_id, pr=pr, extracted_data=contributors_reviews_data)
 
             self._analyze_contributors_interaction(
                 pr_interactions=pr["interactions"], pr_author=pr["created_by"], interactions_data=interactions
@@ -240,8 +233,7 @@ class Processing:
             last_review_dt = max(time_reviews)
 
             contributors_reviews_data[reviewer]["number_reviews"] = number_reviews
-            contributors_reviews_data[reviewer]["median_review_length"] = np.median(
-                reviews_length)
+            contributors_reviews_data[reviewer]["median_review_length"] = np.median(reviews_length)
             contributors_reviews_data[reviewer]["last_review_time"] = last_review_dt
 
             # Encode Pull Request sizes for the contributor
@@ -250,8 +242,7 @@ class Processing:
                     convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
                 ]
             else:
-                contributor_prs_size_encoded = convert_score2num(
-                    label=contributors_reviews_data[reviewer]["PRs_size"])
+                contributor_prs_size_encoded = convert_score2num(label=contributors_reviews_data[reviewer]["PRs_size"])
 
             contributor_pr_median_size, contributor_relative_score = convert_num2label(
                 score=np.median(contributor_prs_size_encoded)
@@ -306,17 +297,12 @@ class Processing:
             extracted_data[contributor_review["author"]]["ids"] = []
             # Time to First Review (TTFR) [hr]
             extracted_data[contributor_review["author"]]["TTFR"] = []
-            extracted_data[contributor_review["author"]
-                           ]["MTTFR"] = []  # Median TTFR [hr]
-            extracted_data[contributor_review["author"]
-                           ]["TTR"] = []  # Time to Review (TTR) [hr]
-            extracted_data[contributor_review["author"]
-                           ]["MTTR"] = []  # Median TTR [hr]
-            extracted_data[contributor_review["author"]
-                           ]["PRs_size"] = []  # Pull Request length
+            extracted_data[contributor_review["author"]]["MTTFR"] = []  # Median TTFR [hr]
+            extracted_data[contributor_review["author"]]["TTR"] = []  # Time to Review (TTR) [hr]
+            extracted_data[contributor_review["author"]]["MTTR"] = []  # Median TTR [hr]
+            extracted_data[contributor_review["author"]]["PRs_size"] = []  # Pull Request length
             # Pull Request length encoded
-            extracted_data[contributor_review["author"]
-                           ]["encoded_PRs_size"] = []
+            extracted_data[contributor_review["author"]]["encoded_PRs_size"] = []
 
         if pr_id not in extracted_data[contributor_review["author"]]["reviews"].keys():
             extracted_data[contributor_review["author"]]["reviews"][pr_id] = [
@@ -336,11 +322,9 @@ class Processing:
             )
 
         if contributor_review["author"] not in reviews_submitted_dts_per_reviewer.keys():
-            reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [
-                contributor_review["submitted_at"]]
+            reviews_submitted_dts_per_reviewer[contributor_review["author"]] = [contributor_review["submitted_at"]]
         else:
-            reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(
-                contributor_review["submitted_at"])
+            reviews_submitted_dts_per_reviewer[contributor_review["author"]].append(contributor_review["submitted_at"])
 
         return extracted_data
 
@@ -374,8 +358,7 @@ class Processing:
 
         project_prs_size = pr["size"]
         extracted_data[reviewer]["PRs_size"].append(project_prs_size)
-        extracted_data[reviewer]["encoded_PRs_size"].append(
-            convert_score2num(label=project_prs_size))
+        extracted_data[reviewer]["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
 
         # Take maximum to consider last approved if more than one contributor has to approve
         pr_approved_dt = max(dt_approved)
@@ -505,9 +488,7 @@ class Processing:
         return authors
 
     @ProcessedKnowledge
-    def process_issue_labels_with_ttci(
-        self
-    ) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
+    def process_issue_labels_with_ttci(self) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
         """Analyse Time To Close Issue for any label that labeled closed issue.
 
         :param self.issues:Dict:
@@ -522,8 +503,7 @@ class Processing:
                 if label not in issues:
                     issues[label] = [[], []]
                 issues[label][0].append(ttci / 3600)
-                issues[label][1].append(
-                    int(self.issues[issue_id]["created_at"]))
+                issues[label][1].append(int(self.issues[issue_id]["created_at"]))
         return issues
 
     @ProcessedKnowledge
@@ -544,9 +524,7 @@ class Processing:
         return authors
 
     @ProcessedKnowledge
-    def process_issue_labels_to_issue_closers(
-        self
-    ) -> Dict[str, Dict[str, int]]:
+    def process_issue_labels_to_issue_closers(self) -> Dict[str, Dict[str, int]]:
         """Analyse number of every label (of closed issues) for any contributor that has closed an issue.
 
         A issue closer is also a contributor, whose Pull Request closed the issue (by referencing it)
@@ -607,10 +585,12 @@ class Processing:
 
         :rtype: { <issue_status> : <num_of_corresponding_entities> }
         """
-        statuses = {'active': 0,
-                    'closed': 0, }
+        statuses = {
+            "active": 0,
+            "closed": 0,
+        }
         for id in self.issues.keys():
-            status = 'active' if self.issues[id]['closed_at'] is None else 'closed'
+            status = "active" if self.issues[id]["closed_at"] is None else "closed"
             statuses[status] += 1
         return statuses
 
@@ -620,12 +600,18 @@ class Processing:
 
         :rtype: { <pull_request_status> : <num_of_corresponding_entities> }
         """
-        statuses = {'active': 0,
-                    'merged': 0,
-                    'rejected': 0, }
+        statuses = {
+            "active": 0,
+            "merged": 0,
+            "rejected": 0,
+        }
         for id in self.pull_requests.keys():
-            status = ('merged' if self.pull_requests[id]['merged_at'] else
-                      'rejected' if self.pull_requests[id]['closed_at'] else
-                      'active')
+            status = (
+                "merged"
+                if self.pull_requests[id]["merged_at"]
+                else "rejected"
+                if self.pull_requests[id]["closed_at"]
+                else "active"
+            )
             statuses[status] += 1
         return statuses

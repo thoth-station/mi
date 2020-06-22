@@ -25,8 +25,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from github import (ContentFile, Github, GithubObject, Issue, IssueComment,
-                    PaginatedList, PullRequest, PullRequestReview)
+from github import ContentFile, Github, GithubObject, Issue, IssueComment, PaginatedList, PullRequest, PullRequestReview
 from github.Repository import Repository
 from numpy.core.defchararray import isnumeric
 
@@ -46,11 +45,7 @@ STANDALONE_LABELS = {"size"}
 class GitHubKnowledge:
     """Class of methods entity extraction from GitHub."""
 
-    _FILENAME_ENTITY = {
-        "Issue": "issues",
-        "PullRequest": "pull_requests",
-        "ContentFile": "content_file"
-    }
+    _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests", "ContentFile": "content_file"}
 
     def connect_to_source(self, project: Tuple[str, str]) -> Repository:
         """Connect to GitHub.
@@ -138,7 +133,7 @@ class GitHubKnowledge:
                 # last element of url is always the issue number
                 ref_issue = referenced_issue_number.split("/")[-1]
             elif referenced_issue_number.startswith("#"):
-                ref_issue = referenced_issue_number.replace('#', '')
+                ref_issue = referenced_issue_number.replace("#", "")
             else:
                 _LOGGER.info("      ...referenced issue number absent")
                 _LOGGER.debug("      keyword message: %s" % body)
@@ -252,7 +247,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
 
-        current_issues = [issue for issue in repository.get_issues(state='all') if issue.pull_request is None]
+        current_issues = [issue for issue in repository.get_issues(state="all") if issue.pull_request is None]
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
@@ -399,7 +394,7 @@ class GitHubKnowledge:
                 file_path = content_file.path
                 encoded = content_file.decoded_content
                 # TODO: Adjust because most of the files are not text
-                content_file_text = encoded.decode('utf-8')
+                content_file_text = encoded.decode("utf-8")
             except Exception as e:
                 _LOGGER.info("%r not found for: %r" % (file_name, repository.full_name))
                 _LOGGER.warning(e)
@@ -432,7 +427,7 @@ class GitHubKnowledge:
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
-        current_pulls = repository.get_pulls(state='all')
+        current_pulls = repository.get_pulls(state="all")
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
@@ -460,7 +455,7 @@ class GitHubKnowledge:
         _METHOD_ANALYSIS_ENTITY = {
             "Issue": self.analyse_issues,
             "PullRequest": self.analyse_pull_requests,
-            "ContentFile": self.analyse_content_files
+            "ContentFile": self.analyse_content_files,
         }
         filename = self._FILENAME_ENTITY[github_type]
         analyse = _METHOD_ANALYSIS_ENTITY[github_type]
@@ -468,9 +463,9 @@ class GitHubKnowledge:
         path = project_path.joinpath("./" + filename + ".json")
 
         storage = KnowledgeStorage(is_local=is_local)
-        prev_knowledge = storage.load_previous_knowledge(project_name=github_repo.full_name,
-                                                         file_path=path,
-                                                         knowledge_type=github_type)
+        prev_knowledge = storage.load_previous_knowledge(
+            project_name=github_repo.full_name, file_path=path, knowledge_type=github_type
+        )
         new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
 
         if new_knowledge is not None:

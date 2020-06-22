@@ -52,22 +52,22 @@ class ProcessedKnowledge:
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
+
         def wrapper():
             return self.func(*args, **kwargs)
 
-        project = os.getenv('PROJECT')
+        project = os.getenv("PROJECT")
 
         preprocessed_dir = Path(StoragePath.PROCESSED.value).joinpath(project)
         utils.check_directory(preprocessed_dir)
-        total_path = preprocessed_dir.joinpath(f'{self.func.__name__ }.json')
+        total_path = preprocessed_dir.joinpath(f"{self.func.__name__ }.json")
 
-        is_local = os.getenv('IS_LOCAL') == "True"
+        is_local = os.getenv("IS_LOCAL") == "True"
         storage = KnowledgeStorage(is_local)
 
-        knowledge = storage.load_previous_knowledge(
-            file_path=total_path, knowledge_type='Processed Knowledge')
+        knowledge = storage.load_previous_knowledge(file_path=total_path, knowledge_type="Processed Knowledge")
 
-        if knowledge is None or knowledge == {} or os.getenv('PROCESS_KNOWLEDGE') is 'True':
+        if knowledge is None or knowledge == {} or os.getenv("PROCESS_KNOWLEDGE") is "True":
             knowledge = wrapper()
             storage.save_knowledge(file_path=total_path, data=knowledge)
 
@@ -98,8 +98,7 @@ class KnowledgeStorage:
         """Initialize to behave as either local or remote storage."""
         self.is_local = is_local
 
-        _LOGGER.debug("Use %s for knowledge loading and storing." %
-                      ('local' if is_local else 'Ceph'))
+        _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
 
     def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
         """Save collected knowledge as json.
@@ -113,15 +112,13 @@ class KnowledgeStorage:
         """
         results = {"results": data}
 
-        _LOGGER.info("Saving knowledge file %s of size %d" %
-                     (os.path.basename(file_path), len(data)))
+        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
 
         if not self.is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = self.get_ceph_store()
             s3.store_document(results, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s/%s%s" %
-                         (s3.bucket, s3.prefix, ceph_filename))
+            _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
                 json.dump(results, f)
@@ -130,11 +127,7 @@ class KnowledgeStorage:
     def get_ceph_store(self) -> CephStore:
         """Establish a connection to the CEPH."""
         s3 = CephStore(
-            key_id=self._KEY_ID,
-            secret_key=self._SECRET_KEY,
-            prefix=self._PREFIX,
-            host=self._HOST,
-            bucket=self._BUCKET
+            key_id=self._KEY_ID, secret_key=self._SECRET_KEY, prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET
         )
         s3.connect()
         return s3
@@ -159,16 +152,15 @@ class KnowledgeStorage:
             project_path = pwd.joinpath("./" + project_name)
             file_path = project_path.joinpath("./" + filename + ".json")
 
-        results = self.load_locally(
-            file_path) if self.is_local else self.load_remotely(file_path)
+        results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
 
         if results is None:
             _LOGGER.info("No previous knowledge of type %s found" % knowledge_type)
             results = {}
         else:
             _LOGGER.info(
-                "Found previous knowledge for %s with %d entities of type %s" % (
-                    project_name, len(results), knowledge_type)
+                "Found previous knowledge for %s with %d entities of type %s"
+                % (project_name, len(results), knowledge_type)
             )
         return results
 
