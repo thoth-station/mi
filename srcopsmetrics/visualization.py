@@ -632,7 +632,7 @@ class Visualization:
         data.append(go.Bar(name='pull requests created', x=top_x_contributors, y=[
                     pr_creators[creator] for creator in top_x_contributors if creator in pr_creators.keys()]))
         data.append(go.Bar(name='reviews given', x=top_x_contributors, y=[
-                    pr_reviews[reviewer] for reviewer in top_x_contributors if reviewer in pr_creators.keys()]))
+                    pr_reviews[reviewer] for reviewer in top_x_contributors if reviewer in pr_reviews.keys()]))
 
         fig = go.Figure(data)
         fig.update_layout(
