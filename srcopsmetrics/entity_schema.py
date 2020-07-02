@@ -34,26 +34,11 @@ class Schemas:
         }
     )
 
-    Issues = Schema(
-        {
-            str: Issue,
-        }
-    )
+    Issues = Schema({str: Issue,})
 
-    PullRequestReview = Schema(
-        {
-            "author": str,
-            "words_count": int,
-            "submitted_at": int,
-            "state": str,
-        }
-    )
+    PullRequestReview = Schema({"author": str, "words_count": int, "submitted_at": int, "state": str,})
 
-    PullRequestReviews = Schema(
-        {
-            str: PullRequestReview,
-        }
-    )
+    PullRequestReviews = Schema({str: PullRequestReview,})
 
     PullRequest = Schema(
         {
@@ -75,22 +60,8 @@ class Schemas:
         }
     )
 
-    PullRequests = Schema(
-        {
-            str: PullRequest,
-        }
-    )
+    PullRequests = Schema({str: PullRequest,})
 
-    ContentFile = Schema(
-        {
-            "name": str,
-            "path": str,
-            "content": str  # TODO: Adjust content type
-        }
-    )
+    ContentFile = Schema({"name": str, "path": str, "content": str})  # TODO: Adjust content type
 
-    ContentFiles = Schema(
-        {
-            str: ContentFile,
-        }
-    )
+    ContentFiles = Schema({str: ContentFile,})

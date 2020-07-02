@@ -52,8 +52,7 @@ def analyse_projects(
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:
-        _LOGGER.info(
-            "######################## Analysing %s ########################\n" % "/".join(project))
+        _LOGGER.info("######################## Analysing %s ########################\n" % "/".join(project))
         github_repo = github_knowledge.connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)

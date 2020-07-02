@@ -42,18 +42,14 @@ class Report:
         """Initialize with project name."""
         self.project_name = project_name
 
-        store = KnowledgeStorage(os.getenv('IS_LOCAL'))
-        prs = store.load_previous_knowledge(
-            project_name=project_name, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
-        issues = store.load_previous_knowledge(
-            project_name=project_name, knowledge_type=EntityTypeEnum.ISSUE.value)
+        store = KnowledgeStorage(os.getenv("IS_LOCAL"))
+        prs = store.load_previous_knowledge(project_name=project_name, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
+        issues = store.load_previous_knowledge(project_name=project_name, knowledge_type=EntityTypeEnum.ISSUE.value)
 
-        self.viz = Visualization(processing=Processing(
-            pull_requests=prs, issues=issues))
+        self.viz = Visualization(processing=Processing(pull_requests=prs, issues=issues))
 
-        external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-        self.app = dash.Dash(
-            __name__, external_stylesheets=external_stylesheets)
+        external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+        self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
         self.app.config.suppress_callback_exceptions = True
 
     def launch(self):
@@ -61,20 +57,18 @@ class Report:
         app = self.app
 
         @app.callback(
-            dash.dependencies.Output('issue-opener', 'figure'),
-            [dash.dependencies.Input('demo-dropdown', 'value')])
+            dash.dependencies.Output("issue-opener", "figure"), [dash.dependencies.Input("demo-dropdown", "value")]
+        )
         def update_opener(value):
-            return self.viz._visualize_issues_types_given_developer(author_login_id=value, developer_action='Open')
+            return self.viz._visualize_issues_types_given_developer(author_login_id=value, developer_action="Open")
 
         @app.callback(
-            dash.dependencies.Output('issue-closer', 'figure'),
-            [dash.dependencies.Input('demo-dropdown', 'value')])
+            dash.dependencies.Output("issue-closer", "figure"), [dash.dependencies.Input("demo-dropdown", "value")]
+        )
         def update_closer(value):
-            return self.viz._visualize_issues_types_given_developer(author_login_id=value, developer_action='Close')
+            return self.viz._visualize_issues_types_given_developer(author_login_id=value, developer_action="Close")
 
-        @app.callback(
-            dash.dependencies.Output('inter', 'figure'),
-            [dash.dependencies.Input('demo-dropdown', 'value')])
+        @app.callback(dash.dependencies.Output("inter", "figure"), [dash.dependencies.Input("demo-dropdown", "value")])
         def update_inter(value):
             return self.viz._visualize_issue_interactions(author_login_id=value)
 
@@ -89,94 +83,57 @@ class Report:
         # min_date = min(self.viz.processing.issues.values(), key= lambda issue: int(issue['created_at']))
         # max_date = max(self.viz.processing.issues.values(), key= lambda issue: int(issue['created_at']))
 
-        self.app.layout = html.Div(children=[
-            html.Center(
-                html.H1(children=f'GitHub repository {self.project_name} Health Report')),
-
-            # html.Div(children=f'''
-            #     {self.project_name}
-            # '''),
-
-            # dcc.RangeSlider(
-            #     id='time-setter',
-            #     min=min_date,
-            #     max=max_date,
-            #     step=1,
-            #     # value=[5, 15],
-            # ),
-
-            html.Center(
-                html.H2(children=f'General PR/Issue information')
-            ),
-            dcc.Graph(
-                id='general section',
-                figure=self.general_section(),
-            ),
-
-
-            html.Center(
-                html.H2(children=f'Repository in time')
-            ),
-            dcc.Graph(
-                id='in time',
-                figure=self.in_time_section()
-            ),
-
-
-            html.Center(
-                html.H2(children=f'Label correlations')
-            ),
-            dcc.Graph(
-                id='labels',
-                figure=self.viz._visualize_ttci_wrt_labels()
-            ),
-
-
-            html.Center(
-                html.H2(children=f'What about contributors?')
-            ),
-            dcc.Graph(
-                id='contributos',
-                figure=self.contributor_section(5)
-            ),
-
-
-            dcc.Dropdown(
-                id='demo-dropdown',
-                options=[{'label': i, 'value': i} for i in issue_creators],
-                value=list(issue_creators.keys())[0]
-            ),
-            html.Div(id='dd-output-container'),
-
-            dcc.Graph(
-                id='issue-opener'
-            ),
-            dcc.Graph(
-                id='issue-closer'
-            ),
-            dcc.Graph(
-                id='inter'
-            )
-        ])
+        self.app.layout = html.Div(
+            children=[
+                html.Center(html.H1(children=f"GitHub repository {self.project_name} Health Report")),
+                # html.Div(children=f'''
+                #     {self.project_name}
+                # '''),
+                # dcc.RangeSlider(
+                #     id='time-setter',
+                #     min=min_date,
+                #     max=max_date,
+                #     step=1,
+                #     # value=[5, 15],
+                # ),
+                html.Center(html.H2(children=f"General PR/Issue information")),
+                dcc.Graph(id="general section", figure=self.general_section(),),
+                html.Center(html.H2(children=f"Repository in time")),
+                dcc.Graph(id="in time", figure=self.in_time_section()),
+                html.Center(html.H2(children=f"Label correlations")),
+                dcc.Graph(id="labels", figure=self.viz._visualize_ttci_wrt_labels()),
+                html.Center(html.H2(children=f"What about contributors?")),
+                dcc.Graph(id="contributos", figure=self.contributor_section(5)),
+                dcc.Dropdown(
+                    id="demo-dropdown",
+                    options=[{"label": i, "value": i} for i in issue_creators],
+                    value=list(issue_creators.keys())[0],
+                ),
+                html.Div(id="dd-output-container"),
+                dcc.Graph(id="issue-opener"),
+                dcc.Graph(id="issue-closer"),
+                dcc.Graph(id="inter"),
+            ]
+        )
 
     def general_section(self):
         """Generate general (first) section to the report."""
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {
-                            'type': 'domain'}]], subplot_titles=('Issues', 'Pull Requests'))
+        fig = make_subplots(
+            rows=1, cols=2, specs=[[{"type": "domain"}, {"type": "domain"}]], subplot_titles=("Issues", "Pull Requests")
+        )
 
-        fig.append_trace(self.viz.pie_chart_entities('Issue'), row=1, col=1)
-        fig.append_trace(self.viz.pie_chart_entities(
-            'PullRequest'), row=1, col=2)
+        fig.append_trace(self.viz.pie_chart_entities("Issue"), row=1, col=1)
+        fig.append_trace(self.viz.pie_chart_entities("PullRequest"), row=1, col=2)
 
         return fig
 
     def in_time_section(self):
         """Generate in time (second) section to report."""
-        fig = make_subplots(rows=1, cols=2, subplot_titles=('MTTCI', 'MTTR'))
+        fig = make_subplots(rows=1, cols=2, subplot_titles=("MTTCI", "MTTR"))
 
         fig.append_trace(self.viz.scatter_ttci_in_time(), row=1, col=1)
         fig.append_trace(self.viz.scatter_ttr_in_time(), row=1, col=2)
-        fig.update_layout(yaxis_title='hours')
+        fig.update_layout(yaxis_title="hours")
 
         return fig
 

@@ -23,8 +23,7 @@ from typing import List, Optional
 
 import click
 
-from srcopsmetrics.bot_knowledge import (analyse_projects,
-                                         visualize_project_results)
+from srcopsmetrics.bot_knowledge import analyse_projects, visualize_project_results
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
@@ -38,18 +37,10 @@ logging.basicConfig(level=logging.INFO)
 
 @click.command()
 @click.option(
-    "--repository",
-    "-r",
-    type=str,
-    required=False,
-    help="Repository to be analysed (e.g thoth-station/performance)",
+    "--repository", "-r", type=str, required=False, help="Repository to be analysed (e.g thoth-station/performance)",
 )
 @click.option(
-    "--organization",
-    "-o",
-    type=str,
-    required=False,
-    help="All repositories of an Organization to be analysed",
+    "--organization", "-o", type=str, required=False, help="All repositories of an Organization to be analysed",
 )
 @click.option(
     "--create-knowledge",
@@ -67,10 +58,7 @@ logging.basicConfig(level=logging.INFO)
             Storage location is {StoragePath.PROCESSED.value}""",
 )
 @click.option(
-    "--is-local",
-    "-l",
-    is_flag=True,
-    help="Use local for knowledge loading and storing.",
+    "--is-local", "-l", is_flag=True, help="Use local for knowledge loading and storing.",
 )
 @click.option(
     "--entities",
@@ -81,7 +69,8 @@ logging.basicConfig(level=logging.INFO)
     help="""Entities to be analysed for a repository.
             If not specified, all entities will be analysed.
             Current entities available are:
-            """ + "\n".join([entity.value for entity in EntityTypeEnum]),
+            """
+    + "\n".join([entity.value for entity in EntityTypeEnum]),
 )
 @click.option(
     "--visualize-statistics",
@@ -104,29 +93,27 @@ def cli(
     reviewer_reccomender: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
-    os.environ['IS_LOCAL'] = 'True' if is_local else 'False'
+    os.environ["IS_LOCAL"] = "True" if is_local else "False"
 
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
 
     if create_knowledge:
-        analyse_projects(
-            projects=[repo.split("/") for repo in repos],
-            is_local=is_local,
-            entities=entities
-        )
+        analyse_projects(projects=[repo.split("/") for repo in repos], is_local=is_local, entities=entities)
 
         for repo in repos:
             remove_previously_processed(repo)
 
     for project in repos:
-        os.environ['PROJECT'] = project
+        os.environ["PROJECT"] = project
 
         if process_knowledge:
             remove_previously_processed(project)
             issues = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value)
+                project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value
+            )
             prs = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value)
+                project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value
+            )
             Processing(issues=issues, pull_requests=prs).regenerate()
 
         if visualize_statistics:
@@ -134,8 +121,7 @@ def cli(
 
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
-            reviewer_assigner.evaluate_reviewers_scores(
-                project=project, is_local=is_local)
+            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if visualize_statistics and repository is not None:
         visualize_project_results(project=repository, is_local=is_local)

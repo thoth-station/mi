@@ -78,13 +78,11 @@ class Visualization:
         Q1 = q[0.25]
         Q3 = q[0.75]
         IQR = Q3 - Q1
-        outliers = df[(df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR))
-                      | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))]
+        outliers = df[(df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR)) | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))]
         _LOGGER.info("Outliers for %r" % quantity)
         _LOGGER.info("Outliers: %r" % outliers)
         filtered_df = df[
-            (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)
-             ) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
+            (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
         ]
 
         return filtered_df
@@ -112,8 +110,7 @@ class Visualization:
 
         #     return processed_data
 
-        filtered_df = self.evaluate_and_remove_outliers(
-            data=data, quantity=quantity)
+        filtered_df = self.evaluate_and_remove_outliers(data=data, quantity=quantity)
         processed_data += filtered_df.values.tolist()
 
         return processed_data
@@ -159,8 +156,7 @@ class Visualization:
 
         # MTTFR
         data = {"ids": prs_ids, "MTTFR": mttfr}
-        mttfr_per_pr_processed = self.analyze_outliers(
-            quantity="MTTFR", data=data)
+        mttfr_per_pr_processed = self.analyze_outliers(quantity="MTTFR", data=data)
 
         self.create_per_pr_plot(
             result_path=result_path,
@@ -174,11 +170,9 @@ class Visualization:
         )
 
         # TTFR
-        data = {"ids": prs_ids, "created_dts": prs_created_dts,
-                "TTFR": ttfr, "lengths": prs_lengths}
+        data = {"ids": prs_ids, "created_dts": prs_created_dts, "TTFR": ttfr, "lengths": prs_lengths}
 
-        tfr_in_time_processed = self.analyze_outliers(
-            quantity="TTFR", data=data)
+        tfr_in_time_processed = self.analyze_outliers(quantity="TTFR", data=data)
 
         self.create_per_pr_plot(
             result_path=result_path,
@@ -220,8 +214,7 @@ class Visualization:
         mttr = projects_reviews_data["MTTR"]
         # MTTR
         data = {"created_dts": prs_created_dts, "MTTR": mttr}
-        mttr_in_time_processed = self.analyze_outliers(
-            quantity="MTTR", data=data)
+        mttr_in_time_processed = self.analyze_outliers(quantity="MTTR", data=data)
 
         self.create_per_pr_plot(
             result_path=result_path,
@@ -235,10 +228,8 @@ class Visualization:
         )
 
         # TTR
-        data = {"ids": prs_ids, "created_dts": prs_created_dts,
-                "TTR": ttr, "lengths": prs_lengths}
-        ttr_in_time_processed = self.analyze_outliers(
-            quantity="TTR", data=data)
+        data = {"ids": prs_ids, "created_dts": prs_created_dts, "TTR": ttr, "lengths": prs_lengths}
+        ttr_in_time_processed = self.analyze_outliers(quantity="TTR", data=data)
 
         self.create_per_pr_plot(
             result_path=result_path,
@@ -276,9 +267,7 @@ class Visualization:
             output_name="TTR-per-PR-length",
         )
 
-    def visualize_issue_data(
-        self, project: str, result_path: Path
-    ):
+    def visualize_issue_data(self, project: str, result_path: Path):
         """Visualize results from Issues for a project."""
         project_issues_data = self.processing.process_issues_project_data()
         issues_created_dts = project_issues_data["created_dts"]
@@ -286,8 +275,7 @@ class Visualization:
 
         # TTCI
         data = {"created_dts": issues_created_dts, "TTCI": issues_ttci}
-        ttci_per_issue_processed = self.analyze_outliers(
-            quantity="TTCI", data=data)
+        ttci_per_issue_processed = self.analyze_outliers(quantity="TTCI", data=data)
         self.create_per_pr_plot(
             result_path=result_path,
             project=project,
@@ -300,12 +288,10 @@ class Visualization:
         )
 
         overall_opened_issues = self.processing.process_issues_creators()
-        self._visualize_issues_per_developer(
-            overall_opened_issues, title="Number of opened issues per each developer")
+        self._visualize_issues_per_developer(overall_opened_issues, title="Number of opened issues per each developer")
 
         overall_closed_issues = self.processing.process_issues_closers()
-        self._visualize_issues_per_developer(
-            overall_closed_issues, title="Number of closed issues per each developer")
+        self._visualize_issues_per_developer(overall_closed_issues, title="Number of closed issues per each developer")
 
         overall_issues_interactions = self.processing.process_issue_interactions()
         overall_issue_types_creators = self.processing.process_issue_labels_to_issue_creators()
@@ -321,8 +307,7 @@ class Visualization:
             self._visualize_top_X_issues_types_wrt_project(
                 overall_types_data=overall_issue_types_creators, developer_action=DeveloperActionEnum.OPEN.value
             ),
-            self._visualize_top_x_issue_interactions(
-                overall_issues_interactions),
+            self._visualize_top_x_issue_interactions(overall_issues_interactions),
             self._visualize_ttci_wrt_labels(),
             self._visualize_ttci_wrt_pr_length(),
         ]
@@ -333,9 +318,7 @@ class Visualization:
     def visualize_developer_activity(self, developer: str):
         """Create plots that are focused on a single contributor."""
         graphs = [
-            self._visualize_issue_interactions(
-                author_login_id=developer
-            ),
+            self._visualize_issue_interactions(author_login_id=developer),
             self._visualize_issues_types_given_developer(
                 author_login_id=developer, developer_action=DeveloperActionEnum.OPEN.value
             ),
@@ -360,14 +343,12 @@ class Visualization:
                 is_local=is_local,
             )
 
-            project_issues_data = self.processing.process_issues_project_data(
-                data=issues_data)
+            project_issues_data = self.processing.process_issues_project_data(data=issues_data)
             issues_created_dts = project_issues_data["created_dts"]
             issues_ttci = project_issues_data["TTCI"]
 
             data = {"created_dts": issues_created_dts, "TTCI": issues_ttci}
-            ttci_per_issue_processed = self.analyze_outliers(
-                quantity="TTCI", data=data)
+            ttci_per_issue_processed = self.analyze_outliers(quantity="TTCI", data=data)
 
             projects_data.append(ttci_per_issue_processed)
 
@@ -406,10 +387,8 @@ class Visualization:
         author_interactions = overall_issues_interactions[author_login_id]
 
         df = pd.DataFrame()
-        df["developers"] = [
-            interactioner for interactioner in author_interactions.keys()]
-        df["interactions"] = [author_interactions[interactioner]
-                              for interactioner in author_interactions.keys()]
+        df["developers"] = [interactioner for interactioner in author_interactions.keys()]
+        df["interactions"] = [author_interactions[interactioner] for interactioner in author_interactions.keys()]
 
         fig = px.bar(
             df,
@@ -427,19 +406,15 @@ class Visualization:
         for author in overall_issues_interactions.keys():
             for interactioner in overall_issues_interactions[author].keys():
                 top_interactions_list.append(
-                    (author, interactioner,
-                     overall_issues_interactions[author][interactioner])
+                    (author, interactioner, overall_issues_interactions[author][interactioner])
                 )
 
-        top_interactions_list = sorted(
-            top_interactions_list, key=lambda tup: tup[2], reverse=True)
+        top_interactions_list = sorted(top_interactions_list, key=lambda tup: tup[2], reverse=True)
         top_x_interactions = top_interactions_list[:top_x]
 
         df = pd.DataFrame()
-        df["developers"] = [
-            f"{interaction[0]}/{interaction[1]}" for interaction in top_x_interactions]
-        df["interactions"] = [interaction[2]
-                              for interaction in top_x_interactions]
+        df["developers"] = [f"{interaction[0]}/{interaction[1]}" for interaction in top_x_interactions]
+        df["interactions"] = [interaction[2] for interaction in top_x_interactions]
 
         fig = px.bar(
             df,
@@ -450,9 +425,7 @@ class Visualization:
         )
         return fig
 
-    def _visualize_issues_types_given_developer(
-        self, author_login_id: str, developer_action: str
-    ) -> Figure:
+    def _visualize_issues_types_given_developer(self, author_login_id: str, developer_action: str) -> Figure:
         """For given author visualize (categorically by labels) number of opened issues by him."""
         overall_types_data = self.processing.process_issue_labels_to_issue_creators()
 
@@ -479,16 +452,13 @@ class Visualization:
         top_labels_list = []
         for author in overall_types_data.keys():
             for label in overall_types_data[author].keys():
-                top_labels_list.append(
-                    (author, label, overall_types_data[author][label]))
+                top_labels_list.append((author, label, overall_types_data[author][label]))
 
-        top_labels_list = sorted(
-            top_labels_list, key=lambda tup: tup[2], reverse=True)
+        top_labels_list = sorted(top_labels_list, key=lambda tup: tup[2], reverse=True)
         top_x_labels = top_labels_list[:top_x]
 
         df = pd.DataFrame()
-        df["developer_label"] = [
-            f"{label[0]} -> {label[1]}" for label in top_x_labels]
+        df["developer_label"] = [f"{label[0]} -> {label[1]}" for label in top_x_labels]
         df["count"] = [label[2] for label in top_x_labels]
 
         action = self._DEVELOPER_ACTION[developer_action]
@@ -513,10 +483,8 @@ class Visualization:
                     top_labels_list[label] = 0
                 top_labels_list[label] += overall_types_data[author][label]
 
-        top_x_labels = zip([label for label in top_labels_list.keys()], [
-                           count for count in top_labels_list.values()])
-        top_x_labels = sorted(top_x_labels, reverse=True,
-                              key=lambda tup: tup[1])
+        top_x_labels = zip([label for label in top_labels_list.keys()], [count for count in top_labels_list.values()])
+        top_x_labels = sorted(top_x_labels, reverse=True, key=lambda tup: tup[1])
 
         df = pd.DataFrame()
         df["label"] = [tup[0] for tup in top_x_labels][:top_x]
@@ -555,8 +523,7 @@ class Visualization:
         fig = px.scatter(df, x="size", y="TTCI", color="size")
         return fig
 
-    def _visualize_ttci_wrt_labels(self, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value
-                                   ) -> Figure:
+    def _visualize_ttci_wrt_labels(self, statistical_quantity: str = StatisticalQuantityEnum.MEDIAN.value) -> Figure:
         """For each label visualize its Time To Close Issue.
 
         :param issues_data:IssueSchema:
@@ -572,13 +539,10 @@ class Visualization:
 
         df = pd.DataFrame()
         df["label"] = [label for label in processed_labels.keys()]
-        df["TTCI"] = [statistical_method(label_ttcis)
-                      for label_ttcis in processed_labels.values()]
+        df["TTCI"] = [statistical_method(label_ttcis) for label_ttcis in processed_labels.values()]
 
-        fig = px.bar(df, x="label", y="TTCI",
-                     title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
-        fig.update_layout(
-            yaxis_title=f"{statistical_quantity} Time To Close Issue (hrs)", xaxis_title="Label name")
+        fig = px.bar(df, x="label", y="TTCI", title=f"{statistical_quantity} TTCI w.r.t. issue labels", color="label")
+        fig.update_layout(yaxis_title=f"{statistical_quantity} Time To Close Issue (hrs)", xaxis_title="Label name")
         return fig
 
     def pie_chart_entities(self, entity: str) -> Figure:
@@ -587,12 +551,13 @@ class Visualization:
         :param entity:str: currently supported 'Issue' or 'PullRequest'
         :rtype: plotly pie chart in form of donut
         """
-        processed = (self.processing.overall_issues_status() if entity is 'Issue' else
-                     self.processing.overall_prs_status())
+        processed = (
+            self.processing.overall_issues_status() if entity is "Issue" else self.processing.overall_prs_status()
+        )
         labels = list(processed.keys())
         values = list(processed.values())
 
-        return go.Pie(labels=labels, values=values, hole=.3)
+        return go.Pie(labels=labels, values=values, hole=0.3)
 
     def stack_chart_top_x_contributors_activity(self, x: int) -> Figure:
         """Generate stack chart for top x active contributors."""
@@ -602,10 +567,9 @@ class Visualization:
         pr_reviews = self.processing.process_pr_reviewers()
 
         overall_stats = {}
-        for issue_creator, pr_creator, issue_closer, reviewer in zip(issue_creators.keys(),
-                                                                     pr_creators.keys(),
-                                                                     issue_closers.keys(),
-                                                                     pr_reviews.keys()):
+        for issue_creator, pr_creator, issue_closer, reviewer in zip(
+            issue_creators.keys(), pr_creators.keys(), issue_closers.keys(), pr_reviews.keys()
+        ):
             if issue_creator not in overall_stats.keys():
                 overall_stats[issue_creator] = 0
             if issue_closer not in overall_stats.keys():
@@ -620,23 +584,41 @@ class Visualization:
             overall_stats[pr_creator] += pr_creators[pr_creator]
             overall_stats[reviewer] += pr_reviews[reviewer]
 
-        overall_stats = sorted(list(overall_stats.items()),
-                               key=lambda contributor: contributor[1], reverse=True)
+        overall_stats = sorted(list(overall_stats.items()), key=lambda contributor: contributor[1], reverse=True)
         top_x_contributors = [el[0] for el in overall_stats[:x]]
         data = []
 
-        data.append(go.Bar(name='issues created', x=top_x_contributors, y=[
-                    issue_creators[creator] for creator in top_x_contributors if creator in issue_creators.keys()]))
-        data.append(go.Bar(name='issues closed', x=top_x_contributors, y=[
-                    issue_closers[closer] for closer in top_x_contributors if closer in issue_closers.keys()]))
-        data.append(go.Bar(name='pull requests created', x=top_x_contributors, y=[
-                    pr_creators[creator] for creator in top_x_contributors if creator in pr_creators.keys()]))
-        data.append(go.Bar(name='reviews given', x=top_x_contributors, y=[
-                    pr_reviews[reviewer] for reviewer in top_x_contributors if reviewer in pr_reviews.keys()]))
+        data.append(
+            go.Bar(
+                name="issues created",
+                x=top_x_contributors,
+                y=[issue_creators[creator] for creator in top_x_contributors if creator in issue_creators.keys()],
+            )
+        )
+        data.append(
+            go.Bar(
+                name="issues closed",
+                x=top_x_contributors,
+                y=[issue_closers[closer] for closer in top_x_contributors if closer in issue_closers.keys()],
+            )
+        )
+        data.append(
+            go.Bar(
+                name="pull requests created",
+                x=top_x_contributors,
+                y=[pr_creators[creator] for creator in top_x_contributors if creator in pr_creators.keys()],
+            )
+        )
+        data.append(
+            go.Bar(
+                name="reviews given",
+                x=top_x_contributors,
+                y=[pr_reviews[reviewer] for reviewer in top_x_contributors if reviewer in pr_reviews.keys()],
+            )
+        )
 
         fig = go.Figure(data)
-        fig.update_layout(
-            barmode='stack', title_text=f'Top {x} active contributors')
+        fig.update_layout(barmode="stack", title_text=f"Top {x} active contributors")
         return fig
 
     def scatter_ttr_in_time(self) -> Figure:
@@ -647,12 +629,14 @@ class Visualization:
         mttr = projects_reviews_data["MTTR"]
 
         data = {"created_dts": prs_created_dts, "MTTR": mttr}
-        mttr_in_time_processed = self.analyze_outliers(
-            quantity="MTTR", data=data)
+        mttr_in_time_processed = self.analyze_outliers(quantity="MTTR", data=data)
 
-        return go.Scatter(x=[el[0] for el in mttr_in_time_processed],
-                          y=[el[1] for el in mttr_in_time_processed],
-                          name='mean ttr in time', mode='lines+markers')
+        return go.Scatter(
+            x=[el[0] for el in mttr_in_time_processed],
+            y=[el[1] for el in mttr_in_time_processed],
+            name="mean ttr in time",
+            mode="lines+markers",
+        )
 
     def scatter_ttci_in_time(self) -> Figure:
         """Generate scatter plot for Time To Close Issue stats."""
@@ -662,9 +646,11 @@ class Visualization:
         issues_ttci = project_issues_data["TTCI"]
 
         data = {"created_dts": issues_created_dts, "TTCI": issues_ttci}
-        ttci_per_issue_processed = self.analyze_outliers(
-            quantity="TTCI", data=data)
+        ttci_per_issue_processed = self.analyze_outliers(quantity="TTCI", data=data)
 
-        return go.Scatter(x=[el[0] for el in ttci_per_issue_processed],
-                          y=[el[1] for el in ttci_per_issue_processed],
-                          name='mean ttci in time', mode='lines+markers')
+        return go.Scatter(
+            x=[el[0] for el in ttci_per_issue_processed],
+            y=[el[1] for el in ttci_per_issue_processed],
+            name="mean ttci in time",
+            mode="lines+markers",
+        )
