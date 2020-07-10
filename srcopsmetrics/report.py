@@ -18,17 +18,13 @@
 """Report page running on Dash."""
 
 import os
-from typing import Dict
 
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 
-import plotly.graph_objects as go
-from plotly.graph_objects import Scatter
 from plotly.subplots import make_subplots
 
-from srcopsmetrics import visualization
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.processing import Processing
 from srcopsmetrics.storage import KnowledgeStorage
@@ -77,7 +73,6 @@ class Report:
 
     def generate_health_report(self):
         """Generate content for report page."""
-        pr_creators = self.viz.processing.process_issues_creators()
         issue_creators = self.viz.processing.process_issues_creators()
 
         # min_date = min(self.viz.processing.issues.values(), key= lambda issue: int(issue['created_at']))

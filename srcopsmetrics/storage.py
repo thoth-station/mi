@@ -93,7 +93,10 @@ class KnowledgeStorage:
     def __init__(self, is_local: Optional[bool] = False):
         """Initialize to behave as either local or remote storage."""
         self.is_local = is_local
-        self.main = Path(os.getenv(StoragePath.LOCATION_VAR.value))
+        location = os.getenv(StoragePath.LOCATION_VAR.value)
+        if location is None:
+            raise ValueError(f"Env variable {StoragePath.LOCATION_VAR.value} must be specified")
+        self.main = Path(location)
 
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
         _LOGGER.debug("Use %s as a main path for storage.", self.main)
@@ -147,10 +150,13 @@ class KnowledgeStorage:
 
         """
         if file_path is None:
-            filename = self._FILENAME_ENTITY[knowledge_type]
-            file_path = (
-                self.main.joinpath(StoragePath.KNOWLEDGE.value).joinpath(project_name).joinpath(filename + ".json")
-            )
+            if knowledge_type is None:
+                _LOGGER.error("Either filepath or knowledge type have to be specified.")
+            else:
+                filename = self._FILENAME_ENTITY[knowledge_type]
+                file_path = (
+                    self.main.joinpath(StoragePath.KNOWLEDGE.value).joinpath(project_name).joinpath(filename + ".json")
+                )
 
         results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
 

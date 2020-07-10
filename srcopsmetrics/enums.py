@@ -45,5 +45,7 @@ class StatisticalQuantityEnum(Enum):
 class StoragePath(Enum):
     """Enum with predefined storage locations."""
 
-    KNOWLEDGE = "./srcopsmetrics/bot_knowledge/"
-    PROCESSED = "./srcopsmetrics/processed/"
+    DEFAULT = "./srcopsmetrics/"
+    LOCATION_VAR = "KNOWLEDGE_PATH"
+    KNOWLEDGE = "bot_knowledge"
+    PROCESSED = "processed"

@@ -17,17 +17,12 @@
 
 """A base class for collecting bot knowledge from GitHub."""
 
-import json
 import logging
 import os
-import time
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from github import ContentFile, Github, GithubObject, Issue, IssueComment, PaginatedList, PullRequest, PullRequestReview
+from github import ContentFile, Github, Issue, PaginatedList, PullRequest
 from github.Repository import Repository
-from numpy.core.defchararray import isnumeric
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.iterator import KnowledgeAnalysis
@@ -317,6 +312,7 @@ class GitHubKnowledge:
             results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
                                                 PRs are stored and where the given PR
                                                 will be stored.
+
         """
         commits = pull_request.commits
         # TODO: Use commits to extract information.
@@ -362,6 +358,7 @@ class GitHubKnowledge:
             results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
                                                 ContentFiles are stored and where the given ContentFile
                                                 will be stored.
+
         """
         results["content_files"] = {
             "name": file_content[0],
@@ -381,6 +378,7 @@ class GitHubKnowledge:
             prev_knowledge {Dict[str, Any]} -- previous knowledge stored.
 
             is_local -- flag to state if the knowledge should be collected locally or on Ceph.
+
         """
         _LOGGER.info("-------------Content Files Analysis-------------")
 
@@ -424,6 +422,7 @@ class GitHubKnowledge:
                                     ogr unfortunatelly did not provide enough to properly analyze issues
 
             prev_knowledge {Dict[str, Any]} -- previous knowledge stored
+
         """
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
@@ -451,14 +450,15 @@ class GitHubKnowledge:
             project_path {str} -- The main directory where the knowledge will be stored
             github_type {str} -- Currently can be: "Issue", "PullRequest", "ContentFile"
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
+
         """
-        _METHOD_ANALYSIS_ENTITY = {
+        method_analysis_entity = {
             "Issue": self.analyse_issues,
             "PullRequest": self.analyse_pull_requests,
             "ContentFile": self.analyse_content_files,
         }
         filename = self._FILENAME_ENTITY[github_type]
-        analyse = _METHOD_ANALYSIS_ENTITY[github_type]
+        analyse = method_analysis_entity[github_type]
 
         path = project_path.joinpath("./" + filename + ".json")
 

@@ -17,21 +17,14 @@
 
 """Create, Visualize, Use bot knowledge from different Software Development Platforms."""
 
-import json
 import logging
-import os
 from pathlib import Path
 
 from typing import List, Tuple, Optional
 
-from github.PullRequest import PullRequest
-
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.processing import Processing
 from srcopsmetrics.utils import check_directory
-from srcopsmetrics.visualization import Visualization
-from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.report import Report
 from srcopsmetrics.exceptions import NotKnownEntities
 
@@ -49,6 +42,7 @@ def analyse_projects(
         projects {List[Tuple[str, str]]} -- one tuple should be in format (project_name, repository_name)
         is_local {bool} -- if set to False, Ceph will be used
         entities {Optional[List[str]]} -- entities that will be analysed. If not specified, all are used.
+
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
     for project in projects:

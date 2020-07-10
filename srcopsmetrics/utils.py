@@ -70,7 +70,9 @@ def convert_score2num(label: str) -> float:
         return 0.01
     # lines_changes >= 0 and lines_changes <= 9:
     else:
-        _LOGGER.error("%s is not a recognized size." % label)
+        _LOGGER.error("%s is not a recognized size.", label)
+        _LOGGER.error("Returning zero as a score.")
+        return 0
 
 
 def convert_num2label(score: float) -> Tuple[str, float]:
