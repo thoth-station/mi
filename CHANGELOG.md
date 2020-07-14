@@ -402,3 +402,54 @@ all the things that you see...
 * :pushpin: Automatic update of dependency pytest from 5.3.5 to 5.4.0
 * :pushpin: Automatic update of dependency plotly from 4.5.3 to 4.5.4
 * :pushpin: Automatic update of dependency plotly from 4.5.2 to 4.5.3
+
+## Release 2.0.1 (2020-07-14T14:33:46)
+* pre-commit config added (#164)
+* Update OWNERS
+* Create OWNERS
+* :pushpin: Automatic update of dependency numpy from 1.18.5 to 1.19.0
+* :pushpin: Automatic update of dependency numpy from 1.18.5 to 1.19.0
+* :pushpin: Automatic update of dependency dash from 1.13.2 to 1.13.3
+* :pushpin: Automatic update of dependency dash from 1.13.1 to 1.13.2
+* :pushpin: Automatic update of dependency dash from 1.13.1 to 1.13.2
+* :pushpin: Automatic update of dependency pandas from 1.0.4 to 1.0.5
+* :pushpin: Automatic update of dependency pandas from 1.0.4 to 1.0.5
+* :pushpin: Automatic update of dependency thoth-storages from 0.23.0 to 0.23.2
+* :pushpin: Automatic update of dependency thoth-storages from 0.23.0 to 0.23.2
+* Fix reviewers stack bar
+* Fix processing on Ceph
+* Do not use pre-preleases
+* :pushpin: Automatic update of dependency coala-bears from 0.12.0.dev20171110210444 to 0.11.1
+* :pushpin: Automatic update of dependency numpy from 1.19.0rc2 to 1.18.5
+* add processed repo
+* Add pipfile.lock
+* :pushpin: Automatic update of dependency coala-bears from 0.12.0.dev20171110210444 to 0.11.1
+* :pushpin: Automatic update of dependency pytest-cov from 2.9.0 to 2.10.0
+* :pushpin: Automatic update of dependency numpy from 1.19.0rc2 to 1.18.5
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.12 to 0.23.0
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.12 to 0.23.0
+* add ttl and generateName
+* added a 'tekton trigger tag_release pipeline issue'
+* implement final template structure
+* Correct setup
+* Parameterize steps
+* Move parameters to openshift templtate
+* Remove viz step
+* :pushpin: Automatic update of dependency pytest from 5.4.2 to 5.4.3
+* :pushpin: Automatic update of dependency numpy from 1.19.0rc1 to 1.19.0rc2
+* :pushpin: Automatic update of dependency autopep8 from 1.5.2 to 1.5.3
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.11 to 0.22.12
+* Add dag task
+* init structure of the workflow template
+* :pushpin: Automatic update of dependency pandas from 1.0.3 to 1.0.4
+* :pushpin: Automatic update of dependency plotly from 4.8.0 to 4.8.1
+* :pushpin: Automatic update of dependency plotly from 4.7.1 to 4.8.0
+* :pushpin: Automatic update of dependency pytest-cov from 2.8.1 to 2.9.0
+* :pushpin: Automatic update of dependency thoth-storages from 0.22.10 to 0.22.11
+* Add steps
+* :pushpin: Automatic update of dependency numpy from 1.18.4 to 1.19.0rc1
+* Add image envs
+* Add basic structure
+* Fix code block
+* Fix bulletpoints
+* Fix readme to be rst
