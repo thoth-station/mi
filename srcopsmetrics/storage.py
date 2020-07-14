@@ -142,7 +142,7 @@ class KnowledgeStorage:
         Arguments:
             file_path {Optional[Path]} -- path to previously stored knowledge from
                                inspected github repository. If None is passed, the used path will
-                               be the
+                               be :value:`~enums.StoragePath.DEFAULT`
 
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
