@@ -1,9 +1,56 @@
 =============
-SrcOpsMetrics
+thoth-station/mi - Meta-information Indicators
 =============
+
+.. code-block:: console
+                    +---------+
+                    |ConfigMap|
+                    +----+----+
+                            |
+                +--+-------+--------+--+
+                |  |                |  |
+                |  |  mi-scheduler  |  |
+                |  |                |  |
+                +------+---+---+-------+
+                    |   |   |   |    |
+                    |   |   |   |    |
+                    |   |   |   |    |
+                    | Argo Workflows |
+                    |   |   |   |    |
+                    |   |   |   |    |
+    +---------------v---v---v---v----v------------------+                                          +--------------------        +--------------------+
+    |                                                   |                                          |   Visualization   |        |   Recommendation   |
+    |  +---------+  +---------+            +---------+  |                                          +-------------------+        +--------------------+
+    |  |thoth/   |  |  AICoE  |            | your    |  |                                          |   Project Health  |        |   thoth            |
+    |  |  station|  |         |            |     org |  |                                          |    (dashboard)    |        |                    |
+    |  +---------+  +---------+            +---------+  |                                          |                   |        |                    |
+    |  |solver   |  |...      |            |your     |  |                                          +---------+---------+        +----------+---------+
+    |  |         |  |         |            |   repos |  |           thoth-station/mi                         ^                             ^
+    |  |amun     |  |...      | X X X X X  |         |  |     (Meta-information Indicators)                  |                             |
+    |  |         |  |         |            |         |  |                                                    +-------------+---------------+
+    |  |adviser  |  |...      |            |         |  |                                                                  |
+    |  |         |  |         |            |         |  |                                                                  |
+    |  |....     |  |...      |            |         |  |                                                +-----------------+-------------------+
+    |  |         |  |         |            |         |  |                                                |                                     |
+    |  +---------+  +---------+            +---------+  |                                                |       Knowledge Processsing         |
+    |                                                   |                                                |                                     |
+    +-----------------------+---------------------------+                                                +-----------------+-------------------+
+    GitHub repositories   |                                                                                              ^
+                            |                 +--------------------------------------------------------+                   |
+                            |                 |                                                        |                   |
+                            |                 |      Entities Analysis   +------->      Knowledge      |                   |
+                            +---------------->-+                                                      +--------------------+
+                                            +---------+----------------+----------+------------------+
+                                            |  Issues |  Pull Requests |  Readmes |  etc...........  |
+                                            |         |                |          |                  |
+                                            +---------+----------------+----------+------------------+
+
 
 This repository contains functions to store knowledge for the bot,
 to use the knowledge stored by the bot to evaluate some statistics.
+
+Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`,
+which schedules the workflows for thoth-station/mi project. 
 
 Pre-Usage
 =========
@@ -164,4 +211,4 @@ I want to add new Entity
 If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge,
 your implementation has to meet with Entity criteria described above. Always remember to first create Issue and describe
 why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal
-of SrcOpsMetrics project. Do not forget to reference the Issue in your Pull Request.
+of thoth-station/mi project. Do not forget to reference the Issue in your Pull Request.
