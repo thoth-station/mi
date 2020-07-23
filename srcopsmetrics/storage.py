@@ -95,7 +95,7 @@ class KnowledgeStorage:
         self.is_local = is_local
         location = os.getenv(StoragePath.LOCATION_VAR.value)
         if location is None:
-            raise ValueError(f"Env variable {StoragePath.LOCATION_VAR.value} must be specified")
+            location = StoragePath.DEFAULT.value
         self.main = Path(location)
 
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))

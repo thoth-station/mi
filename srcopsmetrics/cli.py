@@ -85,6 +85,7 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--knowledge-path",
     "-k",
+    default=StoragePath.DEFAULT.value,
     required=False,
     help=f"""Environment variable named {StoragePath.LOCATION_VAR}
             with path where all the analysed and processed knowledge
@@ -104,9 +105,7 @@ def cli(
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
-    os.environ[StoragePath.LOCATION_VAR.value] = (
-        knowledge_path if knowledge_path is not None else StoragePath.DEFAULT.value
-    )
+    os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
 
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
 
