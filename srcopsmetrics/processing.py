@@ -17,18 +17,16 @@
 
 """Pre-processing GitHub data."""
 
-import itertools
 import logging
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from datetime import datetime
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
 import os
 
 from srcopsmetrics.entity_schema import Schemas
-from srcopsmetrics.storage import KnowledgeStorage, ProcessedKnowledge
+from srcopsmetrics.storage import ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)

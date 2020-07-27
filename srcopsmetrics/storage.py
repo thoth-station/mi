@@ -20,14 +20,10 @@
 import json
 import logging
 import os
-import time
-from datetime import date, datetime
 from functools import partial
-from os.path import join
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from github import Github
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
@@ -49,6 +45,9 @@ class ProcessedKnowledge:
     def __init__(self, f):
         """Initialize with function the decorator is decorating."""
         self.func = f
+        self.main = Path(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value)).joinpath(
+            StoragePath.PROCESSED.value
+        )
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
@@ -56,18 +55,17 @@ class ProcessedKnowledge:
         def wrapper():
             return self.func(*args, **kwargs)
 
-        project = os.getenv("PROJECT")
+        project_path = self.main.joinpath(os.getenv("PROJECT"))
 
-        preprocessed_dir = Path(StoragePath.PROCESSED.value).joinpath(project)
-        utils.check_directory(preprocessed_dir)
-        total_path = preprocessed_dir.joinpath(f"{self.func.__name__ }.json")
+        utils.check_directory(project_path)
+        total_path = project_path.joinpath(f"{self.func.__name__ }.json")
 
         is_local = os.getenv("IS_LOCAL") == "True"
         storage = KnowledgeStorage(is_local)
 
         knowledge = storage.load_previous_knowledge(file_path=total_path, knowledge_type="Processed Knowledge")
 
-        if knowledge is None or knowledge == {} or os.getenv("PROCESS_KNOWLEDGE") is "True":
+        if knowledge is None or knowledge == {} or os.getenv("PROCESS_KNOWLEDGE") == "True":
             knowledge = wrapper()
             storage.save_knowledge(file_path=total_path, data=knowledge)
 
@@ -97,8 +95,11 @@ class KnowledgeStorage:
     def __init__(self, is_local: Optional[bool] = False):
         """Initialize to behave as either local or remote storage."""
         self.is_local = is_local
+        location = os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value)
+        self.main = Path(location)
 
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
+        _LOGGER.debug("Use %s as a main path for storage.", self.main)
 
     def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
         """Save collected knowledge as json.
@@ -109,6 +110,7 @@ class KnowledgeStorage:
         Arguments:
             file_path {Path} -- where the knowledge should be saved
             data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+
         """
         results = {"results": data}
 
@@ -138,8 +140,9 @@ class KnowledgeStorage:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
-            file_path {Optional[Path]} -- path to where was stored previous knowledge from
-                               inspected github repository
+            file_path {Optional[Path]} -- path to previously stored knowledge from
+                               inspected github repository. If None is passed, the used path will
+                               be :value:`~enums.StoragePath.DEFAULT`
 
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
@@ -147,10 +150,13 @@ class KnowledgeStorage:
 
         """
         if file_path is None:
-            filename = self._FILENAME_ENTITY[knowledge_type]
-            pwd = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-            project_path = pwd.joinpath("./" + project_name)
-            file_path = project_path.joinpath("./" + filename + ".json")
+            if knowledge_type is None:
+                _LOGGER.error("Either filepath or knowledge type have to be specified.")
+            else:
+                filename = self._FILENAME_ENTITY[knowledge_type]
+                file_path = (
+                    self.main.joinpath(StoragePath.KNOWLEDGE.value).joinpath(project_name).joinpath(filename + ".json")
+                )
 
         results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
 

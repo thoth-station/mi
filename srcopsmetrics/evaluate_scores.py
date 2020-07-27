@@ -17,23 +17,15 @@
 
 """Reviewer Technical and Social Score."""
 
-import itertools
-import json
 import logging
-import os
-import time
-from collections import Counter
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import List, Tuple
 
-import numpy as np
 import pandas as pd
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.processing import Processing
 from srcopsmetrics.storage import KnowledgeStorage
-from srcopsmetrics.utils import convert_num2label, convert_score2num
 
 _LOGGER = logging.getLogger(__name__)
 

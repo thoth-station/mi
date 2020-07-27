@@ -17,20 +17,15 @@
 
 """Used to iterate through all entities from repository."""
 
-import json
 import logging
 import os
 import time
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from github import Github
 from github.GithubException import GithubException
-from thoth.storages.ceph import CephStore
-from thoth.storages.exceptions import NotFoundError
 from voluptuous.error import MultipleInvalid
-from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entity_schema import Schemas
 

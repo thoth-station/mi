@@ -19,14 +19,12 @@
 
 import logging
 import os
-import itertools
 
 from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,16 +32,14 @@ import pandas as pd
 import plotly.express as px
 
 from srcopsmetrics.utils import check_directory
-from srcopsmetrics.utils import convert_num2label
 from srcopsmetrics.utils import convert_score2num
 
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.enums import DeveloperActionEnum
 from srcopsmetrics.enums import StatisticalQuantityEnum
 from srcopsmetrics.processing import Processing
-from srcopsmetrics.entity_schema import Schemas
 
-from plotly.offline import init_notebook_mode, iplot
+from plotly.offline import init_notebook_mode
 from plotly.graph_objects import Figure
 
 import plotly.graph_objects as go
@@ -60,6 +56,8 @@ class Visualization:
 
     _STATISTICAL_FUNCTION_MAP = {"Median": np.median, "Average": np.average}
 
+    _RANGE_VALUES = 1.5
+
     def __init__(self, *, processing: Processing = None, use_notebook: Optional[str] = None):
         """Initialize Visualization class for bot."""
         self.processing = processing
@@ -71,18 +69,20 @@ class Visualization:
 
     def evaluate_and_remove_outliers(self, data: Dict[str, Any], quantity: str):
         """Evaluate and remove outliers."""
-        RANGE_VALUES = 1.5
-
         df = pd.DataFrame.from_dict(data)
         q = df[f"{quantity}"].quantile([0.25, 0.75])
-        Q1 = q[0.25]
-        Q3 = q[0.75]
-        IQR = Q3 - Q1
-        outliers = df[(df[f"{quantity}"] < (Q1 - RANGE_VALUES * IQR)) | (df[f"{quantity}"] > (Q3 + RANGE_VALUES * IQR))]
+        q1 = q[0.25]
+        q3 = q[0.75]
+        iqr = q3 - q1
+        outliers = df[
+            (df[f"{quantity}"] < (q1 - Visualization._RANGE_VALUES * iqr))
+            | (df[f"{quantity}"] > (q3 + Visualization._RANGE_VALUES * iqr))
+        ]
         _LOGGER.info("Outliers for %r" % quantity)
         _LOGGER.info("Outliers: %r" % outliers)
         filtered_df = df[
-            (df[f"{quantity}"] > (Q1 - RANGE_VALUES * IQR)) & (df[f"{quantity}"] < (Q3 + RANGE_VALUES * IQR))
+            (df[f"{quantity}"] > (q1 - Visualization._RANGE_VALUES * iqr))
+            & (df[f"{quantity}"] < (q3 + Visualization._RANGE_VALUES * iqr))
         ]
 
         return filtered_df
@@ -472,7 +472,7 @@ class Visualization:
         )
         return fig
 
-    def _visualize_top_X_issues_types_wrt_project(
+    def _visualize_top_x_issues_types_wrt_project(
         self, overall_types_data: Dict, developer_action: str, top_x: int = 5
     ) -> Figure:
         """Visualize overall top X issue types that had been opened || closed for given repository w.r.t to project."""
@@ -552,7 +552,7 @@ class Visualization:
         :rtype: plotly pie chart in form of donut
         """
         processed = (
-            self.processing.overall_issues_status() if entity is "Issue" else self.processing.overall_prs_status()
+            self.processing.overall_issues_status() if entity == "Issue" else self.processing.overall_prs_status()
         )
         labels = list(processed.keys())
         values = list(processed.values())

@@ -82,6 +82,16 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
+@click.option(
+    "--knowledge-path",
+    "-k",
+    default=StoragePath.DEFAULT.value,
+    required=False,
+    help=f"""Environment variable named {StoragePath.LOCATION_VAR}
+            with path where all the analysed and processed knowledge
+            are stored. Default knowledge path is {StoragePath.DEFAULT.value}
+            """,
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -91,9 +101,11 @@ def cli(
     entities: Optional[List[str]],
     visualize_statistics: bool,
     reviewer_reccomender: bool,
+    knowledge_path: str,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
+    os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
 
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
 
