@@ -93,9 +93,7 @@ class KnowledgeStorage:
     def __init__(self, is_local: Optional[bool] = False):
         """Initialize to behave as either local or remote storage."""
         self.is_local = is_local
-        location = os.getenv(StoragePath.LOCATION_VAR.value)
-        if location is None:
-            location = StoragePath.DEFAULT.value
+        location = os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value)
         self.main = Path(location)
 
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
