@@ -45,7 +45,9 @@ class ProcessedKnowledge:
     def __init__(self, f):
         """Initialize with function the decorator is decorating."""
         self.func = f
-        self.main = Path(os.getenv(StoragePath.LOCATION_VAR.value)).joinpath(StoragePath.PROCESSED.value)
+        self.main = Path(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value)).joinpath(
+            StoragePath.PROCESSED.value
+        )
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
