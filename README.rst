@@ -50,7 +50,7 @@ This repository contains functions to store knowledge for the bot,
 to use the knowledge stored by the bot to evaluate some statistics.
 
 Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`,
-which schedules the workflows for thoth-station/mi project. 
+which schedules the workflows for thoth-station/mi project.
 
 Pre-Usage
 =========
