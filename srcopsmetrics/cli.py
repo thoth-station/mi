@@ -110,7 +110,8 @@ def cli(
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
 
     if create_knowledge:
-        analyse_projects(projects=[repo.split("/") for repo in repos], is_local=is_local, entities=entities)
+        tupled_repos = [(repo.split("/")[0], repo.split("/")[1]) for repo in repos]
+        analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities)
 
         for repo in repos:
             remove_previously_processed(repo)

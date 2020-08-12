@@ -51,7 +51,6 @@ class ProcessedKnowledge:
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
-
         def wrapper():
             return self.func(*args, **kwargs)
 
