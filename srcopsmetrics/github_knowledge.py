@@ -19,7 +19,8 @@
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 from github import ContentFile, Github, Issue, PaginatedList, PullRequest
 from github.Repository import Repository
@@ -94,9 +95,12 @@ class GitHubKnowledge:
             return "S"
         elif lines_changes >= 0 and lines_changes <= 9:
             return "XS"
+        else:
+            _LOGGER.error("Unrecognizable lines changed number %s, using NaN as size label", lines_changes)
+            return "NaN"
 
     @staticmethod
-    def get_labeled_size(labels: List[str]) -> Union[str, None]:
+    def get_labeled_size(labels: List[str]) -> Optional[str]:
         """Extract size label from list of labels.
 
         Size label is in form 'size/<SIZE>', where <SIZE> can be
@@ -105,6 +109,8 @@ class GitHubKnowledge:
         for label in labels:
             if label.startswith("size"):
                 return label.split("/")[1]
+        _LOGGER.error("Size label not found")
+        return None
 
     @staticmethod
     def get_non_standalone_labels(labels: List[str]):
@@ -112,7 +118,7 @@ class GitHubKnowledge:
         return [label for label in labels if label not in STANDALONE_LABELS]
 
     @staticmethod
-    def search_for_references(body: str) -> List[int]:
+    def search_for_references(body: str) -> Generator[str, None, None]:
         """Return generator for iterating through referenced IDs in a comment."""
         if body is None:
             return
@@ -141,7 +147,7 @@ class GitHubKnowledge:
             _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
             yield ref_issue
 
-    def get_referenced_issues(self, pull_request: PullRequest) -> List[int]:
+    def get_referenced_issues(self, pull_request: PullRequest) -> List[str]:
         """Scan all of the Pull Request comments and get referenced issues.
 
         Arguments:
@@ -230,7 +236,7 @@ class GitHubKnowledge:
 
     def analyse_issues(
         self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """Analyse of every closed issue in repository.
 
         Arguments:
@@ -246,7 +252,7 @@ class GitHubKnowledge:
         new_issues = self.get_only_new_entities(prev_knowledge, current_issues)
 
         if len(new_issues) == 0:
-            return
+            return None
 
         with KnowledgeAnalysis(
             entity_type=EntityTypeEnum.ISSUE.value,
@@ -368,7 +374,7 @@ class GitHubKnowledge:
 
     def analyse_content_files(
         self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """Analyse content files in repository.
 
         Arguments:
@@ -408,13 +414,13 @@ class GitHubKnowledge:
                 break
 
         if not content_file_text:
-            return
+            return None
 
         return accumulated
 
     def analyse_pull_requests(
         self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """Analyse every closed pull_request in repository.
 
         Arguments:
@@ -430,7 +436,7 @@ class GitHubKnowledge:
         new_pulls = self.get_only_new_entities(prev_knowledge, current_pulls)
 
         if len(new_pulls) == 0:
-            return
+            return None
 
         with KnowledgeAnalysis(
             entity_type=EntityTypeEnum.PULL_REQUEST.value,
@@ -442,12 +448,12 @@ class GitHubKnowledge:
 
         return accumulated
 
-    def analyse_entity(self, github_repo: str, project_path: str, github_type: str, is_local: bool = False):
+    def analyse_entity(self, github_repo: Repository, project_path: Path, github_type: str, is_local: bool = False):
         """Load old knowledge and update it with the newly analysed one and save it.
 
         Arguments:
-            github_repo {str} -- Github repo that will be analysed
-            project_path {str} -- The main directory where the knowledge will be stored
+            github_repo {Repository} -- Github repo that will be analysed
+            project_path {Path} -- The main directory where the knowledge will be stored
             github_type {str} -- Currently can be: "Issue", "PullRequest", "ContentFile"
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
 
