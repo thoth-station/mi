@@ -67,6 +67,4 @@ def analyse_projects(
 
 def visualize_project_results(project: str, is_local: bool = False):
     """Visualize results for a project."""
-    report = Report(project_name=project)
-    report.generate_health_report()
-    report.launch()
+    raise NotImplementedError("This functionality is currently unavailable")
