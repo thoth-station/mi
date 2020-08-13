@@ -25,7 +25,6 @@ from typing import List, Tuple, Optional
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.utils import check_directory
-from srcopsmetrics.report import Report
 from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
