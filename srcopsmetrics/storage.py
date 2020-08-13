@@ -51,10 +51,11 @@ class ProcessedKnowledge:
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
-
+        # fmt: off
         def wrapper():
             return self.func(*args, **kwargs)
-
+        # fmt: on
+        # black is bugged in means of formatting the inside wrapper function, disabling it for above block
         project_path = self.main.joinpath(os.getenv("PROJECT"))
 
         utils.check_directory(project_path)
