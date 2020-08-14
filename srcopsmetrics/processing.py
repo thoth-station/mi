@@ -20,7 +20,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from srcopsmetrics.entity_schema import Schemas
@@ -323,7 +323,7 @@ class Processing:
 
     @staticmethod
     def _evaluate_reviewer_data(
-        pr: Dict[str, Any], reviewer: str, review_submission_dt: Union[str, int], extracted_data: Dict[str, Any]
+        pr: Dict[str, Any], reviewer: str, review_submission_dt: List[int], extracted_data: Dict[str, Any]
     ):
         """Evaluate reviewer data from reviews."""
         if not pr["reviews"]:

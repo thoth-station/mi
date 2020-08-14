@@ -21,7 +21,7 @@ import logging
 import os
 import time
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from github import Github
 from github.GithubException import GithubException
