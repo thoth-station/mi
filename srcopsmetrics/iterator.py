@@ -21,7 +21,7 @@ import logging
 import os
 import time
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from github import Github
 from github.GithubException import GithubException
@@ -54,7 +54,7 @@ class KnowledgeAnalysis:
         self,
         *,
         entity_type: Optional[str] = None,
-        new_entities: List[Any] = None,
+        new_entities: Iterable[Any] = None,
         accumulator: Dict[str, Any] = None,
         store_method: Callable = None,
     ):

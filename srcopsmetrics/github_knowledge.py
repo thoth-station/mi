@@ -155,7 +155,7 @@ class GitHubKnowledge:
                                         issues are extracted
 
         Returns:
-            List[int] -- IDs of referenced issues within the Pull Request.
+            List[str] -- IDs of referenced issues within the Pull Request.
 
         """
         issues_referenced = []
