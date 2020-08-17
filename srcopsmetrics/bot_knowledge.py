@@ -25,7 +25,6 @@ from typing import List, Tuple, Optional
 from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.utils import check_directory
-from srcopsmetrics.report import Report
 from srcopsmetrics.exceptions import NotKnownEntities
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +67,4 @@ def analyse_projects(
 
 def visualize_project_results(project: str, is_local: bool = False):
     """Visualize results for a project."""
-    report = Report(project_name=project)
-    report.generate_health_report()
-    report.launch()
+    raise NotImplementedError("This functionality is currently unavailable")

@@ -19,7 +19,7 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -40,12 +40,12 @@ class ReviewerAssigner:
     @staticmethod
     def evaluate_contributor_technical_score(contributions: List[float], weighting_factors: List[float]) -> float:
         """Evaluate contributor final score."""
-        final_score = 1
+        final_score = 1.0
         for contribution, w_factor in zip(contributions, weighting_factors):
             final_score += contribution * w_factor
         return final_score
 
-    def evaluate_reviewers_scores(self, project: Tuple[str, str], number_reviewer: int = 2, is_local: bool = False):
+    def evaluate_reviewers_scores(self, project: str, number_reviewer: int = 2, is_local: bool = False):
         """Evaluate statistics from the knowledge of the bot and provide number of reviewers.
 
         :project: repository to be analyzed (e.g. (thoth-station, performance))
@@ -60,7 +60,7 @@ class ReviewerAssigner:
 
         now_time = datetime.now()
 
-        projects_reviews_data = processing.pre_process_prs_project_data(data=data)
+        projects_reviews_data = processing.process_prs_project_data()
 
         # Project statistics
         project_commits_number = sum([pr["commits_number"] for pr in data.values()])
@@ -98,12 +98,29 @@ class ReviewerAssigner:
         _LOGGER.info("-------------------------------------------------------------------------------")
 
         contributors = sorted(projects_reviews_data["contributors"])
-        contributor_data = []
+        contributor_data: List[
+            Tuple[
+                str,
+                int,
+                float,
+                Optional[int],
+                Optional[float],
+                Optional[int],
+                Optional[int],
+                Optional[int],
+                Optional[str],
+                Optional[str],
+                Optional[timedelta],
+                Union[Any, int],
+                Union[Any, float],
+                str,
+            ]
+        ] = []
         scores_data = []
 
         # Contributors that reviewed and that didn't reviewed
-        contributors_reviews_data = processing.pre_process_contributors_data(
-            data=data, contributors=[c for c in contributors if c not in BOTS_NAMES]
+        contributors_reviews_data = processing.process_contributors_data(
+            contributors=[c for c in contributors if c not in BOTS_NAMES]
         )
 
         for contributor in contributors:

@@ -18,13 +18,11 @@
 """Pre-processing GitHub data."""
 
 import logging
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-
-import os
-
 from srcopsmetrics.entity_schema import Schemas
 from srcopsmetrics.storage import ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
@@ -178,9 +176,9 @@ class Processing:
         extracted_data["encoded_PRs_size"].append(convert_score2num(label=project_prs_size))
 
         # Take maximum to consider last approved if more than one contributor has to approve
-        pr_approved_dt = max(pr_approved_dt)
+        pr_approved_dt_max = max(pr_approved_dt)
 
-        ttr = (pr_approved_dt - pr_created_dt).total_seconds() / 3600
+        ttr = (pr_approved_dt_max - pr_created_dt).total_seconds() / 3600
         extracted_data["TTR"].append(ttr)
 
         mttr = np.median(extracted_data["TTR"])
@@ -195,7 +193,7 @@ class Processing:
         """Pre process of data for contributors in a project repository."""
         pr_ids = sorted([int(k) for k in self.pull_requests.keys()])
 
-        contributors_reviews_data = {}
+        contributors_reviews_data: Dict[str, Any] = {}
         contributors_reviews_data["reviewers"] = []
         contributors_reviews_data["created_dts"] = []
 
@@ -235,12 +233,9 @@ class Processing:
             contributors_reviews_data[reviewer]["last_review_time"] = last_review_dt
 
             # Encode Pull Request sizes for the contributor
-            if len(contributors_reviews_data[reviewer]["PRs_size"]) > 1:
-                contributor_prs_size_encoded = [
-                    convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
-                ]
-            else:
-                contributor_prs_size_encoded = convert_score2num(label=contributors_reviews_data[reviewer]["PRs_size"])
+            contributor_prs_size_encoded = [
+                convert_score2num(label=pr_size) for pr_size in contributors_reviews_data[reviewer]["PRs_size"]
+            ]
 
             contributor_pr_median_size, contributor_relative_score = convert_num2label(
                 score=np.median(contributor_prs_size_encoded)
@@ -258,7 +253,7 @@ class Processing:
 
         pr_author = pr["created_by"]
 
-        reviews_submitted_dts_per_reviewer = {}
+        reviews_submitted_dts_per_reviewer: Dict[str, Any] = {}
 
         for review in pr["reviews"].values():
             self._extract_review_data(
@@ -328,7 +323,7 @@ class Processing:
 
     @staticmethod
     def _evaluate_reviewer_data(
-        pr: Dict[str, Any], reviewer: str, review_submission_dt: datetime.timestamp, extracted_data: Dict[str, Any]
+        pr: Dict[str, Any], reviewer: str, review_submission_dt: List[int], extracted_data: Dict[str, Any]
     ):
         """Evaluate reviewer data from reviews."""
         if not pr["reviews"]:
@@ -472,7 +467,7 @@ class Processing:
 
         :rtype: { <contributor> : { <commenter> : <overall interaction number throughout the project> } }
         """
-        authors = {}
+        authors: Dict[str, Dict[str, int]] = {}
         for issue_id in self.issues.keys():
             issue_author = self.issues[issue_id]["created_by"]
             if issue_author not in authors:
@@ -486,20 +481,20 @@ class Processing:
         return authors
 
     @ProcessedKnowledge
-    def process_issue_labels_with_ttci(self) -> Dict[str, List[Tuple[List[float], List[datetime]]]]:
+    def process_issue_labels_with_ttci(self) -> Dict[str, Tuple[List[float], List[int]]]:
         """Analyse Time To Close Issue for any label that labeled closed issue.
 
         :param self.issues:Dict:
         :rtype: { <label> : [[<closed_issue_ttci>], [<closed_issue_creation_date>]] }
         """
-        issues = {}
+        issues: Dict[str, Tuple[List[float], List[int]]] = {}
         for issue_id in (i for i in self.issues.keys() if self.issues[i]["closed_at"]):
             issue_labels = self.issues[issue_id]["labels"]
             ttci = int(self.issues[issue_id]["closed_at"]) - int(self.issues[issue_id]["created_at"])
 
             for label in issue_labels:
                 if label not in issues:
-                    issues[label] = [[], []]
+                    issues[label] = ([], [])
                 issues[label][0].append(ttci / 3600)
                 issues[label][1].append(int(self.issues[issue_id]["created_at"]))
         return issues
@@ -510,7 +505,7 @@ class Processing:
 
         :rtype: { <issue_creator> : { <issue_label> : <label_occurence_in_created_issues> } }
         """
-        authors = {}
+        authors: Dict[str, Dict[str, int]] = {}
         for issue_id in self.issues.keys():
             issue_author = self.issues[issue_id]["created_by"]
             if issue_author not in authors:
@@ -529,7 +524,7 @@ class Processing:
 
         :rtype: { <issue_closer> : { <issue_label> : <label_occurence_in_closed_issues> } }
         """
-        closers = {}
+        closers: Dict[str, Dict[str, int]] = {}
         for issue_id in self.issues.keys():
             issue_closer = self.issues[issue_id]["closed_by"]
             if issue_closer not in closers:
@@ -560,12 +555,12 @@ class Processing:
         return closers
 
     @ProcessedKnowledge
-    def process_issues_closed_by_pr_size(self) -> Dict[str, int]:
+    def process_issues_closed_by_pr_size(self) -> Dict[str, List[int]]:
         """Analyse number of closed issues to every Pull Request size.
 
         :rtype: { <pr_size_label> : <number_of_closed_issues> }
         """
-        issues = {}
+        issues: Dict[str, List[int]] = {}
         for pr_id in (i for i in self.pull_requests.keys() if self.pull_requests[i]["closed_at"]):
             for issue_id in (i for i in self.pull_requests[pr_id]["referenced_issues"] if self.issues[i]["closed_at"]):
                 ttci = int(self.issues[issue_id]["closed_at"] - int(self.issues[issue_id]["created_at"]))

@@ -21,7 +21,7 @@ import logging
 import os
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from github import Github
 from github.GithubException import GithubException
@@ -54,9 +54,9 @@ class KnowledgeAnalysis:
         self,
         *,
         entity_type: Optional[str] = None,
-        new_entities: Optional[str] = None,
-        accumulator: Optional[str] = None,
-        store_method: Optional[str] = None,
+        new_entities: Iterable[Any] = None,
+        accumulator: Dict[str, Any] = None,
+        store_method: Callable = None,
     ):
         """Initialize with previous and new knowledge of an entity."""
         self.entity_type = entity_type

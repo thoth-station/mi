@@ -51,10 +51,11 @@ class ProcessedKnowledge:
 
     def __call__(self, *args, **kwargs):
         """Load or process knowledge and save it."""
-
+        # fmt: off
         def wrapper():
             return self.func(*args, **kwargs)
-
+        # fmt: on
+        # black is bugged in means of formatting the inside wrapper function, disabling it for above block
         project_path = self.main.joinpath(os.getenv("PROJECT"))
 
         utils.check_directory(project_path)
@@ -150,8 +151,8 @@ class KnowledgeStorage:
 
         """
         if file_path is None:
-            if knowledge_type is None:
-                _LOGGER.error("Either filepath or knowledge type have to be specified.")
+            if knowledge_type is None or project_name is None:
+                raise ValueError("Either filepath or knowledge type with project name have to be specified.")
             else:
                 filename = self._FILENAME_ENTITY[knowledge_type]
                 file_path = (
@@ -171,7 +172,7 @@ class KnowledgeStorage:
         return results
 
     @staticmethod
-    def load_locally(file_path: Path) -> json:
+    def load_locally(file_path: Path) -> Optional[Dict[str, Any]]:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")
         if not file_path.exists() or os.path.getsize(file_path) == 0:
@@ -182,7 +183,7 @@ class KnowledgeStorage:
             results = data["results"]
         return results
 
-    def load_remotely(self, file_path: Path) -> json:
+    def load_remotely(self, file_path: Path) -> Optional[Dict[str, Any]]:
         """Load knowledge file from Ceph storage."""
         _LOGGER.info("Loading knowledge from Ceph")
         ceph_filename = os.path.relpath(file_path).replace("./", "")
@@ -190,3 +191,4 @@ class KnowledgeStorage:
             return self.get_ceph_store().retrieve_document(ceph_filename)["results"]
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
+            return None
