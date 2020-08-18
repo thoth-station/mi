@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with SrcOpsMetrics.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Issue entity class."""
+"""Issues entity class."""
 
 import logging
 from typing import Any, List
@@ -32,7 +32,26 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Issues(BaseEntity):
-    """GitHub Issue entity."""
+    """GitHub Issues entity."""
+
+    entity_name = "Issue"
+
+    entities_schema = Schema(
+            {
+                str: Issue,
+            }
+        )
+
+    entitiy_schema = Schema(
+            {
+                "created_by": str,
+                "created_at": int,
+                "closed_by": Any(str, None),
+                "closed_at": Any(int, None),
+                "labels": [str],
+                "interactions": {str: int},
+            }
+        )
 
     def __init__(self, repository):
         """Initialize with repo and prev knowledge."""
@@ -72,30 +91,56 @@ class Issues(BaseEntity):
         """Override :func:`~BaseEntity.stored_entities`."""
         return self.stored
 
-    @staticmethod
-    def entity_name() -> str:
-        """Override :func:`~BaseEntity.entity_name`."""
-        return "Issue"
 
     @staticmethod
-    def entitiy_schema() -> Schema:
-        """Override :func:`~BaseEntity.entity_schema`."""
-        return Schema(
-            {
-                "created_by": str,
-                "created_at": int,
-                "closed_by": Any(str, None),
-                "closed_at": Any(int, None),
-                "labels": [str],
-                "interactions": {str: int},
-            }
-        )
+    def search_for_references(body: str) -> Generator[str, None, None]:
+        """Return generator for iterating through referenced IDs in a comment."""
+        if body is None:
+            return
+
+        message = body.split(" ")
+        for idx, word in enumerate(message):
+            if word.replace(":", "").lower() not in ISSUE_KEYWORDS:
+                return
+
+            _LOGGER.info("      ...found keyword referencing issue")
+            referenced_issue_number = message[idx + 1]
+            if referenced_issue_number.startswith("https"):
+                # last element of url is always the issue number
+                ref_issue = referenced_issue_number.split("/")[-1]
+            elif referenced_issue_number.startswith("#"):
+                ref_issue = referenced_issue_number.replace("#", "")
+            else:
+                _LOGGER.info("      ...referenced issue number absent")
+                _LOGGER.debug("      keyword message: %s" % body)
+                return
+
+            if not referenced_issue_number.isnumeric():
+                _LOGGER.info("      ...referenced issue number in incorrect format")
+                return
+
+            _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
+            yield ref_issue
 
     @staticmethod
-    def entities_schema() -> Schema:
-        """Override :func:`~BaseEntity.entities_schema`."""
-        return Schema(
-            {
-                str: Issue,
-            }
-        )
+    def get_referenced_issues(self, pull_request: PullRequest) -> List[str]:
+        """Scan all of the Pull Request comments and get referenced issues.
+
+        Arguments:
+            pull_request {PullRequest} -- Pull request for which the referenced
+                                        issues are extracted
+
+        Returns:
+            List[str] -- IDs of referenced issues within the Pull Request.
+
+        """
+        issues_referenced = []
+        for comment in pull_request.get_issue_comments():
+            for id in self.search_for_references(comment.body):
+                issues_referenced.append(id)
+
+        for id in self.search_for_references(pull_request.body):
+            issues_referenced.append(id)
+
+        _LOGGER.debug("      referenced issues: %s" % issues_referenced)
+        return issues_referenced

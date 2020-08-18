@@ -18,17 +18,17 @@
 
 """BaseEntity interface class."""
 
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 from typing import Any, List
 
 from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
 
 
-class BaseEntity:
+class BaseEntity(metaclass=ABCMeta):
     """BaseEntity defines interface every entity class should implement."""
 
-    @staticmethod
+    @property
     @abstractmethod
     def entity_name() -> str:
         """Entity name as defined in GitHub API documentation.
@@ -37,7 +37,7 @@ class BaseEntity:
         """
         pass
 
-    @staticmethod
+    @property
     @abstractmethod
     def entitiy_schema() -> Schema:
         """Return schema of a single entity that is analysed and stored.
@@ -46,7 +46,7 @@ class BaseEntity:
         """
         pass
 
-    @staticmethod
+    @property
     @abstractmethod
     def entities_schema() -> Schema:
         """Return schema of how all of the entities of repo are stored."""
