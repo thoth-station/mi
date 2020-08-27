@@ -22,14 +22,22 @@ from pathlib import Path
 
 from typing import List, Tuple, Optional
 
-from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.utils import check_directory
 from srcopsmetrics.exceptions import NotKnownEntities
+from srcopsmetrics.entities import Issue, PullRequest, ContentFile
 
 _LOGGER = logging.getLogger(__name__)
 
 github_knowledge = GitHubKnowledge()
+
+
+# TODO: make this a function that inspects entities and loads all of the available entities
+# classes from there
+# note: did try this w/ pyclbr but did not work
+def get_all_entities():
+    """Return all of the currently implemented entities."""
+    return [Issue, PullRequest, ContentFile]
 
 
 def analyse_projects(
@@ -51,18 +59,21 @@ def analyse_projects(
         project_path = path.joinpath("./" + github_repo.full_name)
         check_directory(project_path)
 
-        allowed_entities = [e.value for e in EntityTypeEnum]
+        allowed_entities = get_all_entities()
 
+        specified_entities = []
         if entities:
-            check_entities = [i for i in entities if i not in allowed_entities]
-            if check_entities:
-                raise NotKnownEntities(f"There are Entities requested which are not known: {check_entities}")
+            specified_entities = [e for e in allowed_entities if e.name in entities]
+            if specified_entities == []:
+                raise NotKnownEntities(message="", entities=entities)
 
-        entities = entities or allowed_entities
+        inspected_entities = allowed_entities or specified_entities
 
-        for entity in entities:
+        for entity in inspected_entities:
             _LOGGER.info("%s inspection" % entity)
-            github_knowledge.analyse_entity(github_repo, project_path, entity, is_local)
+            github_knowledge.analyse_entity(
+                github_repo=github_repo, project_path=project_path, entity_cls=entity, is_local=is_local
+            )
 
 
 def visualize_project_results(project: str, is_local: bool = False):

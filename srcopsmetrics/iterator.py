@@ -20,14 +20,14 @@
 import logging
 import os
 import time
+import copy
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, Optional
 
 from github import Github
 from github.GithubException import GithubException
 from voluptuous.error import MultipleInvalid
 
-from srcopsmetrics.entity_schema import Schemas
+from srcopsmetrics.entities import Entity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,12 +37,6 @@ API_RATE_MINIMAL_REMAINING = 20
 class KnowledgeAnalysis:
     """Context manager that iterates through all entities in repository and collects them."""
 
-    _ENTITY_SCHEMA = {
-        "Issue": Schemas.Issues,
-        "PullRequest": Schemas.PullRequests,
-        "ContentFiles": Schemas.ContentFiles,
-    }
-
     _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
     _KEY_ID = os.getenv("CEPH_KEY_ID")
     _SECRET_KEY = os.getenv("CEPH_SECRET_KEY")
@@ -51,19 +45,11 @@ class KnowledgeAnalysis:
     _BUCKET = os.getenv("CEPH_BUCKET")
 
     def __init__(
-        self,
-        *,
-        entity_type: Optional[str] = None,
-        new_entities: Iterable[Any] = None,
-        accumulator: Dict[str, Any] = None,
-        store_method: Callable = None,
+        self, *, entity: Entity = None, is_local: bool = False,
     ):
         """Initialize with previous and new knowledge of an entity."""
-        self.entity_type = entity_type
-        self.new_entities = new_entities
-        self.accumulator = accumulator
-        self.accumulator_backup = accumulator
-        self.store_method = store_method
+        self.entity = entity
+        self.backup = None
 
     def __enter__(self):
         """Context manager enter method."""
@@ -74,12 +60,12 @@ class KnowledgeAnalysis:
         if exc_type is not None:
             _LOGGER.info("Cached knowledge could not be saved")
 
-    def store(self):
+    def get_knowledge(self):
         """Iterate through entities of given repository and accumulate them."""
         github = Github(self._GITHUB_ACCESS_TOKEN)
 
         try:
-            for idx, entity in enumerate(self.new_entities, 1):
+            for idx, entity in enumerate(self.entity.analyse(), 1):
 
                 remaining = github.rate_limiting[0]
 
@@ -91,18 +77,18 @@ class KnowledgeAnalysis:
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity_type, idx, len(self.new_entities)))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity, idx, len(self.entity.analyse())))
 
-                self.accumulator_backup = self.accumulator
-                self.store_method(entity, self.accumulator)
+                self.backup = copy.deepdcopy(entity)
+                self.entity.store(entity)
 
         except (GithubException, KeyboardInterrupt):
             _LOGGER.info("Problem occured, saving cached knowledge")
             try:
-                self._ENTITY_SCHEMA[self.entity_type](self.accumulator)
-                return self.accumulator
+                self.entities_schema(self.accumulator)
+                return self.entity.stored_entities()
             except MultipleInvalid:
-                self._ENTITY_SCHEMA[self.entity_type](self.accumulator_backup)
-                return self.accumulator_backup
+                self.entities_schema(self.accumulator_backup)
+                return self.backup.stored_entities()
 
-        return self.accumulator
+        return self.entity.stored_entities()

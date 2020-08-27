@@ -20,25 +20,19 @@
 
 import logging
 
-from github.ContentFile import GithubContentFile
+from github.ContentFile import ContentFile as GithubContentFile
 from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics.entities.BaseEntity import BaseEntity
-from srcopsmetrics.enums import EntityTypeEnum
-from srcopsmetrics.iterator import KnowledgeAnalysis
+from srcopsmetrics.entities import Entity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class ContentFile(BaseEntity):
+class ContentFile(Entity):
     """GitHub ContentFile entity."""
 
-    entity_name = "ContentFile"
-
     entity_schema = Schema({"name": str, "path": str, "content": str})  # TODO: Adjust content type
-
-    entities_schema = Schema({str: entity_schema})
 
     def __init__(self, repository):
         """Initialize with repo and prev knowledge."""
@@ -57,7 +51,7 @@ class ContentFile(BaseEntity):
 
             try:
                 content_file = self.repository.get_contents(file_name)
-                file_path = content_file.path
+                # file_path = content_file.path
                 encoded = content_file.decoded_content
                 # TODO: Adjust because most of the files are not text
                 content_file_text = encoded.decode("utf-8")
@@ -65,20 +59,17 @@ class ContentFile(BaseEntity):
                 _LOGGER.info("%r not found for: %r" % (file_name, self.repository.full_name))
                 _LOGGER.warning(e)
 
-            if content_file_text:
-                with KnowledgeAnalysis(
-                    entity_type=EntityTypeEnum.CONTENT_FILE.value,
-                    new_entities=[[file_name, file_path, content_file_text]],
-                    accumulator=self.prev_knowledge,
-                    store_method=self.store,
-                ) as analysis:
-                    accumulated = analysis.store()
-                break
+            # if content_file_text:
+            #     with KnowledgeAnalysis(
+            #         entity=EntityTypeEnum.CONTENT_FILE.value,
+            #     ) as analysis:
+            #         accumulated = analysis.store()
+            #     break
 
         if not content_file_text:
             return None
 
-        return accumulated
+        return None
 
     def store(self, file_content: GithubContentFile):
         """Override :func:`~BaseEntity.store`."""

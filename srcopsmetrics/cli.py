@@ -27,8 +27,6 @@ from srcopsmetrics.bot_knowledge import analyse_projects, visualize_project_resu
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.processing import Processing
-from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.utils import remove_previously_processed
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
@@ -118,16 +116,6 @@ def cli(
 
     for project in repos:
         os.environ["PROJECT"] = project
-
-        if process_knowledge:
-            remove_previously_processed(project)
-            issues = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value
-            )
-            prs = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value
-            )
-            Processing(issues=issues, pull_requests=prs).regenerate()
 
         if visualize_statistics:
             visualize_project_results(project=project, is_local=is_local)

@@ -19,13 +19,13 @@
 """Pull Request entity class."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics.entities.BaseEntity import BaseEntity
+from srcopsmetrics.entities import Entity
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,11 +33,11 @@ _LOGGER = logging.getLogger(__name__)
 PullRequestReview = Schema({"author": str, "words_count": int, "submitted_at": int, "state": str})
 PullRequestReviews = Schema({str: PullRequestReview})
 
+ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
-class PullRequest(BaseEntity):
+
+class PullRequest(Entity):
     """GitHub PullRequest entity."""
-
-    entity_name = "PullRequest"
 
     entity_schema = Schema(
         {
@@ -59,25 +59,22 @@ class PullRequest(BaseEntity):
         }
     )
 
-    entities_schema = Schema({str: entity_schema})
-
-    def __init__(self, repository):
+    def __init__(self, repository: Repository):
         """Initialize with repo and prev knowledge."""
         self.stored = {}
         self.repository = repository
-        self.prev_knowledge = None
 
     def analyse(self) -> PaginatedList:
-        """Override :func:`~BaseEntity.analyse`."""
+        """Override :func:`~Entity.analyse`."""
         _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
 
         current_pulls = self.repository.get_pulls(state="all")
-        new_pulls = GitHubKnowledge.get_only_new_entities(self.prev_knowledge, current_pulls)
+        new_pulls = GitHubKnowledge.get_only_new_entities(self.previous_knowledge, current_pulls)
 
         return new_pulls
 
     def store(self, pull_request: GithubPullRequest):
-        """Override :func:`~BaseEntity.store`."""
+        """Override :func:`~Entity.store`."""
         commits = pull_request.commits
         # TODO: Use commits to extract information.
         # commits = [commit for commit in pull_request.get_commits()]
@@ -93,29 +90,29 @@ class PullRequest(BaseEntity):
         # Evaluate size of PR
         pull_request_size = None
         if labels:
-            pull_request_size = self.get_labeled_size(labels)
+            pull_request_size = GitHubKnowledge.get_labeled_size(labels)
 
         if not pull_request_size:
             lines_changes = pull_request.additions + pull_request.deletions
-            pull_request_size = self.assign_pull_request_size(lines_changes=lines_changes)
+            pull_request_size = GitHubKnowledge.assign_pull_request_size(lines_changes=lines_changes)
 
         self.stored[str(pull_request.number)] = {
             "size": pull_request_size,
-            "labels": self.get_non_standalone_labels(labels),
+            "labels": GitHubKnowledge.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
             "created_at": created_at,
             "closed_at": closed_at,
             "closed_by": closed_by,
             "merged_at": merged_at,
             "commits_number": commits,
-            "referenced_issues": self.get_referenced_issues(pull_request),
-            "interactions": self.get_interactions(pull_request.get_issue_comments()),
+            "referenced_issues": PullRequest.get_referenced_issues(pull_request),
+            "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
         }
 
     def stored_entities(self):
-        """Override :func:`~BaseEntity.stored_entities`."""
+        """Override :func:`~Entity.stored_entities`."""
         return self.stored
 
     @staticmethod
@@ -163,3 +160,59 @@ class PullRequest(BaseEntity):
                 "state": review.state,
             }
         return results
+
+    @staticmethod
+    def get_referenced_issues(pull_request: GithubPullRequest) -> List[str]:
+        """Scan all of the Pull Request comments and get referenced issues.
+
+        Arguments:
+            pull_request {PullRequest} -- Pull request for which the referenced
+                                        issues are extracted
+
+        Returns:
+            List[str] -- IDs of referenced issues within the Pull Request.
+
+        """
+        issues_referenced = []
+        for comment in pull_request.get_issue_comments():
+            for id in PullRequest.search_for_references(comment.body):
+                issues_referenced.append(id)
+
+        for id in PullRequest.search_for_references(pull_request.body):
+            issues_referenced.append(id)
+
+        _LOGGER.debug("      referenced issues: %s" % issues_referenced)
+        return issues_referenced
+
+    @staticmethod
+    def search_for_references(body: str) -> Generator[str, None, None]:
+        """Return generator for iterating through referenced IDs in a comment."""
+        if body is None:
+            return
+
+        message = body.split(" ")
+        for idx, word in enumerate(message):
+            if word.replace(":", "").lower() not in ISSUE_KEYWORDS:
+                return
+
+            _LOGGER.info("      ...found keyword referencing issue")
+            referenced_issue_number = message[idx + 1]
+            if referenced_issue_number.startswith("https"):
+                # last element of url is always the issue number
+                ref_issue = referenced_issue_number.split("/")[-1]
+            elif referenced_issue_number.startswith("#"):
+                ref_issue = referenced_issue_number.replace("#", "")
+            else:
+                _LOGGER.info("      ...referenced issue number absent")
+                _LOGGER.debug("      keyword message: %s" % body)
+                return
+
+            if not referenced_issue_number.isnumeric():
+                _LOGGER.info("      ...referenced issue number in incorrect format")
+                return
+
+            _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
+            yield ref_issue
+
+
+from github.Repository import Repository

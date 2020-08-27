@@ -19,25 +19,20 @@
 """Issue entity class."""
 
 import logging
-from typing import Generator, List, Optional
+from typing import Optional
 
 from github.Issue import Issue as GithubIssue
-from github.PullRequest import PullRequest
 from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics.entities.BaseEntity import BaseEntity
+from srcopsmetrics.entities import Entity
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
 
-ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
-
-class Issue(BaseEntity):
+class Issue(Entity):
     """GitHub Issue entity."""
-
-    entity_name = "Issue"
 
     entity_schema = Schema(
         {
@@ -49,8 +44,6 @@ class Issue(BaseEntity):
             "interactions": {str: int},
         }
     )
-
-    entities_schema = Schema({str: entity_schema})
 
     def __init__(self, repository):
         """Initialize with repo and prev knowledge."""
@@ -86,56 +79,3 @@ class Issue(BaseEntity):
     def stored_entities(self):
         """Override :func:`~BaseEntity.stored_entities`."""
         return self.stored
-
-    @staticmethod
-    def search_for_references(body: str) -> Generator[str, None, None]:
-        """Return generator for iterating through referenced IDs in a comment."""
-        if body is None:
-            return
-
-        message = body.split(" ")
-        for idx, word in enumerate(message):
-            if word.replace(":", "").lower() not in ISSUE_KEYWORDS:
-                return
-
-            _LOGGER.info("      ...found keyword referencing issue")
-            referenced_issue_number = message[idx + 1]
-            if referenced_issue_number.startswith("https"):
-                # last element of url is always the issue number
-                ref_issue = referenced_issue_number.split("/")[-1]
-            elif referenced_issue_number.startswith("#"):
-                ref_issue = referenced_issue_number.replace("#", "")
-            else:
-                _LOGGER.info("      ...referenced issue number absent")
-                _LOGGER.debug("      keyword message: %s" % body)
-                return
-
-            if not referenced_issue_number.isnumeric():
-                _LOGGER.info("      ...referenced issue number in incorrect format")
-                return
-
-            _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
-            yield ref_issue
-
-    @staticmethod
-    def get_referenced_issues(self, pull_request: PullRequest) -> List[str]:
-        """Scan all of the Pull Request comments and get referenced issues.
-
-        Arguments:
-            pull_request {PullRequest} -- Pull request for which the referenced
-                                        issues are extracted
-
-        Returns:
-            List[str] -- IDs of referenced issues within the Pull Request.
-
-        """
-        issues_referenced = []
-        for comment in pull_request.get_issue_comments():
-            for id in self.search_for_references(comment.body):
-                issues_referenced.append(id)
-
-        for id in self.search_for_references(pull_request.body):
-            issues_referenced.append(id)
-
-        _LOGGER.debug("      referenced issues: %s" % issues_referenced)
-        return issues_referenced

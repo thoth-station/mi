@@ -20,14 +20,14 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from github import ContentFile, Github, PaginatedList
 from github.Repository import Repository
 
-from srcopsmetrics.enums import EntityTypeEnum
 from srcopsmetrics.iterator import KnowledgeAnalysis
 from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.entities import Entity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -169,53 +169,9 @@ class GitHubKnowledge:
             "content": file_content[2],
         }
 
-    def analyse_content_files(
-        self, repository: Repository, prev_knowledge: Dict[str, Any], is_local: bool = False
-    ) -> Optional[Dict[str, Any]]:
-        """Analyse content files in repository.
-
-        Arguments:
-            repository {Repository} -- currently the PyGithub lib is used because of its functionality
-                                    ogr unfortunatelly did not provide enough to properly analyze content files
-
-            prev_knowledge {Dict[str, Any]} -- previous knowledge stored.
-
-            is_local -- flag to state if the knowledge should be collected locally or on Ceph.
-
-        """
-        _LOGGER.info("-------------Content Files Analysis-------------")
-
-        # TODO: Extend to all types of files. Currently only README are considered.
-        # TODO: Add all types of README extensions available
-        content_file_text = ""
-        for file_name in ["README.md", "README.rst"]:
-
-            try:
-                content_file = repository.get_contents(file_name)
-                file_path = content_file.path
-                encoded = content_file.decoded_content
-                # TODO: Adjust because most of the files are not text
-                content_file_text = encoded.decode("utf-8")
-            except Exception as e:
-                _LOGGER.info("%r not found for: %r" % (file_name, repository.full_name))
-                _LOGGER.warning(e)
-
-            if content_file_text:
-                with KnowledgeAnalysis(
-                    entity_type=EntityTypeEnum.CONTENT_FILE.value,
-                    new_entities=[[file_name, file_path, content_file_text]],
-                    accumulator=prev_knowledge,
-                    store_method=self.store_content_file,
-                ) as analysis:
-                    accumulated = analysis.store()
-                break
-
-        if not content_file_text:
-            return None
-
-        return accumulated
-
-    def analyse_entity(self, github_repo: Repository, project_path: Path, github_type: str, is_local: bool = False):
+    def analyse_entity(
+        self, github_repo: Repository, project_path: Path, entity_cls: Type[Entity], is_local: bool = False
+    ):
         """Load old knowledge and update it with the newly analysed one and save it.
 
         Arguments:
@@ -225,24 +181,11 @@ class GitHubKnowledge:
             is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
 
         """
-        method_analysis_entity = {
-            "Issue": self.analyse_issues,
-            "PullRequest": self.analyse_pull_requests,
-            "ContentFile": self.analyse_content_files,
-        }
-        filename = self._FILENAME_ENTITY[github_type]
-        analyse = method_analysis_entity[github_type]
+        entity = entity_cls(repository=github_repo)
+        entity.init_previous_knowledge(is_local=is_local)
 
-        path = project_path.joinpath("./" + filename + ".json")
+        with KnowledgeAnalysis(entity=entity) as analysis:
+            analysis.get_knowledge()
 
         storage = KnowledgeStorage(is_local=is_local)
-        prev_knowledge = storage.load_previous_knowledge(
-            project_name=github_repo.full_name, file_path=path, knowledge_type=github_type
-        )
-        new_knowledge = analyse(github_repo, prev_knowledge, is_local=is_local)
-
-        if new_knowledge is not None:
-            storage.save_knowledge(path, new_knowledge)
-            _LOGGER.info("currently analysed entities of type %s: %d\n" % (github_type, len(new_knowledge)))
-        else:
-            _LOGGER.info("\n")
+        storage.save_knowledge(entity=entity)
