@@ -571,11 +571,11 @@
         },
         "plotly": {
             "hashes": [
-                "sha256:257f530ffd73754bd008454826905657b329053364597479bb9774437a396837",
-                "sha256:7c7b613af8def74f48b1298f08a49086bb9792104119feb4a137f737533021e1"
+                "sha256:752f0803588b8d895d604c58fa55119ad104f3fbdd5eb5f7d11a3079680c31c0",
+                "sha256:aa1602346ffa17895687fc48ae58611f014ed7a5da4b07e79c2ca99d6d4dca31"
             ],
             "index": "pypi",
-            "version": "==4.9.0"
+            "version": "==4.10.0"
         },
         "psycopg2-binary": {
             "hashes": [
@@ -898,7 +898,7 @@
                 "sha256:99d4073b617d30288f569d3f13d2bd7548c3a7e4c8de87db09a9d29bb3a4a60c",
                 "sha256:dafc7639cde7f1b6e1acc0f457842a83e722ccca8eef5270af2d74792619a89f"
             ],
-            "markers": "python_version < '3.8'",
+            "markers": "python_version < '3.7'",
             "version": "==3.7.4.3"
         },
         "tzlocal": {
