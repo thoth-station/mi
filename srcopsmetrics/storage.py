@@ -28,7 +28,6 @@ from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics import utils
-from srcopsmetrics.entities import Entity
 from srcopsmetrics.enums import StoragePath
 from srcopsmetrics.utils import check_directory
 
@@ -104,45 +103,6 @@ class KnowledgeStorage:
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
         _LOGGER.debug("Use %s as a main path for storage.", self.main)
 
-    def get_entity_file_path(self, entity: Entity) -> Path:
-        """Get entity file path."""
-        path = Path.cwd().joinpath(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.KNOWLEDGE_PATH.value))
-
-        project_path = path.joinpath("./" + entity.repository.full_name)
-        check_directory(project_path)
-
-        return project_path.joinpath("./" + entity.filename + ".json")
-
-    def save_knowledge(self, entity: Entity, file_path: Path = None):
-        """Save collected knowledge as json.
-
-        Arguments:
-            file_path {Path} -- where the knowledge should be saved
-            data {Dict[str, Any]} -- collected knowledge. Should be json compatible
-
-        """
-        if entity is None or entity.stored_entities() is None:
-            _LOGGER.info("Nothing to store.")
-            _LOGGER.info("\n")
-            return
-
-        if not file_path:
-            file_path = self.get_entity_file_path(entity)
-
-        _LOGGER.info(
-            "Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(entity.stored_entities()))
-        )
-
-        if not self.is_local:
-            ceph_filename = os.path.relpath(file_path).replace("./", "")
-            s3 = self.get_ceph_store()
-            s3.store_document(entity.stored_entities, ceph_filename)
-            _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
-        else:
-            with open(file_path, "w") as f:
-                json.dump(entity.stored_entities, f)
-            _LOGGER.info("Saved locally at %s" % file_path)
-
     def get_ceph_store(self) -> CephStore:
         """Establish a connection to the CEPH."""
         s3 = CephStore(
@@ -151,42 +111,59 @@ class KnowledgeStorage:
         s3.connect()
         return s3
 
+    def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
+        """Save collected knowledge as json.
+        The saved json contains one dictionary with single key 'results'
+        under which the knowledge is stored.
+        Arguments:
+            file_path {Path} -- where the knowledge should be saved
+            data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+        """
+        results = {"results": data}
+
+        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+
+        if not self.is_local:
+            ceph_filename = os.path.relpath(file_path).replace("./", "")
+            s3 = self.get_ceph_store()
+            s3.store_document(results, ceph_filename)
+            _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+        else:
+            with open(file_path, "w") as f:
+                json.dump(results, f)
+            _LOGGER.info("Saved locally at %s" % file_path)
+
     def load_previous_knowledge(
-        self, project_name: str = None, entity: Type[Entity] = None, file_path: Optional[Path] = None, only_results=True
+        self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None
     ) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
-
         Arguments:
             file_path {Optional[Path]} -- path to previously stored knowledge from
                                inspected github repository. If None is passed, the used path will
                                be :value:`~enums.StoragePath.DEFAULT`
-
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
                             Empty dict if the knowledge does not exist.
-
         """
         if file_path is None:
-            if entity is None or project_name is None:
+            if knowledge_type is None or project_name is None:
                 raise ValueError("Either filepath or knowledge type with project name have to be specified.")
             else:
+                filename = self._FILENAME_ENTITY[knowledge_type]
                 file_path = (
-                    self.main.joinpath(StoragePath.KNOWLEDGE.value)
-                    .joinpath(project_name)
-                    .joinpath(entity.filename() + ".json")
+                    self.main.joinpath(StoragePath.KNOWLEDGE.value).joinpath(project_name).joinpath(filename + ".json")
                 )
 
-        data = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
+        results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
 
-        if data is None:
-            _LOGGER.info("No previous knowledge of type %s found" % entity)
-            return {}
-
-        results = data["results"] if only_results else data
-
-        _LOGGER.info(
-            "Found previous knowledge for %s with %d entities of type %s" % (project_name, len(results), entity)
-        )
+        if results is None:
+            _LOGGER.info("No previous knowledge of type %s found" % knowledge_type)
+            results = {}
+        else:
+            _LOGGER.info(
+                "Found previous knowledge for %s with %d entities of type %s"
+                % (project_name, len(results), knowledge_type)
+            )
         return results
 
     @staticmethod

@@ -65,6 +65,7 @@ class KnowledgeAnalysis:
         github = Github(self._GITHUB_ACCESS_TOKEN)
 
         try:
+            _LOGGER.info("-------------%s Analysis-------------" % self.entity.name)
             for idx, entity in enumerate(self.entity.analyse(), 1):
 
                 remaining = github.rate_limiting[0]
@@ -77,9 +78,9 @@ class KnowledgeAnalysis:
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity, idx, len(self.entity.analyse())))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name, idx, len(self.entity.analyse())))
 
-                self.backup = copy.deepdcopy(entity)
+                self.backup = entity
                 self.entity.store(entity)
 
         except (GithubException, KeyboardInterrupt):

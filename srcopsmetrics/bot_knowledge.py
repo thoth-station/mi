@@ -70,7 +70,7 @@ def analyse_projects(
         inspected_entities = allowed_entities or specified_entities
 
         for entity in inspected_entities:
-            _LOGGER.info("%s inspection" % entity)
+            _LOGGER.info("%s inspection" % entity.__name__)
             github_knowledge.analyse_entity(
                 github_repo=github_repo, project_path=project_path, entity_cls=entity, is_local=is_local
             )

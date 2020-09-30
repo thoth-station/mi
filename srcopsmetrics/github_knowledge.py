@@ -187,5 +187,4 @@ class GitHubKnowledge:
         with KnowledgeAnalysis(entity=entity) as analysis:
             analysis.get_knowledge()
 
-        storage = KnowledgeStorage(is_local=is_local)
-        storage.save_knowledge(entity=entity)
+        entity.save_knowledge()
