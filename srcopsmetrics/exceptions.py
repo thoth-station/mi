@@ -29,6 +29,6 @@ class NotKnownEntities(Exception):
 
     def __init__(self, message, entities):
         """Initialize exception with user specified entities."""
-        allowed = [e.name for e in bot_knowledge.get_all_entities()]
-        unallowed = [e.name for e in entities if e not in allowed]
+        allowed = [e.__name__ for e in bot_knowledge.get_all_entities()]
+        unallowed = [e for e in entities if e not in allowed]
         super().__init__("Invalid specified entities: %s", unallowed)

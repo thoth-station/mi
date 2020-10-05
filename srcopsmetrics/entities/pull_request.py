@@ -23,10 +23,11 @@ from typing import Any, Dict, Generator, List, Optional
 
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
+from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
-from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.entities.tools import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,12 +67,7 @@ class PullRequest(Entity):
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
-        _LOGGER.info("-------------Pull Requests Analysis (including its Reviews)-------------")
-
-        current_pulls = self.repository.get_pulls(state="all")
-        new_pulls = GitHubKnowledge.get_only_new_entities(self.previous_knowledge, current_pulls)
-
-        return new_pulls
+        return self.get_only_new_entities()
 
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
@@ -114,6 +110,10 @@ class PullRequest(Entity):
     def stored_entities(self):
         """Override :func:`~Entity.stored_entities`."""
         return self.stored
+
+    def get_raw_github_data(self):
+        """Override :func:`~Entity.get_raw_github_data`."""
+        return self.repository.get_pulls(state="all")
 
     @staticmethod
     def extract_pull_request_review_requests(pull_request: GithubPullRequest) -> List[str]:
@@ -213,6 +213,3 @@ class PullRequest(Entity):
 
             _LOGGER.info("      ...referenced issue number: %s" % ref_issue)
             yield ref_issue
-
-
-from github.Repository import Repository

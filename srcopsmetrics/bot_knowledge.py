@@ -63,17 +63,18 @@ def analyse_projects(
 
         specified_entities = []
         if entities:
-            specified_entities = [e for e in allowed_entities if e.name in entities]
+            specified_entities = [e for e in allowed_entities if e.__name__ in entities]
             if specified_entities == []:
                 raise NotKnownEntities(message="", entities=entities)
 
-        inspected_entities = allowed_entities or specified_entities
+        inspected_entities = specified_entities or allowed_entities
 
         for entity in inspected_entities:
             _LOGGER.info("%s inspection" % entity.__name__)
             github_knowledge.analyse_entity(
                 github_repo=github_repo, project_path=project_path, entity_cls=entity, is_local=is_local
             )
+            _LOGGER.info("\n")
 
 
 def visualize_project_results(project: str, is_local: bool = False):

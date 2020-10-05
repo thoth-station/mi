@@ -26,7 +26,7 @@ from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
-from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.entities.tools import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,19 +49,14 @@ class Issue(Entity):
         """Initialize with repo and prev knowledge."""
         self.stored = {}
         self.repository = repository
-        self.prev_knowledge = None
+        self.previous_knowledge = None
 
     def analyse(self) -> PaginatedList:
-        """Override :func:`~BaseEntity.analyse`."""
-        _LOGGER.info("-------------Issues (that are not PR) Analysis-------------")
-
-        current_issues = [issue for issue in self.repository.get_issues(state="all") if issue.pull_request is None]
-        new_issues = GitHubKnowledge.get_only_new_entities(self.prev_knowledge, current_issues)
-
-        return new_issues
+        """Override :func:`~Entity.analyse`."""
+        return self.get_only_new_entities()
 
     def store(self, issue: GithubIssue):
-        """Override :func:`~BaseEntity.store`."""
+        """Override :func:`~Entity.store`."""
         if issue.pull_request is not None:
             return  # we analyze issues and prs differentely
 
@@ -76,6 +71,14 @@ class Issue(Entity):
             "interactions": GitHubKnowledge.get_interactions(issue.get_comments()),
         }
 
+    def previous_knowledge(self):
+        """Override :func:`~Entity.previous_knowledge`."""
+        return self.previous_knowledge
+
     def stored_entities(self):
-        """Override :func:`~BaseEntity.stored_entities`."""
+        """Override :func:`~Entity.stored_entities`."""
         return self.stored
+
+    def get_raw_github_data(self):
+        """Override :func:`~Entity.get_raw_github_data`."""
+        return [issue for issue in self.repository.get_issues(state="all") if not issue.pull_request]

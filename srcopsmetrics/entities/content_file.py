@@ -19,6 +19,7 @@
 """ContentFile entity class."""
 
 import logging
+from typing import List
 
 from github.ContentFile import ContentFile as GithubContentFile
 from github.PaginatedList import PaginatedList
@@ -40,45 +41,32 @@ class ContentFile(Entity):
         self.repository = repository
         self.prev_knowledge = None
 
-    def analyse(self) -> PaginatedList:
-        """Override :func:`~BaseEntity.analyse`."""
-        _LOGGER.info("-------------Content Files Analysis-------------")
-
+    def analyse(self) -> List[GithubContentFile]:
+        """Override :func:`~Entity.analyse`."""
         # TODO: Extend to all types of files. Currently only README are considered.
-        # TODO: Add all types of README extensions available
-        content_file_text = ""
-        for file_name in ["README.md", "README.rst"]:
+        # TODO: recursive Readme analysis - is that a good idea?
 
-            try:
-                content_file = self.repository.get_contents(file_name)
-                # file_path = content_file.path
-                encoded = content_file.decoded_content
-                # TODO: Adjust because most of the files are not text
-                content_file_text = encoded.decode("utf-8")
-            except Exception as e:
-                _LOGGER.info("%r not found for: %r" % (file_name, self.repository.full_name))
-                _LOGGER.warning(e)
+        if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
+            return [self.get_raw_github_data()]
 
-            # if content_file_text:
-            #     with KnowledgeAnalysis(
-            #         entity=EntityTypeEnum.CONTENT_FILE.value,
-            #     ) as analysis:
-            #         accumulated = analysis.store()
-            #     break
+        if self.previous_knowledge["readme"]["size"] == self.repository.get_readme().size:
+            return []
 
-        if not content_file_text:
-            return None
-
-        return None
-
-    def store(self, file_content: GithubContentFile):
-        """Override :func:`~BaseEntity.store`."""
-        self.stored["content_files"] = {
-            "name": file_content[0],
-            "path": file_content[1],
-            "content": file_content[2],
+    def store(self, content_file: GithubContentFile):
+        """Override :func:`~Entity.store`."""
+        self.stored["readme"] = {
+            "name": content_file.name,
+            "path": content_file.path,
+            "content": content_file.decoded_content.decode("utf-8"),
+            "type": content_file.type,
+            "license": content_file.license,
+            "size": content_file.size,
         }
 
     def stored_entities(self):
-        """Override :func:`~BaseEntity.stored_entities`."""
+        """Override :func:`~Entity.stored_entities`."""
         return self.stored
+
+    def get_raw_github_data(self):
+        """Override :func:`~Entity.get_raw_github_data`."""
+        return self.repository.get_readme()

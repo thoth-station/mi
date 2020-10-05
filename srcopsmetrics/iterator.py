@@ -50,6 +50,7 @@ class KnowledgeAnalysis:
         """Initialize with previous and new knowledge of an entity."""
         self.entity = entity
         self.backup = None
+        self.knowledge_updated = False
 
     def __enter__(self):
         """Context manager enter method."""
@@ -60,13 +61,14 @@ class KnowledgeAnalysis:
         if exc_type is not None:
             _LOGGER.info("Cached knowledge could not be saved")
 
-    def get_knowledge(self):
+    def run(self):
         """Iterate through entities of given repository and accumulate them."""
         github = Github(self._GITHUB_ACCESS_TOKEN)
+        _LOGGER.info("-------------%s Analysis-------------" % self.entity.name)
 
         try:
-            _LOGGER.info("-------------%s Analysis-------------" % self.entity.name)
             for idx, entity in enumerate(self.entity.analyse(), 1):
+                self.knowledge_updated = True
 
                 remaining = github.rate_limiting[0]
 
@@ -86,10 +88,16 @@ class KnowledgeAnalysis:
         except (GithubException, KeyboardInterrupt):
             _LOGGER.info("Problem occured, saving cached knowledge")
             try:
-                self.entities_schema(self.accumulator)
+                self.entity.entities_schema(self.accumulator)
                 return self.entity.stored_entities()
             except MultipleInvalid:
-                self.entities_schema(self.accumulator_backup)
+                self.entity.entities_schema(self.accumulator_backup)
                 return self.backup.stored_entities()
 
-        return self.entity.stored_entities()
+        # return self.entity.stored_entities()
+
+    def save_analysed_knowledge(self):
+        if self.knowledge_updated:
+            self.entity.save_knowledge()
+        else:
+            _LOGGER.info("Nothing to store, no update operation needed")

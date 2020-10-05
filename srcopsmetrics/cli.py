@@ -111,24 +111,24 @@ def cli(
         tupled_repos = [(lambda x: (x[0], x[1]))(repo.split("/")) for repo in repos]
         analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities)
 
-        for repo in repos:
-            remove_previously_processed(repo)
+    #     for repo in repos:
+    #         remove_previously_processed(repo)
 
-    for project in repos:
-        os.environ["PROJECT"] = project
+    # for project in repos:
+    #     os.environ["PROJECT"] = project
 
-        if visualize_statistics:
-            visualize_project_results(project=project, is_local=is_local)
+    #     if visualize_statistics:
+    #         visualize_project_results(project=project, is_local=is_local)
 
-        if reviewer_reccomender:
-            reviewer_assigner = ReviewerAssigner()
-            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+    #     if reviewer_reccomender:
+    #         reviewer_assigner = ReviewerAssigner()
+    #         reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
-    if visualize_statistics and repository is not None:
-        visualize_project_results(project=repository, is_local=is_local)
-    elif visualize_statistics and organization is not None:
-        # TODO
-        raise NotImplementedError
+    # if visualize_statistics and repository is not None:
+    #     visualize_project_results(project=repository, is_local=is_local)
+    # elif visualize_statistics and organization is not None:
+    #     # TODO
+    #     raise NotImplementedError
 
 
 if __name__ == "__main__":

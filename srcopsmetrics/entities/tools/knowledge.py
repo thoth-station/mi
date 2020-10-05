@@ -1,22 +1,3 @@
-#!/usr/bin/env python3
-# SrcOpsMetrics
-# Copyright(C) 2020 Francesco Murdaca, Dominik Tuchyna
-#
-# This program is free software: you can redistribute it and / or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-"""A base class for collecting bot knowledge from GitHub."""
-
 import logging
 import os
 from pathlib import Path
@@ -25,33 +6,13 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 from github import ContentFile, Github, PaginatedList
 from github.Repository import Repository
 
-from srcopsmetrics.iterator import KnowledgeAnalysis
-from srcopsmetrics.storage import KnowledgeStorage
-from srcopsmetrics.entities import Entity
-
 _LOGGER = logging.getLogger(__name__)
-
-_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 STANDALONE_LABELS = {"size"}
 
+_GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 class GitHubKnowledge:
-    """Class of methods entity extraction from GitHub."""
-
-    _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests", "ContentFile": "content_file"}
-
-    def connect_to_source(self, project: Tuple[str, str]) -> Repository:
-        """Connect to GitHub.
-
-        :param project: Tuple source repo and repo name.
-        """
-        # Connect using PyGitHub
-        g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
-        repo_name = project[0] + "/" + project[1]
-        repo = g.get_repo(repo_name)
-
-        return repo
 
     @staticmethod
     def get_repositories(repository: Optional[str] = None, organization: Optional[str] = None) -> List[str]:
@@ -152,38 +113,3 @@ class GitHubKnowledge:
             # we count by the num of words in comment
             interactions[comment.user.login] += len(comment.body.split(" "))
         return interactions
-
-    def store_content_file(self, file_content: ContentFile, results: Dict[str, Dict[str, Any]]):
-        """Analyse pull request and save its desired features to results.
-
-        Arguments:
-            file_content {ContentFile} -- Content File type to be stored.
-            results {Dict[str, Dict[str, Any]]} -- dictionary where all the currently
-                                                ContentFiles are stored and where the given ContentFile
-                                                will be stored.
-
-        """
-        results["content_files"] = {
-            "name": file_content[0],
-            "path": file_content[1],
-            "content": file_content[2],
-        }
-
-    def analyse_entity(
-        self, github_repo: Repository, project_path: Path, entity_cls: Type[Entity], is_local: bool = False
-    ):
-        """Load old knowledge and update it with the newly analysed one and save it.
-
-        Arguments:
-            github_repo {Repository} -- Github repo that will be analysed
-            project_path {Path} -- The main directory where the knowledge will be stored
-            github_type {str} -- Currently can be: "Issue", "PullRequest", "ContentFile"
-            is_local {bool} -- If true, the local store will be used for knowledge loading and storing.
-
-        """
-        entity = entity_cls(repository=github_repo)
-        entity.init_previous_knowledge(is_local=is_local)
-
-        with KnowledgeAnalysis(entity=entity) as analysis:
-            analysis.run()
-            analysis.save_analysed_knowledge()
