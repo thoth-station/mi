@@ -38,7 +38,6 @@ _LOGGER = logging.getLogger(__name__)
 class Entity(metaclass=ABCMeta):
     """This class defines interface every entity class should implement."""
 
-    # @abstractmethod
     def __init__(self, repository: Repository):
         """Initialize entity with github repository.
 
@@ -46,31 +45,7 @@ class Entity(metaclass=ABCMeta):
         """
         self.repository = repository
 
-    # @property
-    # @abstractmethod
-    # def repository(self) -> Repository:
-    #     """Repository object as defined in GitHub API documentation.
-
-    #     Currently only PyGithub supported.
-    #     """
-    #     return self._repository
-
-    # @repository.setter
-    # @abstractmethod
-    # def repository(self, repository):
-    #     return self._repository
-
-    # @property
-    # @abstractmethod
-    # def previous_knowledge(self) -> Collection:
-    #     """Previous knowledge of given entity.
-
-    #     Can be anything iterable.
-    #     """
-
     @property
-    # @abstractmethod
-    # @classmethod
     def name(self) -> str:
         """Entity name as defined in GitHub API documentation.
 
@@ -79,8 +54,6 @@ class Entity(metaclass=ABCMeta):
         return type(self).__name__
 
     @property
-    # @abstractmethod
-    # @classmethod
     def filename(self) -> str:
         """File name of stored knowledge.
 
