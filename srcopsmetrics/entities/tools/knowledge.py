@@ -1,10 +1,28 @@
+# Copyright (C) 2020 Dominik Tuchyna
+#
+# This file is part of thoth-station/mi - Meta-information Indicators.
+#
+# thoth-station/mi - Meta-information Indicators is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# thoth-station/mi - Meta-information Indicators is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Knowledge extraction tools/functions."""
+
 import logging
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional
 
-from github import ContentFile, Github, PaginatedList
-from github.Repository import Repository
+from github import Github, PaginatedList
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +30,9 @@ STANDALONE_LABELS = {"size"}
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
+
 class GitHubKnowledge:
+    """Class that represents statical tools used in knowledge analysis."""
 
     @staticmethod
     def get_repositories(repository: Optional[str] = None, organization: Optional[str] = None) -> List[str]:

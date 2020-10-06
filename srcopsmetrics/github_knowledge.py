@@ -26,7 +26,6 @@ from github import ContentFile, Github, PaginatedList
 from github.Repository import Repository
 
 from srcopsmetrics.iterator import KnowledgeAnalysis
-from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics.entities import Entity
 
 _LOGGER = logging.getLogger(__name__)

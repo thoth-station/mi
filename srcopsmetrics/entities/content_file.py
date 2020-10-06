@@ -22,7 +22,6 @@ import logging
 from typing import List
 
 from github.ContentFile import ContentFile as GithubContentFile
-from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
@@ -33,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 class ContentFile(Entity):
     """GitHub ContentFile entity."""
 
-    entity_schema = Schema({"name": str, "path": str, "content": str})  # TODO: Adjust content type
+    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "license": str, "size": int,})
 
     def __init__(self, repository):
         """Initialize with repo and prev knowledge."""
@@ -51,6 +50,8 @@ class ContentFile(Entity):
 
         if self.previous_knowledge["readme"]["size"] == self.repository.get_readme().size:
             return []
+
+        return [self.get_raw_github_data()]
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""

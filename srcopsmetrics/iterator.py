@@ -20,7 +20,6 @@
 import logging
 import os
 import time
-import copy
 from datetime import datetime
 
 from github import Github
@@ -97,6 +96,7 @@ class KnowledgeAnalysis:
         # return self.entity.stored_entities()
 
     def save_analysed_knowledge(self):
+        """Save analysed knowledge if new information was extracted."""
         if self.knowledge_updated:
             self.entity.save_knowledge()
         else:

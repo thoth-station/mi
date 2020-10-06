@@ -1,18 +1,35 @@
+# Copyright (C) 2020 Dominik Tuchyna
+#
+# This file is part of thoth-station/mi - Meta-information Indicators.
+#
+# thoth-station/mi - Meta-information Indicators is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# thoth-station/mi - Meta-information Indicators is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Knowledge storage tools and classes."""
+
 import json
 import logging
 import os
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
-from srcopsmetrics import utils
 from srcopsmetrics.enums import StoragePath
-from srcopsmetrics.utils import check_directory
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class KnowledgeStorage:
     """Class for knowledge loading and saving."""
@@ -47,6 +64,7 @@ class KnowledgeStorage:
         s3.connect()
         return s3
 
+    @staticmethod
     def load_locally(file_path: Path) -> Optional[Dict[str, Any]]:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")

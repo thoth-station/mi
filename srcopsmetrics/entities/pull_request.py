@@ -27,7 +27,7 @@ from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
-from srcopsmetrics.entities.tools import GitHubKnowledge
+from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class PullRequest(Entity):
 
     def __init__(self, repository: Repository):
         """Initialize with repo and prev knowledge."""
-        self.stored = {}
+        self.stored = PullRequest.entities_schema()
         self.repository = repository
 
     def analyse(self) -> PaginatedList:

@@ -22,14 +22,13 @@ import logging
 import os
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics import utils
 from srcopsmetrics.enums import StoragePath
-from srcopsmetrics.utils import check_directory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -113,11 +112,14 @@ class KnowledgeStorage:
 
     def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
         """Save collected knowledge as json.
+
         The saved json contains one dictionary with single key 'results'
         under which the knowledge is stored.
+
         Arguments:
             file_path {Path} -- where the knowledge should be saved
             data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+
         """
         results = {"results": data}
 
@@ -137,13 +139,16 @@ class KnowledgeStorage:
         self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None
     ) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
+
         Arguments:
             file_path {Optional[Path]} -- path to previously stored knowledge from
                                inspected github repository. If None is passed, the used path will
                                be :value:`~enums.StoragePath.DEFAULT`
+
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
                             Empty dict if the knowledge does not exist.
+
         """
         if file_path is None:
             if knowledge_type is None or project_name is None:

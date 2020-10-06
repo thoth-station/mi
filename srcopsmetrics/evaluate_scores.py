@@ -23,7 +23,6 @@ from typing import Any, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.processing import Processing
 from srcopsmetrics.storage import KnowledgeStorage
 
@@ -51,7 +50,9 @@ class ReviewerAssigner:
         :project: repository to be analyzed (e.g. (thoth-station, performance))
         :param number_reviewer: number of reviewers to select
         """
-        data = KnowledgeStorage(is_local=is_local).load_previous_knowledge(project_name=project, entity=PullRequest)
+        data = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
+            project_name=project, knowledge_type="PullRequest"
+        )
         if not data:
             return {}
 

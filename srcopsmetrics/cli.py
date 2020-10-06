@@ -23,11 +23,9 @@ from typing import List, Optional
 
 import click
 
-from srcopsmetrics.bot_knowledge import analyse_projects, visualize_project_results
+from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
-from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.utils import remove_previously_processed
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)

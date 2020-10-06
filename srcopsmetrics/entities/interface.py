@@ -18,20 +18,19 @@
 
 """Entity interface class."""
 
+import json
+import logging
 import os
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from typing import Any, Collection, Dict
-import logging
 
-from github import Github
 from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics.enums import StoragePath
-from srcopsmetrics.storage import KnowledgeStorage
 from srcopsmetrics import utils
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
+from srcopsmetrics.enums import StoragePath
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,18 +88,18 @@ class Entity(metaclass=ABCMeta):
         """
         return type(self).__name__
 
-    @property
+    @classmethod
     @abstractmethod
-    def entity_schema(self) -> Schema:
+    def entity_schema(cls) -> Schema:
         """Return schema of a single entity that is analysed and stored.
 
         Entity is stored inside the entities_schema.
         """
 
-    @property
-    def entities_schema(self) -> Schema:
+    @classmethod
+    def entities_schema(cls) -> Schema:
         """Return schema of how all of the entities of repo are stored."""
-        return Schema({str: self.entity_schema})
+        return Schema({str: cls.entity_schema})
 
     @abstractmethod
     def analyse(self) -> Collection:
@@ -122,7 +121,6 @@ class Entity(metaclass=ABCMeta):
 
     def init_previous_knowledge(self, is_local: bool = False):
         """Every entity must have a previous knowledge initialization method."""
-
         self.previous_knowledge = self.load_previous_knowledge()
 
     @property
@@ -178,9 +176,8 @@ class Entity(metaclass=ABCMeta):
         return data
 
     @abstractmethod
-    def get_raw_github_data() -> Collection:
+    def get_raw_github_data(self) -> Collection:
         """Get all entities method from github using PyGithub."""
-        pass
 
     def get_only_new_entities(self) -> Collection:
         """Get new entities (whether PRs or other Issues).
