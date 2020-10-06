@@ -38,7 +38,6 @@ class ContentFile(Entity):
         """Initialize with repo and prev knowledge."""
         self.stored = {}
         self.repository = repository
-        self.prev_knowledge = None
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
