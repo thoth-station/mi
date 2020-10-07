@@ -17,10 +17,9 @@
 
 """ThothYaml entity class."""
 
-from typing import Any
+import logging
+from typing import List
 
-import yaml
-from github.ContentFile import ContentFile
 from github.Issue import Issue
 from github.Repository import Repository
 from voluptuous.schema_builder import Schema
@@ -29,10 +28,17 @@ from srcopsmetrics.entities import Entity
 
 THOTH_YAML_PATH = "./thoth.yaml"
 
-UPDATE_KEYWORDS = {
-    "Automatic update of dependency",
-    "Failed to update dependencies to their latest version",
-    "Initial dependency lock"}
+UPDATE_TYPES_AND_KEYWORDS = {
+    "automatic": "Automatic update of dependency",
+    "failure_notification": "Failed to update dependencies to their latest version",
+    "initial_lock": "Initial dependency lock",
+}
+
+BOTS = {
+    "sesheta",
+}
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class KebechetUpdateManager(Entity):
@@ -40,9 +46,9 @@ class KebechetUpdateManager(Entity):
 
     entity_schema = Schema(
         {
-            "type": str,            # manual, automatic, failed
+            "request_type": str,  # manual, automatic, failed
             "request_created": int,
-            "sesheta_comment": int,
+            "bot_first_response": int,
             "request_closed:": int,  # timestamp
             "request_state": str,
         }
@@ -50,21 +56,22 @@ class KebechetUpdateManager(Entity):
 
     def __init__(self, repository: Repository):
         """Initialize with repo and prev knowledge."""
-        self.stored = {}
+        self.stored = self.__class__.entities_schema()
         self.repository = repository
 
-    def analyse(self) -> List[GithubContentFile]:
+    def analyse(self) -> List[Issue]:
         """Override :func:`~Entity.analyse`."""
+        pass
 
-    def store(self, update_issue: Issue):
+    def store(self, update_request: Issue):
         """Override :func:`~Entity.store`."""
-
-        self.stored[update_issue.number] = {
-            "type": ,            # manual, automatic, failed
-            "request_created": int,
-            "sesheta_comment": int,
-            "request_closed:": int,  # timestamp
-            "request_state": str,
+        self.stored[update_request.number] = {
+            "request_type": self.__class__.get_request_type(update_request),  # manual, automatic, failed
+            "request_created": update_request.created_at,
+            "bot_first_response": self.__class__.get_bot_responses(update_request)[0],
+            "bot_last_response": self.__class__.get_bot_responses(update_request)[-1],
+            "request_closed:": update_request.closed_at,  # timestamp
+            "request_state": update_request.state,
         }
 
     def stored_entities(self):
@@ -73,12 +80,37 @@ class KebechetUpdateManager(Entity):
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return [issue in self.repository.get_issues(state='closed')
-                if (not issue.pull_request and issue.title="Kebechet update")
-                or self.is_update_manager(issue.title)]
+        return [
+            issue for issue in self.repository.get_issues(state="closed") if self.__class__.is_update_request(issue)
+        ]
 
     @staticmethod
-    def is_update_manager(issue_title):
-        for keyword in UPDATE_KEYWORDS:
-            if keyword in issue_title:
+    def is_update_request(issue: Issue) -> bool:
+        """Find out if issue is a form of update request or not."""
+        if issue.pullrequest:
+            return issue.title == "Kebechet update"
+
+        for keyword in UPDATE_TYPES_AND_KEYWORDS.values():
+            if keyword in issue.title:
                 return True
+
+        return False
+
+    @staticmethod
+    def get_request_type(issue: Issue) -> str:
+        """Get the type of the update request."""
+        for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
+            if keyword in issue.title:
+                return request_type
+
+        _LOGGER.info(f"Update request not recognized, issue num.{issue.number}")
+        return "not_recognized"
+
+    @staticmethod
+    def get_bot_responses(issue: Issue) -> List[int]:
+        """Get timestamps for all bot comments in issue."""
+        responses = []
+        for comment in issue.get_comments():
+            if comment.user in BOTS:
+                responses.append(comment.created_at)
+        return responses
