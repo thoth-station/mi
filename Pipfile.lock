@@ -85,17 +85,17 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:cb3becf1b2f2cb5f58030fe947a6abd26f27c01df0403097ae2a52bfadefcf19",
-                "sha256:de2bdcd9a8d638c2ef391ffc6d4b692ad701a6d8ad6e9d77d016059cf89b481a"
+                "sha256:2415549481e446c6809ff7199d8321f976ece7b7b5c18c829bcee3121a784385",
+                "sha256:82b5c608c3d6bb1bd66b3d2a64a31c8a470294fef61c761bf38f2f8fdc905328"
             ],
-            "version": "==1.15.12"
+            "version": "==1.15.14"
         },
         "botocore": {
             "hashes": [
-                "sha256:12b2381ee82ff32d5135c0887eadec18d38c8ff7fac06405ba6a8584f2159c3c",
-                "sha256:368f85992b0c7fda95b216776d475791c59e4c4415325fda683a02c5c110cf35"
+                "sha256:539aaf805ad8842ee3fb7350e0a4853f3db6a95ea9ffbe92add1ad2a6636ee86",
+                "sha256:b929e352a6fd4883cae38ba662fbf6ba93a9251acf476aa1e05b0fac1e81c313"
             ],
-            "version": "==1.18.12"
+            "version": "==1.18.14"
         },
         "brotli": {
             "hashes": [
@@ -898,7 +898,7 @@
                 "sha256:99d4073b617d30288f569d3f13d2bd7548c3a7e4c8de87db09a9d29bb3a4a60c",
                 "sha256:dafc7639cde7f1b6e1acc0f457842a83e722ccca8eef5270af2d74792619a89f"
             ],
-            "markers": "python_version < '3.7'",
+            "markers": "python_version < '3.8'",
             "version": "==3.7.4.3"
         },
         "tzlocal": {
@@ -1270,10 +1270,10 @@
         },
         "rope": {
             "hashes": [
-                "sha256:658ad6705f43dcf3d6df379da9486529cf30e02d9ea14c5682aa80eb33b649e1"
+                "sha256:786b5c38c530d4846aa68a42604f61b4e69a493390e3ca11b88df0fbfdc3ed04"
             ],
             "index": "pypi",
-            "version": "==0.17.0"
+            "version": "==0.18.0"
         },
         "secretstorage": {
             "hashes": [
@@ -1299,10 +1299,10 @@
         },
         "tqdm": {
             "hashes": [
-                "sha256:2dd75fdb764f673b8187643496fcfbeac38348015b665878e582b152f3391cdb",
-                "sha256:93b7a6a9129fce904f6df4cf3ae7ff431d779be681a95c3344c26f3e6c09abfa"
+                "sha256:5313148c57fcca7df562187903cf9cfa30fe1df2fe0641ea6ddb8ef9e841a137",
+                "sha256:b04bbbc52a7f1e3665eaa310f34c6ebbdf058bd3f6251fd64c6ab831817121ea"
             ],
-            "version": "==4.50.0"
+            "version": "==4.50.1"
         },
         "twine": {
             "hashes": [
