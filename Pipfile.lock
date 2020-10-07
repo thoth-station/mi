@@ -173,10 +173,10 @@
         },
         "dash": {
             "hashes": [
-                "sha256:9ea4e9cb9845bf23651340e31305a38c2f2f3fb3e452b5939c9514d67b5438f3"
+                "sha256:596b20d5fdbf1dbcce2a77dc226d85a83e26aa0656c0a7a41e53cd20cc5f7a5e"
             ],
             "index": "pypi",
-            "version": "==1.16.2"
+            "version": "==1.16.3"
         },
         "dash-core-components": {
             "hashes": [
