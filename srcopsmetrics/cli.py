@@ -25,6 +25,7 @@ import click
 
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
+from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
