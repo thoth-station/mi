@@ -79,7 +79,7 @@ class KnowledgeAnalysis:
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name, idx, len(self.entity.analyse())))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(self.entity.analyse())))
 
                 self.backup = entity
                 self.entity.store(entity)
