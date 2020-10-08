@@ -23,13 +23,10 @@ from typing import List, Optional
 
 import click
 
-from srcopsmetrics.bot_knowledge import analyse_projects, visualize_project_results
+from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.processing import Processing
-from srcopsmetrics.storage import KnowledgeStorage
-from srcopsmetrics.utils import remove_previously_processed
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -113,33 +110,18 @@ def cli(
         tupled_repos = [(lambda x: (x[0], x[1]))(repo.split("/")) for repo in repos]
         analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities)
 
-        for repo in repos:
-            remove_previously_processed(repo)
-
     for project in repos:
         os.environ["PROJECT"] = project
 
-        if process_knowledge:
-            remove_previously_processed(project)
-            issues = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.ISSUE.value
-            )
-            prs = KnowledgeStorage(is_local=is_local).load_previous_knowledge(
-                project_name=project, knowledge_type=EntityTypeEnum.PULL_REQUEST.value
-            )
-            Processing(issues=issues, pull_requests=prs).regenerate()
-
         if visualize_statistics:
-            visualize_project_results(project=project, is_local=is_local)
-
+            raise NotImplementedError
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if visualize_statistics and repository is not None:
-        visualize_project_results(project=repository, is_local=is_local)
+        raise NotImplementedError
     elif visualize_statistics and organization is not None:
-        # TODO
         raise NotImplementedError
 
 

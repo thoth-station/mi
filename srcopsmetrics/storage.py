@@ -102,6 +102,14 @@ class KnowledgeStorage:
         _LOGGER.debug("Use %s for knowledge loading and storing." % ("local" if is_local else "Ceph"))
         _LOGGER.debug("Use %s as a main path for storage.", self.main)
 
+    def get_ceph_store(self) -> CephStore:
+        """Establish a connection to the CEPH."""
+        s3 = CephStore(
+            key_id=self._KEY_ID, secret_key=self._SECRET_KEY, prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET
+        )
+        s3.connect()
+        return s3
+
     def save_knowledge(self, file_path: Path, data: Dict[str, Any]):
         """Save collected knowledge as json.
 
@@ -126,14 +134,6 @@ class KnowledgeStorage:
             with open(file_path, "w") as f:
                 json.dump(results, f)
             _LOGGER.info("Saved locally at %s" % file_path)
-
-    def get_ceph_store(self) -> CephStore:
-        """Establish a connection to the CEPH."""
-        s3 = CephStore(
-            key_id=self._KEY_ID, secret_key=self._SECRET_KEY, prefix=self._PREFIX, host=self._HOST, bucket=self._BUCKET
-        )
-        s3.connect()
-        return s3
 
     def load_previous_knowledge(
         self, project_name: str = None, knowledge_type: str = None, file_path: Optional[Path] = None
@@ -180,15 +180,14 @@ class KnowledgeStorage:
             return None
         with open(file_path, "r") as f:
             data = json.load(f)
-            results = data["results"]
-        return results
+        return data
 
     def load_remotely(self, file_path: Path) -> Optional[Dict[str, Any]]:
         """Load knowledge file from Ceph storage."""
         _LOGGER.info("Loading knowledge from Ceph")
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
-            return self.get_ceph_store().retrieve_document(ceph_filename)["results"]
+            return self.get_ceph_store().retrieve_document(ceph_filename)
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
             return None

@@ -23,7 +23,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from srcopsmetrics.entity_schema import Schemas
+
+from srcopsmetrics.entities import Issue, PullRequest
 from srcopsmetrics.storage import ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 
@@ -33,14 +34,14 @@ _LOGGER = logging.getLogger(__name__)
 class Processing:
     """Pre processing functions for entity extracted."""
 
-    def __init__(self, issues: Schemas.Issues, pull_requests: Schemas.PullRequests):
+    def __init__(self, issues, pull_requests):
         """Initialize with issues and pull requests knowledge.
 
         If any of the entities is not specified, the behaviour
         of corresponding process function is undefined.
         """
-        self.issues = issues
-        self.pull_requests = pull_requests
+        self.issues = Issue.entities_schema(issues)
+        self.pull_requests = PullRequest.entities_schema(pull_requests)
 
     def regenerate(self):
         """Process stored knowledge and save it."""
