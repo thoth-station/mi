@@ -24,7 +24,7 @@ from pathlib import Path
 from pkgutil import iter_modules
 from typing import List, Optional, Tuple
 
-from srcopsmetrics.entities import Entity
+from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
 from srcopsmetrics.exceptions import NotKnownEntities
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.utils import check_directory
@@ -34,8 +34,6 @@ import inspect
 _LOGGER = logging.getLogger(__name__)
 
 github_knowledge = GitHubKnowledge()
-
-NOT_FOR_INSPECTION = {"interface", "template", "tools"}
 
 
 def get_all_entities():
