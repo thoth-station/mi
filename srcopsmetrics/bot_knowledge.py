@@ -24,7 +24,7 @@ from pathlib import Path
 from pkgutil import iter_modules
 from typing import List, Optional, Tuple
 
-from srcopsmetrics.entities import Entity
+from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
 from srcopsmetrics.exceptions import NotKnownEntities
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.utils import check_directory
@@ -36,6 +36,22 @@ _LOGGER = logging.getLogger(__name__)
 github_knowledge = GitHubKnowledge()
 
 NOT_FOR_INSPECTION = {"interface", "template", "tools"}
+
+
+def get_all_entities():
+    """Return all of the currently implemented entities."""
+    entities_classes = []
+
+    for pkg in iter_modules([os.path.abspath("./srcopsmetrics/entities/")]):
+        if pkg.name in NOT_FOR_INSPECTION:
+            continue
+
+        module = import_module(f"srcopsmetrics.entities.{pkg.name}")
+        for name, klazz in inspect.getmembers(module, inspect.isclass):
+            if name != "Entity" and issubclass(klazz, Entity):
+                entities_classes.append(klazz)
+
+    return entities_classes
 
 
 def get_all_entities():

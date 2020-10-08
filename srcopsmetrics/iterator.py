@@ -63,7 +63,7 @@ class KnowledgeAnalysis:
     def run(self):
         """Iterate through entities of given repository and accumulate them."""
         github = Github(self._GITHUB_ACCESS_TOKEN)
-        _LOGGER.info("-------------%s Analysis-------------" % self.entity.name)
+        _LOGGER.info("-------------%s Analysis-------------" % self.entity.name())
 
         try:
             for idx, entity in enumerate(self.entity.analyse(), 1):

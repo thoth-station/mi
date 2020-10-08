@@ -45,13 +45,13 @@ class Entity(metaclass=ABCMeta):
         """
         self.repository = repository
 
-    @property
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         """Entity name as defined in GitHub API documentation.
 
         If this entity is not part of GitHub API, its name is up to contributor.
         """
-        return type(self).__name__
+        return cls.__name__
 
     @property
     def filename(self) -> str:
@@ -140,11 +140,11 @@ class Entity(metaclass=ABCMeta):
         )
 
         if data is None:
-            _LOGGER.info("No previous knowledge of type %s found" % self.name)
+            _LOGGER.info("No previous knowledge of type %s found" % self.name())
             return {}
 
         _LOGGER.info(
-            "Found previous %s knowledge for %s with %d records" % (self.name, self.repository.full_name, len(data))
+            "Found previous %s knowledge for %s with %d records" % (self.name(), self.repository.full_name, len(data))
         )
         return data
 
