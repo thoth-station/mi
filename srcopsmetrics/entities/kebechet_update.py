@@ -117,4 +117,4 @@ class KebechetUpdateManager(Entity):
         for comment in issue.get_comments():
             if comment.user.login in BOTS:
                 responses.append(comment.created_at.timestamp())
-        return responses
+        return responses if len(responses) != 0 else [None]
