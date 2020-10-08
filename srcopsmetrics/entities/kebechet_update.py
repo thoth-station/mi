@@ -66,14 +66,14 @@ class KebechetUpdateManager(Entity):
 
     def store(self, update_request: Issue):
         """Override :func:`~Entity.store`."""
-        first = self.__class__.get_bot_responses(update_request)[0].timestamp(),
-        last = self.__class__.get_bot_responses(update_request)[-1].timestamp(),
+        _LOGGER.info("ID: %s", update_request.number)
+        responses = self.__class__.get_bot_responses(update_request)
 
         self.stored[update_request.number] = {
-            "request_type": self.__class__.get_request_type(update_request),  # manual, automatic, failed
+            "request_type": self.__class__.get_request_type(update_request),
             "request_created": update_request.created_at.timestamp(),
-            "bot_first_response": first,
-            "bot_last_response": last,
+            "bot_first_response": responses[0],
+            "bot_last_response": responses[-1],
             "request_closed:": update_request.closed_at.timestamp(),
             "request_state": update_request.state,
         }
@@ -116,5 +116,5 @@ class KebechetUpdateManager(Entity):
         responses = []
         for comment in issue.get_comments():
             if comment.user.login in BOTS:
-                responses.append(comment.created_at)
+                responses.append(comment.created_at.timestamp())
         return responses
