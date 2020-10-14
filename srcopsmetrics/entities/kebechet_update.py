@@ -18,9 +18,10 @@
 """ThothYaml entity class."""
 
 import logging
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from github.Issue import Issue
+from github.PaginatedList import PaginatedList
 from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
@@ -60,7 +61,7 @@ class KebechetUpdateManager(Entity):
         self.stored = {}
         self.repository = repository
 
-    def analyse(self) -> List[Issue]:
+    def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
         return self.get_only_new_entities()
 
@@ -111,7 +112,7 @@ class KebechetUpdateManager(Entity):
         return "not_recognized"
 
     @staticmethod
-    def get_bot_responses(issue: Issue) -> List[int]:
+    def get_bot_responses(issue: Issue) -> List[Optional[int]]:
         """Get timestamps for all bot comments in issue."""
         responses = []
         for comment in issue.get_comments():
