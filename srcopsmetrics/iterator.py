@@ -69,7 +69,7 @@ class KnowledgeAnalysis:
             for idx, entity in enumerate(self.entity.analyse(), 1):
                 self.knowledge_updated = True
 
-                remaining = github.rate_limiting[0]
+                remaining = github.get_rate_limit().core
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
                     wait_time = github.rate_limiting_resettime - int(datetime.now().timestamp())
