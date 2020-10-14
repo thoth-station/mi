@@ -40,10 +40,10 @@ thoth-station/mi - Meta-information Indicators
                             |                 |                                                        |                   |
                             |                 |      Entities Analysis   +------->      Knowledge      |                   |
                             +---------------->-+                                                      +--------------------+
-                                            +---------+----------------+----------+------------------+
-                                            |  Issues |  Pull Requests |  Readmes |  etc...........  |
-                                            |         |                |          |                  |
-                                            +---------+----------------+----------+------------------+
+                                              +---------+----------------+----------+------------------+
+                                              |  Issues |  Pull Requests |  Readmes |  etc...........  |
+                                              |         |                |          |                  |
+                                              +---------+----------------+----------+------------------+
 
 
 This repository contains functions to store knowledge for the bot,
