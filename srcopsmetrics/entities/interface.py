@@ -43,6 +43,7 @@ class Entity(metaclass=ABCMeta):
 
         Every entity should be initialized just with the repository name.
         """
+        self.stored = self.entities_schema()({})
         self.repository = repository
 
     @classmethod
