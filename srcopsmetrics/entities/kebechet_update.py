@@ -22,7 +22,6 @@ from typing import List, Optional
 
 from github.Issue import Issue
 from github.PaginatedList import PaginatedList
-from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
