@@ -29,8 +29,8 @@ from srcopsmetrics.entities import Entity
 _LOGGER = logging.getLogger(__name__)
 
 
-class ContentFile(Entity):
-    """GitHub ContentFile entity."""
+class ReadMe(Entity):
+    """GitHub ReadMe entity."""
 
     entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "license": str, "size": int,})
 
@@ -41,7 +41,6 @@ class ContentFile(Entity):
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
-        # TODO: Extend to all types of files. Currently only README are considered.
         # TODO: recursive Readme analysis - is that a good idea?
 
         if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
