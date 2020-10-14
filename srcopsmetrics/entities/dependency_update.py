@@ -35,11 +35,6 @@ class DependencyUpdate(Entity):
 
     entity_schema = Schema({"user": str, "date": int})
 
-    def __init__(self, repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = {}
-        self.repository = repository
-
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
         if self.previous_knowledge is None:

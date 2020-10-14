@@ -18,7 +18,7 @@
 """ThothYaml entity class."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from github.Issue import Issue
 from github.PaginatedList import PaginatedList
@@ -55,11 +55,6 @@ class KebechetUpdateManager(Entity):
             "request_state": str,
         }
     )
-
-    def __init__(self, repository: Repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = {}
-        self.repository = repository
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
