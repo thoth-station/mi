@@ -49,6 +49,9 @@ def get_all_entities():
             if name != "Entity" and issubclass(klazz, Entity):
                 entities_classes.append(klazz)
 
+    _LOGGER.info("########################")
+    _LOGGER.info("Detected entities:\n%s", "\n".join([e.name() for e in entities_classes]))
+    _LOGGER.info("########################")
     return entities_classes
 
 
