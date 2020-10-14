@@ -26,13 +26,11 @@ from srcopsmetrics.entities import Entity
 
 
 class DependencyUpdate(Entity):
-    """Template entity.
+    """Python Dependency update entity.
 
-    Serves as a skelet for implementing a new entity so the contributor
-    does not have to spend time copying everything from interface class.
-
-    For further inspiration look at other implemented entities like Issue
-    or PullRequest.
+    Any change (git commit) that was made into the Pipfile.lock file
+    is considered a dependency update. It could be either manual (by
+    contributor commiting to the file) or automatic (done by bot).
     """
 
     entity_schema = Schema({"user": str, "date": int})
