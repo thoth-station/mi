@@ -17,35 +17,50 @@
 
 """Release entity class."""
 
-from typing import Any, List
+import logging
+from typing import Any, List, Union
 
 from github.GitRelease import GitRelease
 from github.GitTag import GitTag
+from semver import VersionInfo
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Release(Entity):
     """Release entity."""
 
-    entity_schema = Schema(
-        {
-            "release_date": int,
-            "note": str,
-        })
+    entity_schema = Schema({"release_date": int, "note": str,})
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
         return [tag for tag in self.get_raw_github_data() if tag.name not in self.previous_knowledge]
 
-    def store(self, release: GitTag):
+    def store(self, release: Union[GitTag, GitRelease]):
         """Override :func:`~Entity.store`."""
-        release_pull_request = release.commit.get_pulls()[0]
+        is_tag = issubclass(release, GitTag)
 
-        self.stored[release.name] = {
-            "release_date": release_pull_request.closed_at,
-            "note": release_pull_request.body,
+        version_name = release.name if is_tag else release.title
+        name = version_name[1:] if len(version_name) > 0 and version_name[0] == "v" else version_name
+
+        try:
+            version = VersionInfo.parse(name)
+        except ValueError:
+            _LOGGER.info("Found tag is not a valid release, skipping")
+            return None
+        return version
+
+        self.stored[release.sha] = {
+            "major": version.major,
+            "minor": version.minor,
+            "patch": version.patch,
+            "prerelease": version.prerelease,
+            "build": version.build,
+            "release_date": release.commit.get_pulls()[0].closed_at if is_tag else release.created_at,
+            "note": release.commit.get_pulls()[0].body if is_tag else release.body,
         }
 
     def stored_entities(self):
@@ -54,4 +69,7 @@ class Release(Entity):
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_tags()
+        releases = [r for r in self.repository.get_releases()]
+        releases.extend([t for t in self.get_tags()])
+
+        return releases
