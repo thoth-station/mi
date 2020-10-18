@@ -11,6 +11,7 @@ pandas = "*"
 thoth-storages = "*"
 plotly = "*"
 dash = "*"
+semver = "*"
 
 [dev-packages]
 pytest = "*"
