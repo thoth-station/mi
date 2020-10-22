@@ -51,7 +51,7 @@ class Release(Entity):
             version = VersionInfo.parse(name)
         except ValueError:
             _LOGGER.info("Found tag is not a valid release, skipping")
-            return None
+            return
 
         self.stored[release.commit.sha] = {
             "major": version.major,
