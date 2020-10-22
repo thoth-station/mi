@@ -18,6 +18,7 @@
 """Release entity class."""
 
 import logging
+from datetime import datetime
 from typing import Any, List, Union
 
 from github.GitRelease import GitRelease
@@ -58,7 +59,7 @@ class Release(Entity):
             "patch": version.patch,
             "prerelease": version.prerelease,
             "build": version.build,
-            "release_date": self.__class__.get_tag_release_date(release) if is_tag else release.created_at,
+            "release_date": self.__class__.get_tag_release_date(release) if is_tag else release.created_at.timestamp(),
             "note": self.__class__.get_tag_release_note(release) if is_tag else release.body,
         }
 
@@ -66,9 +67,9 @@ class Release(Entity):
     def get_tag_release_date(release_tag: Tag):
         """Get release date from regular Tag."""
         if release_tag.commit.get_pulls().totalCount == 0:
-            return release_tag.commit.last_modified
+            return datetime.strptime(release_tag.commit.last_modified, "%a, %d %b %Y %X %Z").timestamp()
 
-        return release_tag.commit.get_pulls()[0].closed_at
+        return release_tag.commit.get_pulls()[0].closed_at.timestamp()
 
     @staticmethod
     def get_tag_release_note(release_tag: Tag):
