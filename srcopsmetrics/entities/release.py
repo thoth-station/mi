@@ -21,7 +21,7 @@ import logging
 from typing import Any, List, Union
 
 from github.GitRelease import GitRelease
-from github.GitTag import GitTag
+from github.Tag import Tag
 from semver import VersionInfo
 from voluptuous.schema_builder import Schema
 
@@ -37,13 +37,13 @@ class Release(Entity):
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
-        return [tag for tag in self.get_raw_github_data() if tag.name not in self.previous_knowledge]
+        return [tag for tag in self.get_raw_github_data() if tag.commit.sha not in self.previous_knowledge]
 
-    def store(self, release: Union[GitTag, GitRelease]):
+    def store(self, release: Union[Tag, GitRelease]):
         """Override :func:`~Entity.store`."""
-        is_tag = issubclass(release, GitTag)
+        is_tag = issubclass(Tag, type(release))
 
-        version_name = release.name if is_tag else release.title
+        version_name = release.name
         name = version_name[1:] if len(version_name) > 0 and version_name[0] == "v" else version_name
 
         try:
@@ -51,17 +51,32 @@ class Release(Entity):
         except ValueError:
             _LOGGER.info("Found tag is not a valid release, skipping")
             return None
-        return version
 
-        self.stored[release.sha] = {
+        self.stored[release.commit.sha] = {
             "major": version.major,
             "minor": version.minor,
             "patch": version.patch,
             "prerelease": version.prerelease,
             "build": version.build,
-            "release_date": release.commit.get_pulls()[0].closed_at if is_tag else release.created_at,
-            "note": release.commit.get_pulls()[0].body if is_tag else release.body,
+            "release_date": self.__class__.get_tag_release_date(release) if is_tag else release.created_at,
+            "note": self.__class__.get_tag_release_note(release) if is_tag else release.body,
         }
+
+    @staticmethod
+    def get_tag_release_date(release_tag: Tag):
+        """Get release date from regular Tag."""
+        if release_tag.commit.get_pulls().totalCount == 0:
+            return release_tag.commit.last_modified
+
+        return release_tag.commit.get_pulls()[0].closed_at
+
+    @staticmethod
+    def get_tag_release_note(release_tag: Tag):
+        """Get release note from regular Tag."""
+        if release_tag.commit.get_pulls().totalCount == 0:
+            return release_tag.commit.commit.message
+
+        return release_tag.commit.get_pulls()[0].body
 
     def stored_entities(self):
         """Override :func:`~Entity.stored_entities`."""
@@ -70,6 +85,6 @@ class Release(Entity):
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
         releases = [r for r in self.repository.get_releases()]
-        releases.extend([t for t in self.get_tags()])
+        releases.extend([t for t in self.repository.get_tags()])
 
         return releases
