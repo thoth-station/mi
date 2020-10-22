@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Template entity class."""
+"""Stargazer entity class."""
 
 from typing import Any, List
 
@@ -25,15 +25,8 @@ from voluptuous.schema_builder import Schema
 from srcopsmetrics.entities import Entity
 
 
-class Star(Entity):
-    """Template entity.
-
-    Serves as a skelet for implementing a new entity so the contributor
-    does not have to spend time copying everything from interface class.
-
-    For further inspiration look at other implemented entities like Issue
-    or PullRequest.
-    """
+class Stargazer(Entity):
+    """Repository Stargazer entity."""
 
     entity_schema = Schema({"date": int})
 
