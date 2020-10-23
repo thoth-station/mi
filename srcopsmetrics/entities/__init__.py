@@ -17,11 +17,5 @@
 
 """Entities imports."""
 
-from .interface import Entity
-from .content_file import ContentFile
-from .issue import Issue
-from .pull_request import PullRequest
-
 NOT_FOR_INSPECTION = {"interface", "template", "tools"}
 
-__all__ = ["Entity", "ContentFile", "Issue", "PullRequest"]
