@@ -16,6 +16,6 @@
 # along with SrcOpsMetrics.  If not, see <http://www.gnu.org/licenses/>.
 
 """Entities imports."""
+from .interface import Entity
 
 NOT_FOR_INSPECTION = {"interface", "template", "tools"}
-
