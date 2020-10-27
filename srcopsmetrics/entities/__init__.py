@@ -18,4 +18,6 @@
 """Entities imports."""
 from .interface import Entity
 
+__all__ = ["Entity"]
+
 NOT_FOR_INSPECTION = {"interface", "template", "tools"}
