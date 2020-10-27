@@ -19,7 +19,7 @@
 
 from typing import Any, List
 
-from github.Stargazer import Stargazer
+from github.Stargazer import Stargazer as GithubStargazer
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
@@ -33,7 +33,7 @@ class Stargazer(Entity):
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
 
-    def store(self, stargazer: Stargazer):
+    def store(self, stargazer: GithubStargazer):
         """Override :func:`~Entity.store`."""
         self.stored[stargazer.user.login] = {
             "date": stargazer.starred_at.timestamp(),
