@@ -20,7 +20,7 @@
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from github import Github
 from github.GithubException import GithubException
@@ -69,17 +69,21 @@ class KnowledgeAnalysis:
             for idx, entity in enumerate(self.entity.analyse(), 1):
                 self.knowledge_updated = True
 
-                remaining = github.rate_limiting[0]
+                remaining = github.get_rate_limit().core.remaining
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
-                    wait_time = github.rate_limiting_resettime - int(datetime.now().timestamp())
-                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
-                    time.sleep(wait_time)
+                    gh_time = github.get_rate_limit().core.reset
+                    local_time = datetime.now(tz=timezone.utc)
+
+                    wait_time = gh_time - local_time.replace(tzinfo=None)
+
+                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
+                    time.sleep(wait_time.seconds)
 
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name, idx, len(self.entity.analyse())))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(self.entity.analyse())))
 
                 self.backup = entity
                 self.entity.store(entity)
