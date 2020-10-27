@@ -9,6 +9,7 @@ pygithub = "*"
 matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
+semver = "*"
 
 [dev-packages]
 pytest = "*"
