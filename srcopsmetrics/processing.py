@@ -24,7 +24,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
-from srcopsmetrics.entities import Issue, PullRequest
+from srcopsmetrics.entities.issue import Issue
+from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.storage import ProcessedKnowledge
 from srcopsmetrics.utils import convert_num2label, convert_score2num
 
