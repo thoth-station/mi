@@ -118,6 +118,7 @@ class Entity(metaclass=ABCMeta):
             file_path = self.file_path
 
         _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(self.stored_entities())))
+        self.entities_schema()(self.stored_entities()) # check for entities schema
 
         if not is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")

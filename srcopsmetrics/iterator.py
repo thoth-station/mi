@@ -20,6 +20,7 @@
 import logging
 import os
 import time
+import copy
 from datetime import datetime, timezone
 
 from github import Github
@@ -48,7 +49,6 @@ class KnowledgeAnalysis:
     ):
         """Initialize with previous and new knowledge of an entity."""
         self.entity = entity
-        self.backup = None
         self.knowledge_updated = False
 
     def __enter__(self):
@@ -85,19 +85,20 @@ class KnowledgeAnalysis:
 
                 _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(self.entity.analyse())))
 
-                self.backup = entity
+                backup = copy.deepcopy(self.entity.stored_entities())
                 self.entity.store(entity)
 
         except (GithubException, KeyboardInterrupt):
-            _LOGGER.info("Problem occured, saving cached knowledge")
+            _LOGGER.info("Problem occured, checking knowledge consistency")
             try:
-                self.entity.entities_schema(self.accumulator)
-                return self.entity.stored_entities()
+                self.entity.entities_schema()(self.entity.stored_entities())
+                _LOGGER.info("Knowledge consistent")
             except MultipleInvalid:
-                self.entity.entities_schema(self.accumulator_backup)
-                return self.backup.stored_entities()
+                _LOGGER.info("Knowledge inconsistent, restoring cached knowledge")
+                self.entity.entities_schema()(self.accumulator_backup)
+                self.entity = backup
+                _LOGGER("Knowledge restored")
 
-        # return self.entity.stored_entities()
 
     def save_analysed_knowledge(self):
         """Save analysed knowledge if new information was extracted."""

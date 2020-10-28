@@ -51,7 +51,7 @@ class DependencyUpdate(Entity):
 
         self.stored[commit.sha] = {
             "user": author,
-            "date": date.timestamp(),
+            "date": int(date.timestamp()),
         }
 
     def stored_entities(self):
