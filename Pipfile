@@ -9,8 +9,6 @@ pygithub = "*"
 matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
-plotly = "*"
-dash = "*"
 semver = "*"
 
 [dev-packages]
