@@ -23,7 +23,6 @@ from typing import Any, Dict, Generator, List, Optional
 
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
-from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics.entities import Entity
@@ -60,11 +59,6 @@ class PullRequest(Entity):
         }
     )
 
-    def __init__(self, repository: Repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = PullRequest.entities_schema()
-        self.repository = repository
-
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
         return self.get_only_new_entities()
@@ -92,7 +86,7 @@ class PullRequest(Entity):
             lines_changes = pull_request.additions + pull_request.deletions
             pull_request_size = GitHubKnowledge.assign_pull_request_size(lines_changes=lines_changes)
 
-        self.stored[str(pull_request.number)] = {
+        self.stored_entities[str(pull_request.number)] = {
             "size": pull_request_size,
             "labels": GitHubKnowledge.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
@@ -106,10 +100,6 @@ class PullRequest(Entity):
             "reviews": self.extract_pull_request_reviews(pull_request),
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

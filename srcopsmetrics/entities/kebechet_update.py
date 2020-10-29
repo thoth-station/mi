@@ -64,7 +64,7 @@ class KebechetUpdateManager(Entity):
         _LOGGER.info("ID: %s", update_request.number)
         responses = self.__class__.get_bot_responses(update_request)
 
-        self.stored[update_request.number] = {
+        self.stored_entities[update_request.number] = {
             "request_type": self.__class__.get_request_type(update_request),
             "request_created": update_request.created_at.timestamp(),
             "bot_first_response": responses[0],
@@ -72,10 +72,6 @@ class KebechetUpdateManager(Entity):
             "request_closed:": update_request.closed_at.timestamp(),
             "request_state": update_request.state,
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

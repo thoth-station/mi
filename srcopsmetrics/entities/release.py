@@ -53,7 +53,7 @@ class Release(Entity):
             _LOGGER.info("Found tag is not a valid release, skipping")
             return
 
-        self.stored[release.commit.sha] = {
+        self.stored_entities[release.commit.sha] = {
             "major": version.major,
             "minor": version.minor,
             "patch": version.patch,
@@ -78,10 +78,6 @@ class Release(Entity):
             return release_tag.commit.commit.message
 
         return release_tag.commit.get_pulls()[0].body
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
