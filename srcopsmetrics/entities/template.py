@@ -36,11 +36,6 @@ class TemplateEntity(Entity):
 
     entity_schema = Schema({"extracted_information": Any})
 
-    def __init__(self, repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = {}
-        self.repository = repository
-
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
 
@@ -49,10 +44,6 @@ class TemplateEntity(Entity):
         self.stored["key"] = {
             "extracted_information": github_entity.attribute,
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

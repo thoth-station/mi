@@ -43,7 +43,8 @@ class Entity(metaclass=ABCMeta):
 
         Every entity should be initialized just with the repository name.
         """
-        self.stored = self.entities_schema()({})
+        self.stored_entities = self.entities_schema()({})
+        self.previous_knowledge = self.entities_schema()({})
         self.repository = repository
 
     @classmethod
@@ -89,13 +90,9 @@ class Entity(metaclass=ABCMeta):
         All the stored entities are then retrieved by stored_entities function.
         """
 
-    @abstractmethod
-    def stored_entities(self) -> Collection:
-        """Return analysed entities."""
-
     def init_previous_knowledge(self, is_local: bool = False):
         """Every entity must have a previous knowledge initialization method."""
-        self.previous_knowledge = self.load_previous_knowledge()
+        self.previous_knowledge = self.load_previous_knowledge(is_local=is_local)
 
     @property
     def file_path(self) -> Path:
@@ -109,7 +106,7 @@ class Entity(metaclass=ABCMeta):
 
     def save_knowledge(self, file_path: Path = None, is_local: bool = False):
         """Save collected knowledge as json."""
-        if self.stored_entities() is None or len(self.stored_entities()) == 0:
+        if self.stored_entities is None or len(self.stored_entities) == 0:
             _LOGGER.info("Nothing to store.")
             _LOGGER.info("\n")
             return
@@ -117,16 +114,21 @@ class Entity(metaclass=ABCMeta):
         if not file_path:
             file_path = self.file_path
 
-        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(self.stored_entities())))
+        self.entities_schema()(self.stored_entities)  # check for entities schema
+        to_save = {**self.previous_knowledge, **self.stored_entities}
+
+        _LOGGER.info("Knowledge file %s", (os.path.basename(file_path)))
+        _LOGGER.info("new %d entities", len(self.stored_entities))
+        _LOGGER.info("(overall %d entities)", len(to_save))
 
         if not is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = KnowledgeStorage().get_ceph_store()
-            s3.store_document(self.stored_entities(), ceph_filename)
+            s3.store_document(to_save, ceph_filename)
             _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
-                json.dump(self.stored_entities(), f)
+                json.dump(to_save, f)
             _LOGGER.info("Saved locally at %s" % file_path)
 
     def load_previous_knowledge(self, is_local: bool = False) -> Dict[str, Any]:

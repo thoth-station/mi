@@ -20,6 +20,7 @@
 import logging
 import os
 import time
+import copy
 from datetime import datetime, timezone
 
 from github import Github
@@ -48,8 +49,8 @@ class KnowledgeAnalysis:
     ):
         """Initialize with previous and new knowledge of an entity."""
         self.entity = entity
-        self.backup = None
         self.knowledge_updated = False
+        self.is_local = is_local
 
     def __enter__(self):
         """Context manager enter method."""
@@ -85,23 +86,23 @@ class KnowledgeAnalysis:
 
                 _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(self.entity.analyse())))
 
-                self.backup = entity
+                backup = copy.deepcopy(self.entity.stored_entities)
                 self.entity.store(entity)
 
         except (GithubException, KeyboardInterrupt):
-            _LOGGER.info("Problem occured, saving cached knowledge")
+            _LOGGER.info("Problem occured, checking knowledge consistency")
             try:
-                self.entity.entities_schema(self.accumulator)
-                return self.entity.stored_entities()
+                self.entity.entities_schema()(self.entity.stored_entities)
+                _LOGGER.info("Knowledge consistent")
             except MultipleInvalid:
-                self.entity.entities_schema(self.accumulator_backup)
-                return self.backup.stored_entities()
-
-        # return self.entity.stored_entities()
+                _LOGGER.info("Knowledge inconsistent, restoring cached knowledge")
+                self.entity.entities_schema()(backup)
+                self.entity.stored_entities = backup
+                _LOGGER.info("Knowledge restored")
 
     def save_analysed_knowledge(self):
         """Save analysed knowledge if new information was extracted."""
         if self.knowledge_updated:
-            self.entity.save_knowledge()
+            self.entity.save_knowledge(is_local=self.is_local)
         else:
             _LOGGER.info("Nothing to store, no update operation needed")

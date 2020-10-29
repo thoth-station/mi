@@ -45,12 +45,6 @@ class Issue(Entity):
         }
     )
 
-    def __init__(self, repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = {}
-        self.repository = repository
-        self.previous_knowledge = None
-
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
         return self.get_only_new_entities()
@@ -62,7 +56,7 @@ class Issue(Entity):
 
         labels = [label.name for label in issue.get_labels()]
 
-        self.stored[str(issue.number)] = {
+        self.stored_entities[str(issue.number)] = {
             "created_by": issue.user.login,
             "created_at": int(issue.created_at.timestamp()),
             "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
@@ -74,10 +68,6 @@ class Issue(Entity):
     def previous_knowledge(self):
         """Override :func:`~Entity.previous_knowledge`."""
         return self.previous_knowledge
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
