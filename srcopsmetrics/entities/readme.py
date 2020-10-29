@@ -57,10 +57,6 @@ class ReadMe(Entity):
             "size": content_file.size,
         }
 
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
-
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
         return self.repository.get_readme()
