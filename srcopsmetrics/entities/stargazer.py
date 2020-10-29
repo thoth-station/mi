@@ -35,13 +35,9 @@ class Stargazer(Entity):
 
     def store(self, stargazer: GithubStargazer):
         """Override :func:`~Entity.store`."""
-        self.stored[stargazer.user.login] = {
+        self.stored_entities[stargazer.user.login] = {
             "date": stargazer.starred_at.timestamp(),
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

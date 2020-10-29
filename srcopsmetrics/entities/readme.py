@@ -34,11 +34,6 @@ class ReadMe(Entity):
 
     entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "license": str, "size": int,})
 
-    def __init__(self, repository):
-        """Initialize with repo and prev knowledge."""
-        self.stored = {}
-        self.repository = repository
-
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
         # TODO: recursive Readme analysis - is that a good idea?
@@ -53,7 +48,7 @@ class ReadMe(Entity):
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
-        self.stored["readme"] = {
+        self.stored_entities[content_file.path] = {
             "name": content_file.name,
             "path": content_file.path,
             "content": content_file.decoded_content.decode("utf-8"),
@@ -61,10 +56,6 @@ class ReadMe(Entity):
             "license": content_file.license,
             "size": content_file.size,
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

@@ -49,14 +49,10 @@ class DependencyUpdate(Entity):
         author = commit.author.login if commit.author is not None else git_commit.author.email
         date = git_commit.author.date
 
-        self.stored[commit.sha] = {
+        self.stored_entities[commit.sha] = {
             "user": author,
-            "date": date.timestamp(),
+            "date": int(date.timestamp()),
         }
-
-    def stored_entities(self):
-        """Override :func:`~Entity.stored_entities`."""
-        return self.stored
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
