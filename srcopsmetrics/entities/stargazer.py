@@ -28,16 +28,15 @@ from srcopsmetrics.entities import Entity
 class Stargazer(Entity):
     """Repository Stargazer entity."""
 
-    entity_schema = Schema({"date": int})
+    entity_schema = Schema(int)
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
+        return [s for s in self.get_raw_github_data() if s.user.login not in self.previous_knowledge]
 
     def store(self, stargazer: GithubStargazer):
         """Override :func:`~Entity.store`."""
-        self.stored_entities[stargazer.user.login] = {
-            "date": stargazer.starred_at.timestamp(),
-        }
+        self.stored_entities[stargazer.user.login] = int(stargazer.starred_at.timestamp())
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
