@@ -17,7 +17,8 @@
 
 """Fork entity class."""
 
-from github.PaginatedList import PaginatedList
+from typing import List
+
 from github.Repository import Repository
 from voluptuous.schema_builder import Schema
 
@@ -29,14 +30,14 @@ class Fork(Entity):
 
     entity_schema = Schema(int)
 
-    def analyse(self) -> PaginatedList[Repository]:
+    def analyse(self) -> List[Repository]:
         """Override :func:`~Entity.analyse`."""
-        return [repo for repo in self.get_raw_github_data() if repo.fullname not in self.previous_knowledge]
+        return [repo for repo in self.get_raw_github_data() if repo.owner.login not in self.previous_knowledge.keys()]
 
     def store(self, fork: Repository):
         """Override :func:`~Entity.store`."""
-        self.stored_entities[fork.full_name] = int(fork.created_at.timestamp())
+        self.stored_entities[fork.owner.login] = int(fork.created_at.timestamp())
 
-    def get_raw_github_data(self) -> PaginatedList[Repository]:
+    def get_raw_github_data(self) -> List[Repository]:
         """Override :func:`~Entity.get_raw_github_data`."""
         return self.repository.get_forks()
