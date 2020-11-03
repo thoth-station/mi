@@ -17,17 +17,12 @@
 
 """Template entity class."""
 
-from typing import (
-    Any,
-    List)
+from typing import Any, List
 
-from github.StatsCodeFrequency import \
-    StatsCodeFrequency
-from voluptuous.schema_builder import \
-    Schema
+from github.StatsCodeFrequency import StatsCodeFrequency
+from voluptuous.schema_builder import Schema
 
-from srcopsmetrics.entities import \
-    Entity
+from srcopsmetrics.entities import Entity
 
 
 class CodeFrequency(Entity):
