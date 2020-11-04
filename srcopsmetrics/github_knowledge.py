@@ -181,8 +181,8 @@ class GitHubKnowledge:
 
         """
         entity = entity_cls(repository=github_repo)
-        entity.init_previous_knowledge(is_local=is_local)
 
-        with KnowledgeAnalysis(entity=entity) as analysis:
+        with KnowledgeAnalysis(entity=entity, is_local=is_local) as analysis:
+            analysis.init_previous_knowledge()
             analysis.run()
             analysis.save_analysed_knowledge()

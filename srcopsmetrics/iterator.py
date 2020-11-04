@@ -45,7 +45,7 @@ class KnowledgeAnalysis:
     _BUCKET = os.getenv("CEPH_BUCKET")
 
     def __init__(
-        self, *, entity: Entity = None, is_local: bool = False,
+        self, entity: Entity, is_local: bool = False,
     ):
         """Initialize with previous and new knowledge of an entity."""
         self.entity = entity
@@ -60,6 +60,10 @@ class KnowledgeAnalysis:
         """Context manager exit method."""
         if exc_type is not None:
             _LOGGER.info("Cached knowledge could not be saved")
+
+    def init_previous_knowledge(self, is_local: bool = False):
+        """Every entity must have a previous knowledge initialization method."""
+        self.entity.previous_knowledge = self.entity.load_previous_knowledge(is_local=self.is_local)
 
     def run(self):
         """Iterate through entities of given repository and accumulate them."""

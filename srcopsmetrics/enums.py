@@ -48,6 +48,7 @@ class StoragePath(Enum):
     DEFAULT = "./srcopsmetrics/"
     LOCATION_VAR = "KNOWLEDGE_PATH"
     KNOWLEDGE = "bot_knowledge"
-    KNOWLEDGE_PATH = DEFAULT + KNOWLEDGE
     PROCESSED = "processed"
+
+    KNOWLEDGE_PATH = DEFAULT + KNOWLEDGE
     PROCESSED_PATH = DEFAULT + PROCESSED
