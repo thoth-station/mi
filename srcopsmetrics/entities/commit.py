@@ -43,7 +43,7 @@ class Commit(Entity):
 
     def analyse(self) -> List[GithubCommit]:
         """Override :func:`~Entity.analyse`."""
-        return [c for c in self.get_raw_github_data() if c.sha not in self.previous_knowledge.keys()]
+        return [c for c in self.get_raw_github_data() if c.sha not in self.previous_knowledge]
 
     def store(self, commit: GithubCommit):
         """Override :func:`~Entity.store`."""
