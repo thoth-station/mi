@@ -66,8 +66,6 @@ class PullRequest(Entity):
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
         commits = pull_request.commits
-        # TODO: Use commits to extract information.
-        # commits = [commit for commit in pull_request.get_commits()]
 
         created_at = int(pull_request.created_at.timestamp())
         closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None
