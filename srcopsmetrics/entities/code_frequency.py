@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Template entity class."""
+"""Code frequency entity class."""
 
 from typing import Any, List
 
@@ -26,14 +26,7 @@ from srcopsmetrics.entities import Entity
 
 
 class CodeFrequency(Entity):
-    """Template entity.
-
-    Serves as a skelet for implementing a new entity so the contributor
-    does not have to spend time copying everything from interface class.
-
-    For further inspiration look at other implemented entities like Issue
-    or PullRequest.
-    """
+    """Code frequency statistics entity."""
 
     entity_schema = Schema({"additions": int, "deletions": int})
 
