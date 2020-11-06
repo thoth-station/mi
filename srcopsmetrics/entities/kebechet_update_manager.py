@@ -82,12 +82,10 @@ class KebechetUpdateManager(Entity):
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return [
-            issue for issue in self.repository.get_issues(state="closed") if self.__class__.get_request_type(issue)
-        ]
+        return [issue for issue in self.repository.get_issues(state="closed") if self.__class__.get_request_type(issue)]
 
     @staticmethod
-    def get_request_type(issue: Issue) -> str:
+    def get_request_type(issue: Issue) -> typing.Optional[str]:
         """Get the type of the update request."""
         if not issue.pull_request and issue.title == "Kebechet update":
             return "manual"
