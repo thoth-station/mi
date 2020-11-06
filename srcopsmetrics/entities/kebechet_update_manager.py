@@ -58,7 +58,7 @@ class KebechetUpdateManager(Entity):
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
-        return [i for i in self.get_only_new_entities() if i.number not in self.previous_knowledge]
+        return [i for i in self.get_raw_github_data() if i.number not in self.previous_knowledge]
 
     def store(self, update_request: Issue):
         """Override :func:`~Entity.store`."""
@@ -83,21 +83,21 @@ class KebechetUpdateManager(Entity):
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
         return [
-            issue for issue in self.repository.get_issues(state="closed") if self.__class__.is_update_request(issue)
+            issue for issue in self.repository.get_issues(state="closed") if self.__class__.get_request_type(issue)
         ]
 
     @staticmethod
     def get_request_type(issue: Issue) -> str:
         """Get the type of the update request."""
-        if not issue.pull_request:
+        if not issue.pull_request and issue.title == "Kebechet update":
             return "manual"
 
         for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
             if keyword in issue.title:
                 return request_type
 
-        _LOGGER.info(f"Update request not recognized, issue num.{issue.number}")
-        return "not_recognized"
+        _LOGGER.debug(f"Update request not recognized, issue num.{issue.number}")
+        return None
 
     @staticmethod
     def get_first_bot_response(issue: Issue) -> typing.Optional[int]:
