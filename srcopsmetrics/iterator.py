@@ -71,7 +71,8 @@ class KnowledgeAnalysis:
         _LOGGER.info("-------------%s Analysis-------------" % self.entity.name())
 
         try:
-            for idx, entity in enumerate(self.entity.analyse(), 1):
+            entities = self.entity.analyse()
+            for idx, entity in enumerate(entities, 1):
                 self.knowledge_updated = True
 
                 remaining = github.get_rate_limit().core.remaining
@@ -88,7 +89,7 @@ class KnowledgeAnalysis:
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(self.entity.analyse())))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(entities)))
 
                 backup = copy.deepcopy(self.entity.stored_entities)
                 self.entity.store(entity)
