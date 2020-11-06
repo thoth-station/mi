@@ -90,14 +90,11 @@ class Entity(metaclass=ABCMeta):
         All the stored entities are then retrieved by stored_entities function.
         """
 
-    def init_previous_knowledge(self, is_local: bool = False):
-        """Every entity must have a previous knowledge initialization method."""
-        self.previous_knowledge = self.load_previous_knowledge(is_local=is_local)
-
     @property
     def file_path(self) -> Path:
         """Get entity file path."""
-        path = Path.cwd().joinpath(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.KNOWLEDGE_PATH.value))
+        path = Path.cwd().joinpath(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value))
+        path = path.joinpath(StoragePath.KNOWLEDGE.value)
 
         project_path = path.joinpath("./" + self.repository.full_name)
         utils.check_directory(project_path)
