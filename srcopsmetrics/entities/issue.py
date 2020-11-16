@@ -61,9 +61,30 @@ class Issue(Entity):
             "created_at": int(issue.created_at.timestamp()),
             "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
-            "labels": GitHubKnowledge.get_non_standalone_labels(labels),
+            "labels": self.__class__.get_labels(issue),
             "interactions": GitHubKnowledge.get_interactions(issue.get_comments()),
         }
+
+    @staticmethod
+    def get_labels(issue: GithubIssue):
+        """Get non standalone labels by filtering them from all of the labels."""
+        labels = {}
+
+        for event in issue.get_timeline():
+            if event.action != "labeled":
+                continue
+
+            label = issue.get_timeline()[0].__dict__.get('_rawData')['label']
+            if label["name"] in labels.keys():
+                continue
+
+            labels[label["name"]] {
+                "color": label["color"],
+                "labeled_at": int(event.created_at.timestamp())
+                "labeler": event.actor.login,
+            }
+        
+        return labels
 
     def previous_knowledge(self):
         """Override :func:`~Entity.previous_knowledge`."""
