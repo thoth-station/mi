@@ -19,7 +19,7 @@
 """Issue entity class."""
 
 import logging
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from github.Issue import Issue as GithubIssue
 from github.PaginatedList import PaginatedList
@@ -40,7 +40,7 @@ class Issue(Entity):
             "created_at": int,
             "closed_by": Optional[str],
             "closed_at": Optional[int],
-            "labels": [str],
+            "labels": {str: {str: Union[int, str]}},
             "interactions": {str: int},
         }
     )
@@ -54,8 +54,6 @@ class Issue(Entity):
         if issue.pull_request is not None:
             return  # we analyze issues and prs differentely
 
-        labels = [label.name for label in issue.get_labels()]
-
         self.stored_entities[str(issue.number)] = {
             "created_by": issue.user.login,
             "created_at": int(issue.created_at.timestamp()),
@@ -66,24 +64,24 @@ class Issue(Entity):
         }
 
     @staticmethod
-    def get_labels(issue: GithubIssue):
+    def get_labels(issue: GithubIssue) -> Dict[str, Dict[str, Union[int, str]]]:
         """Get non standalone labels by filtering them from all of the labels."""
-        labels = {}
+        labels: Dict[str, Dict[str, Union[int, str]]] = {}
 
         for event in issue.get_timeline():
             if event.action != "labeled":
                 continue
 
-            label = issue.get_timeline()[0].__dict__.get('_rawData')['label']
+            label = issue.get_timeline()[0].__dict__.get("_rawData")["label"]
             if label["name"] in labels.keys():
                 continue
 
-            labels[label["name"]] {
+            labels[label["name"]] = {
                 "color": label["color"],
-                "labeled_at": int(event.created_at.timestamp())
+                "labeled_at": int(event.created_at.timestamp()),
                 "labeler": event.actor.login,
             }
-        
+
         return labels
 
     def previous_knowledge(self):
