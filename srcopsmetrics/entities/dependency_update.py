@@ -44,15 +44,23 @@ class DependencyUpdate(Entity):
 
     def store(self, commit: Commit):
         """Override :func:`~Entity.store`."""
-        git_commit = commit.commit
-
-        author = commit.author.login if commit.author is not None else git_commit.author.email
-        date = git_commit.author.date
-
         self.stored_entities[commit.sha] = {
-            "user": author,
-            "date": int(date.timestamp()),
+            "user": self.get_author(commit),
+            "date": int(commit.commit.author.date.timestamp()),
         }
+
+    def get_author(self, commit):
+        """Get author login of the commit."""
+        prs = commit.get_pulls()
+        commit_author = commit.author
+
+        if prs.totalCount:
+            return prs[0].user.login
+
+        if commit_author:
+            return commit_author.login
+
+        return commit.commit.author.name
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
