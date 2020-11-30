@@ -86,7 +86,6 @@ class PullRequest(Entity):
 
         self.stored_entities[str(pull_request.number)] = {
             "size": pull_request_size,
-            "labels": GitHubKnowledge.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
             "created_at": created_at,
             "closed_at": closed_at,
@@ -97,6 +96,7 @@ class PullRequest(Entity):
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
+            "labels": GitHubKnowledge.get_labels(pull_request.as_issue()),
         }
 
     def get_raw_github_data(self):
