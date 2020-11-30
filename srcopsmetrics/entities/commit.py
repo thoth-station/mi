@@ -21,6 +21,7 @@ from typing import Dict, List
 
 from github.Commit import Commit as GithubCommit
 from voluptuous.schema_builder import Schema
+from voluptuous import Any
 from datetime import datetime
 
 from srcopsmetrics.entities import Entity
@@ -31,7 +32,7 @@ class Commit(Entity):
 
     entity_schema = Schema(
         {
-            "pull_request": int,
+            "pull_request": Any(None, int),
             "patch": Schema({str: str}),
             "author": str,
             "message": str,
@@ -52,7 +53,7 @@ class Commit(Entity):
         self.stored_entities[commit.sha] = {
             "pull_request": pull_request_id,
             "patch": Commit.get_patches_for_files(commit),
-            "author": commit.author.login,
+            "author": commit.author.login if commit.author else commit.commit.author.name,
             "message": commit.commit.message,
             "date": int(datetime.strptime(commit.last_modified, "%a, %d %b %Y %X %Z").timestamp()),
             "additions": commit.stats.additions,
