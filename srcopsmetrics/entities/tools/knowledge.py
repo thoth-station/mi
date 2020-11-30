@@ -140,10 +140,11 @@ class GitHubKnowledge:
         labels: Dict[str, Dict[str, Union[int, str]]] = {}
 
         for event in issue.get_timeline():
-            if event.action != "labeled":
+
+            if event.event != "labeled":
                 continue
 
-            label = issue.get_timeline()[0].__dict__.get("_rawData")["label"]
+            label = event.__dict__.get("_rawData")["label"]
             if label["name"] in labels.keys():
                 continue
 

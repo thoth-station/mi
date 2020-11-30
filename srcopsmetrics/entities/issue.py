@@ -19,11 +19,11 @@
 """Issue entity class."""
 
 import logging
-from typing import Optional, Union
 
 from github.Issue import Issue as GithubIssue
 from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
+from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
@@ -38,9 +38,9 @@ class Issue(Entity):
         {
             "created_by": str,
             "created_at": int,
-            "closed_by": Optional[str],
-            "closed_at": Optional[int],
-            "labels": {str: {str: Union[int, str]}},
+            "closed_by": Any(None, str),
+            "closed_at": Any(None, int),
+            "labels": {str: {str: Any(int, str)}},
             "interactions": {str: int},
         }
     )
