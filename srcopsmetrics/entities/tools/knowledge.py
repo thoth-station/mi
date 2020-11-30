@@ -19,10 +19,10 @@
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from github import Github, PaginatedList
-
+from github.Issue import Issue
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,3 +133,25 @@ class GitHubKnowledge:
             # we count by the num of words in comment
             interactions[comment.user.login] += len(comment.body.split(" "))
         return interactions
+
+    @staticmethod
+    def get_labels(issue: Issue) -> Dict[str, Dict[str, Union[int, str]]]:
+        """Get non standalone labels by filtering them from all of the labels."""
+        labels: Dict[str, Dict[str, Union[int, str]]] = {}
+
+        for event in issue.get_timeline():
+
+            if event.event != "labeled":
+                continue
+
+            label = event.__dict__.get("_rawData")["label"]
+            if label["name"] in labels.keys():
+                continue
+
+            labels[label["name"]] = {
+                "color": label["color"],
+                "labeled_at": int(event.created_at.timestamp()),
+                "labeler": event.actor.login,
+            }
+
+        return labels

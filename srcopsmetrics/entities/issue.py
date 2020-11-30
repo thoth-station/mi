@@ -19,11 +19,11 @@
 """Issue entity class."""
 
 import logging
-from typing import Optional
 
 from github.Issue import Issue as GithubIssue
 from github.PaginatedList import PaginatedList
 from voluptuous.schema_builder import Schema
+from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
@@ -38,9 +38,9 @@ class Issue(Entity):
         {
             "created_by": str,
             "created_at": int,
-            "closed_by": Optional[str],
-            "closed_at": Optional[int],
-            "labels": [str],
+            "closed_by": Any(None, str),
+            "closed_at": Any(None, int),
+            "labels": {str: {str: Any(int, str)}},
             "interactions": {str: int},
         }
     )
@@ -54,14 +54,12 @@ class Issue(Entity):
         if issue.pull_request is not None:
             return  # we analyze issues and prs differentely
 
-        labels = [label.name for label in issue.get_labels()]
-
         self.stored_entities[str(issue.number)] = {
             "created_by": issue.user.login,
             "created_at": int(issue.created_at.timestamp()),
             "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
-            "labels": GitHubKnowledge.get_non_standalone_labels(labels),
+            "labels": GitHubKnowledge.get_labels(issue),
             "interactions": GitHubKnowledge.get_interactions(issue.get_comments()),
         }
 

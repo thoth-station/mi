@@ -19,11 +19,12 @@
 """Pull Request entity class."""
 
 import logging
-from typing import Any, Dict, Generator, List, Optional
+from typing import Dict, Generator, List
 
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from voluptuous.schema_builder import Schema
+from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
@@ -42,15 +43,15 @@ class PullRequest(Entity):
     entity_schema = Schema(
         {
             "size": str,
-            "labels": [str],
+            "labels": {str: {str: Any(int, str)}},
             "created_by": str,
             "created_at": int,
             # "approved_at": pr_approved,
             # "approved_by": pr_approved_by,
             # "time_to_approve": time_to_approve,
-            "closed_at": Optional[int],
-            "closed_by": Optional[str],
-            "merged_at": Optional[int],
+            "closed_at": Any(None, int),
+            "closed_by": Any(None, str),
+            "merged_at": Any(None, int),
             "commits_number": int,
             "referenced_issues": [int],
             "interactions": {str: int},
@@ -86,7 +87,6 @@ class PullRequest(Entity):
 
         self.stored_entities[str(pull_request.number)] = {
             "size": pull_request_size,
-            "labels": GitHubKnowledge.get_non_standalone_labels(labels),
             "created_by": pull_request.user.login,
             "created_at": created_at,
             "closed_at": closed_at,
@@ -97,6 +97,7 @@ class PullRequest(Entity):
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
+            "labels": GitHubKnowledge.get_labels(pull_request.as_issue()),
         }
 
     def get_raw_github_data(self):
