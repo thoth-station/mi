@@ -549,3 +549,11 @@ all the things that you see...
 * :pushpin: Automatic update of dependency pytest-cov from 2.10.0 to 2.10.1 (#184)
 * :pushpin: Automatic update of dependency thoth-storages from 0.25.0 to 0.25.1 (#183)
 * :pushpin: Automatic update of dependency matplotlib from 3.3.0 to 3.3.1 (#182)
+
+## Release 2.2.0 (2020-12-01T21:40:58)
+### Features
+* bump python version (#292)
+* Add specific labels to issues (#286)
+* :arrow_up: Automatic update of dependencies by kebechet. (#291)
+* Fix/dependency update author (#290)
+* :arrow_up: Automatic update of dependencies by kebechet. (#288)
