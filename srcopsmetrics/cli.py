@@ -32,6 +32,14 @@ _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
 
 
+def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
+    """Get passed entities as list."""
+    if entities_raw and entities_raw != "":
+        return entities_raw.split(",")
+
+    return []
+
+
 @click.command()
 @click.option(
     "--repository", "-r", type=str, required=False, help="Repository to be analysed (e.g thoth-station/performance)",
@@ -60,11 +68,12 @@ logging.basicConfig(level=logging.INFO)
 @click.option(
     "--entities",
     "-e",
-    multiple=True,
     type=str,
     required=False,
     help="""Entities to be analysed for a repository.
-            If not specified, all entities will be analysed.
+            For multiple entities please use format
+            -e Foo,Bar,...
+            If nothing specified, all entities will be analysed.
             Current entities available are:
             """
     + "\n".join([entity.value for entity in EntityTypeEnum]),
@@ -95,7 +104,7 @@ def cli(
     create_knowledge: bool,
     process_knowledge: bool,
     is_local: bool,
-    entities: Optional[List[str]],
+    entities: Optional[str],
     visualize_statistics: bool,
     reviewer_reccomender: bool,
     knowledge_path: str,
@@ -106,9 +115,11 @@ def cli(
 
     repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
 
+    entities_args = get_entities_as_list(entities)
+
     if create_knowledge:
         tupled_repos = [(lambda x: (x[0], x[1]))(repo.split("/")) for repo in repos]
-        analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities)
+        analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities_args)
 
     for project in repos:
         os.environ["PROJECT"] = project
