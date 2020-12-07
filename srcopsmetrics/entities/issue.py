@@ -36,6 +36,8 @@ class Issue(Entity):
 
     entity_schema = Schema(
         {
+            "title": str,
+            "body": str,
             "created_by": str,
             "created_at": int,
             "closed_by": Any(None, str),
@@ -55,6 +57,8 @@ class Issue(Entity):
             return  # we analyze issues and prs differentely
 
         self.stored_entities[str(issue.number)] = {
+            "title": issue.title,
+            "body": issue.body,
             "created_by": issue.user.login,
             "created_at": int(issue.created_at.timestamp()),
             "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
