@@ -42,13 +42,12 @@ class PullRequest(Entity):
 
     entity_schema = Schema(
         {
+            "title": str,
+            "body": str,
             "size": str,
             "labels": {str: {str: Any(int, str)}},
             "created_by": str,
             "created_at": int,
-            # "approved_at": pr_approved,
-            # "approved_by": pr_approved_by,
-            # "time_to_approve": time_to_approve,
             "closed_at": Any(None, int),
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
@@ -86,6 +85,8 @@ class PullRequest(Entity):
             pull_request_size = GitHubKnowledge.assign_pull_request_size(lines_changes=lines_changes)
 
         self.stored_entities[str(pull_request.number)] = {
+            "title": pull_request.title,
+            "body": pull_request.body,
             "size": pull_request_size,
             "created_by": pull_request.user.login,
             "created_at": created_at,
