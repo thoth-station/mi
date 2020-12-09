@@ -1,8 +1,9 @@
-=============
-thoth-station/mi - Meta-information Indicators
-=============
+================================
+Meta-information Indicators (MI)
+================================
 
-.. code-block:: console
+.. code-block::
+
                     +---------+
                     |ConfigMap|
                     +----+----+
@@ -47,7 +48,7 @@ thoth-station/mi - Meta-information Indicators
 
 
 This repository contains functions to store knowledge for the bot,
-to use the knowledge stored by the bot to evaluate some statistics.
+primary goal is to use the knowledge to evaluate repository statistics.
 
 Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`,
 which schedules the workflows for thoth-station/mi project.
