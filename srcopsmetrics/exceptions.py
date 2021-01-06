@@ -17,8 +17,6 @@
 
 """Exceptions for SrcOpsMetrics."""
 
-from srcopsmetrics import bot_knowledge
-
 
 class MissingPreviousKnowledge(Exception):
     """An exception when no previous knowledge has been extracted for a project."""
@@ -27,8 +25,8 @@ class MissingPreviousKnowledge(Exception):
 class NotKnownEntities(Exception):
     """An exception when Entities requested are not known."""
 
-    def __init__(self, message, entities):
+    def __init__(self, message, specified_entities, available_entities):
         """Initialize exception with user specified entities."""
-        allowed = [e.__name__ for e in bot_knowledge.get_all_entities()]
-        unallowed = [e for e in entities if e not in allowed]
+        allowed = [e.__name__ for e in available_entities]
+        unallowed = [e for e in specified_entities if e not in allowed]
         super().__init__("Invalid specified entities: %s", unallowed)

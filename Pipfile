@@ -12,6 +12,7 @@ pandas = "*"
 thoth-storages = "*"
 semver = "*"
 idna_ssl = "*"
+typing_extensions = "*"
 
 [dev-packages]
 pytest = "*"
