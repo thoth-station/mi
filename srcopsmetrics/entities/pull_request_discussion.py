@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Template entity class."""
+"""Pull Request Discussion Entity."""
 
 
 from github.PaginatedList import PaginatedList
@@ -26,14 +26,7 @@ from srcopsmetrics.entities import Entity
 
 
 class PullRequestDiscussion(Entity):
-    """Template entity.
-
-    Serves as a skelet for implementing a new entity so the contributor
-    does not have to spend time copying everything from interface class.
-
-    For further inspiration look at other implemented entities like Issue
-    or PullRequest.
-    """
+    """Pull Request Discussion Entity class."""
 
     entity_schema = Schema([{"user": str, "text": str, "created_at": int, "reactions": list}])
 
