@@ -1,5 +1,5 @@
 check:
-  - thoth-pytest
+  - thoth-pytest38
   - thoth-precommit
   - thoth-build
 release:
