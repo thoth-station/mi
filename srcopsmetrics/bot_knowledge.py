@@ -27,7 +27,7 @@ from typing import List, Optional, Tuple
 from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
 from srcopsmetrics.exceptions import NotKnownEntities
 from srcopsmetrics.github_knowledge import GitHubKnowledge
-from srcopsmetrics.utils import check_directory
+from srcopsmetrics import utils
 
 import inspect
 
@@ -36,7 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 github_knowledge = GitHubKnowledge()
 
 
-def get_all_entities():
+def _get_all_entities():
     """Return all of the currently implemented entities."""
     entities_classes = []
 
@@ -72,15 +72,15 @@ def analyse_projects(
         github_repo = github_knowledge.connect_to_source(project=project)
 
         project_path = path.joinpath("./" + github_repo.full_name)
-        check_directory(project_path)
+        utils.check_directory(project_path)
 
-        allowed_entities = get_all_entities()
+        allowed_entities = _get_all_entities()
 
         specified_entities = []
         if entities:
             specified_entities = [e for e in allowed_entities if e.__name__ in entities]
             if specified_entities == []:
-                raise NotKnownEntities(message="", entities=entities)
+                raise NotKnownEntities(message="", specified_entities=entities, available_entities=allowed_entities)
 
         inspected_entities = specified_entities or allowed_entities
 

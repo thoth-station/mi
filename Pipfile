@@ -3,6 +3,7 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
+
 [packages]
 numpy = "*"
 pygithub = "*"
@@ -10,6 +11,7 @@ matplotlib = "*"
 pandas = "*"
 thoth-storages = "*"
 semver = "*"
+
 
 [dev-packages]
 pytest = "*"
