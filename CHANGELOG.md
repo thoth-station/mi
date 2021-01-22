@@ -557,3 +557,16 @@ all the things that you see...
 * :arrow_up: Automatic update of dependencies by kebechet. (#291)
 * Fix/dependency update author (#290)
 * :arrow_up: Automatic update of dependencies by kebechet. (#288)
+
+## Release 2.3.0 (2021-01-22T00:44:31)
+### Features
+* PullRequestDiscussion entity (#302)
+* :arrow_up: Automatic update of dependencies by kebechet. (#307)
+* :arrow_up: Automatic update of dependencies by kebechet. (#306)
+* add dominik to approvers (#305)
+* :arrow_up: Automatic update of dependencies by kebechet. (#304)
+* Add explicitly thoth-pytest38 (#303)
+* Fix graph (#297)
+* Multiple entities now passed as comma sep. string (#296)
+### Improvements
+* Add title and body attributes for inspection (#298)
