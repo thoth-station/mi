@@ -29,6 +29,11 @@ def get_install_requires():
         res = requirements_file.readlines()
         return [req.split(" ", maxsplit=1)[0] for req in res if req]
 
+def get_test_requires():
+    with open('requirements-test.txt', 'r') as requirements_file:
+        res = requirements_file.readlines()
+        return [req.split(' ', maxsplit=1)[0] for req in res if req]
+
 
 def get_version():
     """Get the version of the MI."""
@@ -57,5 +62,6 @@ setup(
     author_email="fmurdaca@redhat.com, xtuchyna@redhat.com",
     license="GPLv3+",
     install_requires=get_install_requires(),
+    tests_require=get_test_requires(),
     url="https://github.com/AICoE/SrcOpsMetrics",
 )
