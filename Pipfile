@@ -6,11 +6,11 @@ name = "pypi"
 
 [packages]
 numpy = "*"
-pygithub = "*"
-matplotlib = "*"
 pandas = "*"
+pygithub = "*"
 thoth-storages = "*"
 semver = "*"
+voluptuous = "*"
 
 
 [dev-packages]
