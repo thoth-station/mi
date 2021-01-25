@@ -20,4 +20,4 @@
 from srcopsmetrics.__init__ import __version__
 
 if __name__ == "__main__":
-    print(f"A template project with Thoth integration, v{__version__}.")
+    print(f"Meta-information Indicators project for analysing GitHub entities, v{__version__}.")
