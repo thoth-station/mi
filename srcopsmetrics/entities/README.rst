@@ -16,36 +16,33 @@ For every repository we want to gather following metrics:
 
 Time to Close an Issue (ttci)
 -----------------------------
-Variation after each PR approved in time.
+For every closed Issue in repository.
 
 
-Mean Time to Review (mttr)
---------------------------
-Variation after each PR approved in time.
+Median Time to Close an Issue (mttci)
+-----------------------------
+Each Issue ttci can be compared to the metrics of Issues closed before.
+Therefore, median ttci for every Issue in repository.
 
 
-Mean Time to First Review (mttfr)
----------------------------------
-Variation after each PR approved in time.
+Time to Close an Issue Score (ttci_score)
+-----------------------------
+Score from "future" based on Polynomial model that fits the mttci_time data.  
 
 
 Time To First Review (ttfr)
 ---------------------------
-For every PR
+For every PR, extract the time of its first review.
 
 
-Time to Review (ttr)
---------------------
-For every review of a PR
+Median Time to First Review (mttfr)
+---------------------------------
+Same as for mttci_time
 
 
-Time to Review for PR size (ttr_size)
---------------------
-variation after each PR length.
-
-
-Time to First Review (ttfr_size)
+Time To First Review Score (ttfr_score)
 ---------------------------
-variation after each PR length.
+For every PR, extract the time of its first review.
+
 
 
