@@ -56,12 +56,12 @@ class Metrics:
             ttm = int(pr["merged_at"]) - created_at
 
             reviewers = [pr["reviews"][r]["author"] for r in pr["reviews"]]
-
-            # first_review_time = min( [ int(pr["reviews"][r]["submitted_at"]) for r in pr["reviews"] ] )
             review_times = [ int(pr["reviews"][r]["submitted_at"]) for r in pr["reviews"] ]
             ttfr = min( review_times ) - created_at if review_times else None
 
-            data.append( [pr["created_by"], pr["size"], pr["labels"], ttm, reviewers, ttfr] )
+            labels = [k for k in pr["labels"].keys()]
+
+            data.append( [pr["created_by"], pr["size"], labels, ttm, reviewers, ttfr] )
 
         aggregated = pd.DataFrame(data)
         aggregated.columns = [ 'author', 'size', 'labels', 'ttm', 'reviewers', 'ttfr' ]
