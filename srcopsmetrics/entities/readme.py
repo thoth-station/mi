@@ -21,8 +21,10 @@
 import logging
 from typing import List
 
+from github import UnknownObjectException
 from github.ContentFile import ContentFile as GithubContentFile
 from voluptuous.schema_builder import Schema
+from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 
@@ -32,7 +34,9 @@ _LOGGER = logging.getLogger(__name__)
 class ReadMe(Entity):
     """GitHub ReadMe entity."""
 
-    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "license": str, "size": int,})
+    entity_schema = Schema(
+        {"name": str, "path": str, "content": str, "type": str, "license": Any(None, str), "size": int,}
+    )
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
@@ -59,4 +63,7 @@ class ReadMe(Entity):
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_readme()
+        try:
+            return self.repository.get_readme()
+        except UnknownObjectException:
+            return []
