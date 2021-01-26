@@ -1,0 +1,6 @@
+numpy
+pandas
+pygithub
+thoth-storages
+semver
+voluptuous

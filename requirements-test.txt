@@ -1,0 +1,6 @@
+pytest
+pytest-timeout
+pytest-cov
+twine
+autopep8
+rope
