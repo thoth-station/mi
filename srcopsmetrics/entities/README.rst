@@ -2,53 +2,50 @@
 Meta-information Indicators Entities
 ====================================
 
+Entity Criteria
+===============
 
+See template.py for necessary functionality that has to be provided in each Entity implementation.
 
 
 Meta-information Indicators Metrics
 ===================================
 
-Time to Close an Issue (TTCI)
+For every repository we want to gather following metrics:
+
+
+Time to Close an Issue (ttci)
 -----------------------------
-variation after each PR approved in time.
+Variation after each PR approved in time.
 
 
-Mean time to Review (MTTR)
+Mean Time to Review (mttr)
 --------------------------
-variation after each PR approved in time.
+Variation after each PR approved in time.
 
 
-Mean time to First Review (MTTFR)
+Mean Time to First Review (mttfr)
 ---------------------------------
-variation after each PR approved in time.
+Variation after each PR approved in time.
 
 
-Time to First Review (TTFR)
+Time To First Review (ttfr)
 ---------------------------
-variation after each PR approved in time.
+For every PR
 
 
-Time to Review (TTR)
+Time to Review (ttr)
 --------------------
-variation after each PR approved in time.
+For every review of a PR
 
 
-Time to Review (TTR)
+Time to Review for PR size (ttr_size)
 --------------------
 variation after each PR length.
 
 
-Time to Review (TTR)
---------------------
-variation after each PR.
-
-
-Time to First Review (TTFR)
+Time to First Review (ttfr_size)
 ---------------------------
 variation after each PR length.
 
-
-Time to First Review (TTFR)
----------------------------
-variation after each PR.
 
