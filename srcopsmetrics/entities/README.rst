@@ -42,7 +42,7 @@ Same as for mttci_time
 
 Time To First Review Score (ttfr_score)
 ---------------------------
-For every PR, extract the time of its first review.
+Same as for ttci_score
 
 
 
