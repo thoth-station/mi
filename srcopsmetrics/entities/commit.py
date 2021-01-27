@@ -33,7 +33,7 @@ class Commit(Entity):
     entity_schema = Schema(
         {
             "pull_request": Any(None, int),
-            "patch": Schema({str: str}),
+            "patch": Schema({str: Any(None, str)}),
             "author": str,
             "message": str,
             "date": int,
