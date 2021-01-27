@@ -24,6 +24,7 @@ from typing import List
 from github import UnknownObjectException
 from github.ContentFile import ContentFile as GithubContentFile
 from voluptuous.schema_builder import Schema
+from datetime import datetime
 
 from srcopsmetrics.entities import Entity
 
@@ -33,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class ReadMe(Entity):
     """GitHub ReadMe entity."""
 
-    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int,})
+    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int})
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
@@ -47,14 +48,17 @@ class ReadMe(Entity):
         except UnknownObjectException:
             return []
 
-        if self.previous_knowledge[readme.path]["size"] == readme.size:
+        date = int(datetime.strptime(readme.last_modified, "%a, %d %b %Y %X %Z").timestamp())
+
+        if str(date) in self.previous_knowledge:
             return []
 
         return [self.get_raw_github_data()]
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
-        self.stored_entities[content_file.path] = {
+        last_modified = int(datetime.strptime(content_file.last_modified, "%a, %d %b %Y %X %Z").timestamp())
+        self.stored_entities[str(last_modified)] = {
             "name": content_file.name,
             "path": content_file.path,
             "content": content_file.decoded_content.decode("utf-8"),
