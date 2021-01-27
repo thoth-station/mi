@@ -46,6 +46,7 @@ class ReadMe(Entity):
         try:
             readme = self.repository.get_readme()
         except UnknownObjectException:
+            # TODO: consider storing ReadMe deletion events
             return []
 
         date = int(datetime.strptime(readme.last_modified, "%a, %d %b %Y %X %Z").timestamp())
