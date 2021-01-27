@@ -24,7 +24,6 @@ from typing import List
 from github import UnknownObjectException
 from github.ContentFile import ContentFile as GithubContentFile
 from voluptuous.schema_builder import Schema
-from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 
@@ -43,7 +42,10 @@ class ReadMe(Entity):
         if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
             return [self.get_raw_github_data()]
 
-        readme = self.repository.get_readme()
+        try:
+            readme = self.repository.get_readme()
+        except UnknownObjectException:
+            return []
 
         if self.previous_knowledge[readme.path]["size"] == readme.size:
             return []
