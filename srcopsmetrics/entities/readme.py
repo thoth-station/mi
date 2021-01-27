@@ -34,9 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class ReadMe(Entity):
     """GitHub ReadMe entity."""
 
-    entity_schema = Schema(
-        {"name": str, "path": str, "content": str, "type": str, "license": Any(None, str), "size": int,}
-    )
+    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int,})
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
@@ -45,7 +43,9 @@ class ReadMe(Entity):
         if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
             return [self.get_raw_github_data()]
 
-        if self.previous_knowledge["readme"]["size"] == self.repository.get_readme().size:
+        readme = self.repository.get_readme()
+
+        if self.previous_knowledge[readme.path]["size"] == readme.size:
             return []
 
         return [self.get_raw_github_data()]
@@ -57,7 +57,6 @@ class ReadMe(Entity):
             "path": content_file.path,
             "content": content_file.decoded_content.decode("utf-8"),
             "type": content_file.type,
-            "license": content_file.license,
             "size": content_file.size,
         }
 
