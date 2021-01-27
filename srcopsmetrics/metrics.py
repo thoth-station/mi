@@ -43,9 +43,12 @@ class Metrics:
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
 
-    def aggregate_pull_requests(self):
+    def get_aggregate_pull_requests(self):
         # cols: AUTHOR PR_SIZE PR_LABELS PR_MERGE_TIME REVIEWERS TTFR
         data = []
+        overall_ttfr = []
+        overall_ttm = []
+
         for pr in self.prs.values():
 
             if not pr["merged_at"]:
@@ -59,14 +62,26 @@ class Metrics:
             review_times = [ int(pr["reviews"][r]["submitted_at"]) for r in pr["reviews"] ]
             ttfr = min( review_times ) - created_at if review_times else None
 
+            overall_ttfr.append( ttfr )
+            overall_ttm.append( ttm )
+
             labels = [k for k in pr["labels"].keys()]
 
             data.append( [pr["created_by"], pr["size"], labels, ttm, reviewers, ttfr] )
 
         aggregated = pd.DataFrame(data)
         aggregated.columns = [ 'author', 'size', 'labels', 'ttm', 'reviewers', 'ttfr' ]
-        print(aggregated)
 
-    def aggregate_issues(self):
+        y = df['rando']
+        removed_outliers = y.between(y.quantile(.05), y.quantile(.95))
+        return aggregated
+
+
+    def get_aggregate_issues(self):
         # cols: LABELS AUTHOR CLOSE_TIME
+
+
+    def get_metrics_for_issues(self):
         pass
+
+
