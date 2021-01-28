@@ -153,6 +153,10 @@ class Metrics:
         """Get metrics for Pull Requests.
 
         Current metrics are scores for tta, ttm and tffr.
+        These scores are based on calculating the difference between the
+        last known metric and the last prediction of fitted polynomial on metrics.
+        Therefore, if the score is negative, we expect repository health to worsen in following week,
+        on the other hand if the score is positive, we expect the health to be better.
         """
         self.pr_metrics = self.get_aggregated_pull_requests()[["date", "ttm", "tta", "ttfr"]].copy()
 
