@@ -49,9 +49,11 @@ class ReadMe(Entity):
             # TODO: consider storing ReadMe deletion events
             return []
 
-        date = int(datetime.strptime(readme.last_modified, "%a, %d %b %Y %X %Z").timestamp())
-
-        if str(date) in self.previous_knowledge:
+        if (
+            "README" in self.previous_knowledge
+            and readme.decoded_content.decode("utf-8") == self.previous_knowledge["README"]["content"]
+            and readme.path == self.previous_knowledge["README"]["path"]
+        ):
             return []
 
         return [self.get_raw_github_data()]
@@ -59,12 +61,13 @@ class ReadMe(Entity):
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
         last_modified = int(datetime.strptime(content_file.last_modified, "%a, %d %b %Y %X %Z").timestamp())
-        self.stored_entities[str(last_modified)] = {
+        self.stored_entities["README"] = {
             "name": content_file.name,
             "path": content_file.path,
             "content": content_file.decoded_content.decode("utf-8"),
             "type": content_file.type,
             "size": content_file.size,
+            "date": last_modified,
         }
 
     def get_raw_github_data(self):
