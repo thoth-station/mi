@@ -22,6 +22,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import time
 import logging
 
 import matplotlib.pyplot as plt
@@ -33,6 +34,8 @@ from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.utils import check_directory
 
+from typing import Dict
+
 _LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -41,13 +44,14 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 class Metrics:
     """Metrics used in MI."""
 
-    def __init__(self, repository: str):
+    def __init__(self, repository: str, visuaize: bool = False):
         """Initialize with collected knowledge."""
         gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
 
         self.repo_name = repository
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
+        self.visualize = visuaize
 
     def get_aggregated_pull_requests(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate metrics from it and return DataFrame."""
@@ -92,10 +96,12 @@ class Metrics:
         # TODO: what degree would be best?
         ttm_score = np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], 3))
 
+        one_week_ahead_timestamp = int(time.time()) + 3600 * 24 * 7
+
         trendline_pts = np.linspace(
             self.pr_metrics.loc[0, "date"].astype(int),
-            self.pr_metrics.loc[len(self.pr_metrics.index) - 1, "date"].astype(int),
-            100,
+            one_week_ahead_timestamp,
+            len(self.pr_metrics.index) + 7,  # because we are making one week ahead prediction
         )
         plt.xlabel("Pull requests creation date")
         plt.ylabel(f"Metrics {metrics_name} and {time_metrics_name} represented in hours")
@@ -121,14 +127,37 @@ class Metrics:
         )
         plt.legend(loc="upper left")
 
-        path = f"./vismetrics_name/knowledge_statistics/{self.repo_name}"
+        path = f"./srcopsmetrics/knowledge_statistics/{self.repo_name}"
         check_directory(Path(path))
         plt.savefig(f"{path}/{metrics_name}", pad_inches=5)
         _LOGGER.info("Saved visualization %s", path)
         plt.clf()
 
-    def get_metrics_for_prs(self):
-        """Get metrics from Pull Requests."""
+    def compute_predictions(self, time_metrics_name: str, days_ahead: int = 7) -> np.array:
+        """Compute estimation of the mean metrics in time for future score.
+
+        Return numpy.array with prediciton for all the available dates
+        in self.pr_metrics plus specified days_ahead
+        """
+        score = np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], 3))
+        return score(
+            self.pr_metrics["date"].append(pd.Series([int(time.time()) * 3600 * 24 for i in range(1, days_ahead + 1)]))
+        )
+        # one_week_ahead_timestamp = int(time.time()) + 3600*24*7
+
+        # estimation = np.linspace(
+        #     self.pr_metrics.loc[0, "date"].astype(int),
+        #     one_week_ahead_timestamp,
+        #     len(self.pr_metrics.index) + 7, # because we are making one week ahead prediction
+        # )
+
+        # return estimation
+
+    def get_metrics_for_prs(self) -> Dict[str, int]:
+        """Get metrics for Pull Requests.
+
+        Current metrics are scores for tta, ttm and tffr.
+        """
         self.pr_metrics = self.get_aggregated_pull_requests()[["date", "ttm", "tta", "ttfr"]].copy()
 
         self.pr_metrics["mttm_time"] = float()
@@ -137,11 +166,21 @@ class Metrics:
 
         for idx in self.pr_metrics.index:
             self.pr_metrics.loc[idx, "mttm_time"] = np.median(self.pr_metrics["ttm"][: idx + 1])
-            self.pr_metrics.loc[idx, "mtta_time"] = np.median(self.pr_metrics["tta"][: idx + 1])
-            self.pr_metrics.loc[idx, "mttfr_time"] = np.median(self.pr_metrics["ttfr"][: idx + 1])
+            self.pr_metrics.loc[idx, "mtta_time"] = np.nanmedian(self.pr_metrics["tta"][: idx + 1])
+            self.pr_metrics.loc[idx, "mttfr_time"] = np.nanmedian(self.pr_metrics["ttfr"][: idx + 1])
 
         self.pr_metrics["datetime"] = self.pr_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
 
-        self.plot_graph_for_metrics("ttm", "mttm_time")
-        self.plot_graph_for_metrics("tta", "mtta_time")
-        self.plot_graph_for_metrics("ttfr", "mttfr_time")
+        if self.visualize:
+            self.plot_graph_for_metrics("ttm", "mttm_time")
+            self.plot_graph_for_metrics("tta", "mtta_time")
+            self.plot_graph_for_metrics("ttfr", "mttfr_time")
+
+        metrics = {"mttm_time", "mtta_time", "mttfr_time"}
+        scores = {k: 0 for k in metrics}
+        for metric in metrics:
+            prediction = self.compute_predictions(metric)[-1]
+            last_known_metric = self.pr_metrics.loc[len(self.pr_metrics.index) - 1, "mttm_time"]
+            scores[metric] = last_known_metric - prediction
+
+        return scores

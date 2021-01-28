@@ -19,6 +19,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import List, Optional
 
 import click
@@ -28,6 +29,7 @@ from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.metrics import Metrics
+from srcopsmetrics.storage import KnowledgeStorage
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -137,7 +139,10 @@ def cli(
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0])
-        repo_metrics.get_metrics_for_prs()
+        scores = repo_metrics.get_metrics_for_prs()
+
+        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/scores")
+        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
 
     if visualize_statistics and repository is not None:
         raise NotImplementedError
