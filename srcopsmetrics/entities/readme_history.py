@@ -19,19 +19,18 @@
 """ReadMeHistory entity class."""
 
 import logging
+from datetime import datetime
 from typing import List
 
-from github import UnknownObjectException
 from github.ContentFile import ContentFile as GithubContentFile
 from voluptuous.schema_builder import Schema
-from datetime import datetime
 
-from srcopsmetrics.entities import Entity
+from srcopsmetrics.entities.readme import ReadMe
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class ReadMeHistory(Entity):
+class ReadMeHistory(ReadMe):
     """README History entity."""
 
     entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int})
@@ -59,10 +58,3 @@ class ReadMeHistory(Entity):
             "type": content_file.type,
             "size": content_file.size,
         }
-
-    def get_raw_github_data(self):
-        """Override :func:`~Entity.get_raw_github_data`."""
-        try:
-            return self.repository.get_readme()
-        except UnknownObjectException:
-            return []
