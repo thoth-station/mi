@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with SrcOpsMetrics.  If not, see <http://www.gnu.org/licenses/>.
 
-"""ContentFile entity class."""
+"""ReadMeHistory entity class."""
 
 import logging
 from typing import List
@@ -32,27 +32,22 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ReadMeHistory(Entity):
-    """README History entity"""
+    """README History entity."""
 
     entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int})
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
-        if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
-            return [self.get_raw_github_data()]
+        readme = self.get_raw_github_data()
 
-        try:
-            readme = self.repository.get_readme()
-        except UnknownObjectException:
-            # TODO: consider storing ReadMe deletion events
-            return []
+        if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
+            return [readme]
 
         date = int(datetime.strptime(readme.last_modified, "%a, %d %b %Y %X %Z").timestamp())
-
-        if str(date) in self.previous_knowledge:
+        if not readme or str(date) in self.previous_knowledge:
             return []
 
-        return [self.get_raw_github_data()]
+        return [readme]
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
