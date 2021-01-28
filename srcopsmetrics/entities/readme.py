@@ -39,24 +39,19 @@ class ReadMe(Entity):
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
         # TODO: recursive Readme analysis - is that a good idea?
+        readme = self.get_raw_github_data()
 
         if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
-            return [self.get_raw_github_data()]
+            return [readme]
 
-        try:
-            readme = self.repository.get_readme()
-        except UnknownObjectException:
-            # TODO: consider storing ReadMe deletion events
-            return []
-
-        if (
+        if not readme or (
             "README" in self.previous_knowledge
             and readme.decoded_content.decode("utf-8") == self.previous_knowledge["README"]["content"]
             and readme.path == self.previous_knowledge["README"]["path"]
         ):
             return []
 
-        return [self.get_raw_github_data()]
+        return [readme]
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
