@@ -10,7 +10,6 @@ See template.py for necessary functionality that has to be provided in each Enti
 
 Meta-information Indicators Metrics
 ===================================
-
 For every repository we want to gather following metrics:
 
 
@@ -73,3 +72,5 @@ similar to mttci_time
 Time To Merge Score (ttm_score)
 -------------------------------
 similar to ttci_score
+
+TODO: insert graphs for each set of scores
