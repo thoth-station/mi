@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ReadMeHistory(Entity):
-    """GitHub ReadMe entity."""
+    """README History entity"""
 
     entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int})
 
