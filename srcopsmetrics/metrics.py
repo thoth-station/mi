@@ -18,7 +18,13 @@
 
 """Metrics for MI."""
 
+import os
 from datetime import datetime
+from pathlib import Path
+
+import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from github import Github
@@ -28,9 +34,9 @@ from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import (
     PullRequest)
 from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.utils import check_directory
 
-import os
-import matplotlib.pyplot as plt
+_LOGGER = logging.getLogger(__name__)
 
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
@@ -42,6 +48,7 @@ class Metrics:
         """Initialize with collected knowledge."""
         gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo( repository )
 
+        self.repo_name = repository
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
 
@@ -82,42 +89,43 @@ class Metrics:
         normal = factor.between( factor.quantile(.05), factor.quantile(.95) )
         return aggregated[normal].sort_values(by=['date']).reset_index(drop=True)
 
+    def plot_graph_for_metrics( self, metrics_name: str, time_metrics_name: str ):
+        #TODO: score should be calculated from e.g. weekly stats, not overall
+        #TODO: what degree would be best?
+        ttm_score = np.poly1d( np.polyfit(self.pr_metrics['date'], self.pr_metrics[ time_metrics_name ], 3) )
 
-    def get_aggregated_issues(self):
-        # cols: LABELS AUTHOR CLOSE_TIME
-        pass
+        trendline_pts = np.linspace( self.pr_metrics.loc[0, 'date'].astype( int ), self.pr_metrics.loc[ len(self.pr_metrics.index)-1, 'date'].astype( int ), 100)
+        plt.xlabel("Pull requests creation date")
+        plt.ylabel(f"Metrics {metrics_name} and {time_metrics_name} represented in hours")
+
+        plt.xticks(rotation=45, ha="right")
+        metrics = plt.plot( self.pr_metrics['datetime'], self.pr_metrics[ metrics_name ].apply(lambda x: x/3600), '.', label=metrics_name )
+        time_metrics = plt.plot( self.pr_metrics['datetime'], self.pr_metrics[ time_metrics_name ].apply(lambda x: x/3600), '--', label=time_metrics_name)
+        score_metrics = plt.plot( [datetime.fromtimestamp(t) for t in trendline_pts], ttm_score( trendline_pts ) / 3600, '-', label=f"{metrics_name} score" )
+        plt.legend(loc='upper left')
+
+        path = f'./vismetrics_name/knowledge_statistics/{self.repo_name}'
+        check_directory( Path(path) )
+        plt.savefig( f"{path}/{metrics_name}", pad_in )
+        _LOGGER.info("Saved visualization %s", path)
+        plt.clf()
 
 
     def get_metrics_for_prs(self):
-        metrics = self.get_aggregated_pull_requests()[ ['date', 'ttm', 'tta', 'ttfr' ] ].copy()
+        self.pr_metrics = self.get_aggregated_pull_requests()[ ['date', 'ttm', 'tta', 'ttfr' ] ].copy()
 
-        metrics[ 'mttm_time'] = None
-        metrics[ 'mtta_time' ] = None
-        metrics[ 'mttfr_time' ] = None
+        self.pr_metrics[ 'mttm_time'] = float()
+        self.pr_metrics[ 'mtta_time' ] = float()
+        self.pr_metrics[ 'mttfr_time' ] = float()
 
-        for idx in metrics.index:
-            metrics.loc[idx, 'mttm_time'] = np.median( metrics['ttm'][:idx+1] )
-            metrics.loc[idx, 'mtta_time'] = np.median( metrics['tta'][:idx+1] )
-            metrics.loc[idx, 'mttfr_time'] = np.median( metrics['ttfr'][:idx+1] )
+        for idx in self.pr_metrics.index:
+            self.pr_metrics.loc[idx, 'mttm_time'] = np.median( self.pr_metrics['ttm'][:idx+1] )
+            self.pr_metrics.loc[idx, 'mtta_time'] = np.median( self.pr_metrics['tta'][:idx+1] )
+            self.pr_metrics.loc[idx, 'mttfr_time'] = np.median( self.pr_metrics['ttfr'][:idx+1] )
 
-        metrics[ 'datetime' ] = metrics.apply( lambda x: datetime.fromtimestamp( x['date'] ), axis=1 )
+        self.pr_metrics[ 'datetime' ] = self.pr_metrics.apply( lambda x: datetime.fromtimestamp( x['date'] ), axis=1 )
 
-        ttm_score = np.poly1d( np.polyfit(metrics['date'], metrics['mttm_time'], 10) )
-
-        trendline_pts = np.linspace( metrics.loc[0, 'date'].astype( int ), metrics.loc[ len(metrics.index)-1, 'date'].astype( int ), 100)
-        plt.plot(   metrics['datetime'], metrics['ttm'].apply(lambda x: x/3600), '.',
-                    metrics['datetime'], metrics['mttm_time'].apply(lambda x: x/3600), '--',
-                    [datetime.fromtimestamp(t) for t in trendline_pts], ttm_score( trendline_pts ) / 3600, '-')
-
-        # ts.plot()
-        plt.show()
-
-
-
-
-    def get_metrics_for_issues(self):
-        aggregated = pd.DataFrame(data) #mean time to comment
-        aggregated.columns = [ 'ttci', 'mttci_time', 'ttc', 'mttc_time' ]
-
-
+        self.plot_graph_for_metrics( 'ttm', 'mttm_time' )
+        self.plot_graph_for_metrics( 'tta', 'mtta_time' )
+        self.plot_graph_for_metrics( 'ttfr', 'mttfr_time' )
 
