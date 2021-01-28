@@ -23,14 +23,10 @@ from typing import List, Optional
 
 import click
 
-from srcopsmetrics.bot_knowledge import (
-    analyse_projects)
-from srcopsmetrics.enums import (EntityTypeEnum,
-                                 StoragePath)
-from srcopsmetrics.evaluate_scores import (
-    ReviewerAssigner)
-from srcopsmetrics.github_knowledge import (
-    GitHubKnowledge)
+from srcopsmetrics.bot_knowledge import analyse_projects
+from srcopsmetrics.enums import EntityTypeEnum, StoragePath
+from srcopsmetrics.evaluate_scores import ReviewerAssigner
+from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.metrics import Metrics
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
@@ -104,11 +100,7 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             """,
 )
 @click.option(
-    "--metrics",
-    "-m",
-    is_flag=True,
-    required=False,
-    help=f"""Launch Metrics Calculation for specified repository.""",
+    "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
 )
 def cli(
     repository: Optional[str],
@@ -144,8 +136,8 @@ def cli(
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if metrics:
-        metrics = Metrics( repository=repos[0] )
-        metrics.get_metrics_for_prs()
+        repo_metrics = Metrics(repository=repos[0])
+        repo_metrics.get_metrics_for_prs()
 
     if visualize_statistics and repository is not None:
         raise NotImplementedError
