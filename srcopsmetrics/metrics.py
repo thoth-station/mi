@@ -92,9 +92,7 @@ class Metrics:
 
     def plot_graph_for_metrics(self, metrics_name: str, time_metrics_name: str):
         """Calculate metrics score and plot graph."""
-        # TODO: score should be calculated from e.g. weekly stats, not overall
-        # TODO: what degree would be best?
-        ttm_score = np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], 3))
+        score_fit = self.get_least_square_polynomial_fit(time_metrics_name)
 
         one_week_ahead_timestamp = int(time.time()) + 3600 * 24 * 7
 
@@ -103,6 +101,7 @@ class Metrics:
             one_week_ahead_timestamp,
             len(self.pr_metrics.index) + 7,  # because we are making one week ahead prediction
         )
+
         plt.xlabel("Pull requests creation date")
         plt.ylabel(f"Metrics {metrics_name} and {time_metrics_name} represented in hours")
 
@@ -121,7 +120,7 @@ class Metrics:
         )
         plt.plot(
             [datetime.fromtimestamp(t) for t in trendline_pts],
-            ttm_score(trendline_pts) / 3600,
+            score_fit(trendline_pts) / 3600,
             "-",
             label=f"{metrics_name} score",
         )
@@ -129,9 +128,15 @@ class Metrics:
 
         path = f"./srcopsmetrics/knowledge_statistics/{self.repo_name}"
         check_directory(Path(path))
-        plt.savefig(f"{path}/{metrics_name}", pad_inches=5)
+        plt.savefig(f"{path}/{metrics_name}", dpi=300)
         _LOGGER.info("Saved visualization %s", path)
         plt.clf()
+
+    def get_least_square_polynomial_fit(self, time_metrics_name: str, degree: int = 3):
+        """Apply least square polynomial fit on time metrics data."""
+        # TODO: score should be calculated from e.g. weekly stats, not overall
+        # TODO: what degree would be best?
+        return np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], degree))
 
     def compute_predictions(self, time_metrics_name: str, days_ahead: int = 7) -> np.array:
         """Compute estimation of the mean metrics in time for future score.
@@ -139,19 +144,10 @@ class Metrics:
         Return numpy.array with prediciton for all the available dates
         in self.pr_metrics plus specified days_ahead
         """
-        score = np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], 3))
+        score = self.get_least_square_polynomial_fit(time_metrics_name)
         return score(
             self.pr_metrics["date"].append(pd.Series([int(time.time()) * 3600 * 24 for i in range(1, days_ahead + 1)]))
         )
-        # one_week_ahead_timestamp = int(time.time()) + 3600*24*7
-
-        # estimation = np.linspace(
-        #     self.pr_metrics.loc[0, "date"].astype(int),
-        #     one_week_ahead_timestamp,
-        #     len(self.pr_metrics.index) + 7, # because we are making one week ahead prediction
-        # )
-
-        # return estimation
 
     def get_metrics_for_prs(self) -> Dict[str, int]:
         """Get metrics for Pull Requests.
