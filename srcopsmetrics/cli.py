@@ -131,23 +131,16 @@ def cli(
     for project in repos:
         os.environ["PROJECT"] = project
 
-        if visualize_statistics:
-            raise NotImplementedError
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if metrics:
-        repo_metrics = Metrics(repository=repos[0])
+        repo_metrics = Metrics(repository=repos[0], visuaize=visualize_statistics)
         scores = repo_metrics.get_metrics_for_prs()
 
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/scores")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
-
-    if visualize_statistics and repository is not None:
-        raise NotImplementedError
-    elif visualize_statistics and organization is not None:
-        raise NotImplementedError
 
 
 if __name__ == "__main__":
