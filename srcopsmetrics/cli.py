@@ -145,7 +145,7 @@ def cli(
 
     if metrics:
         metrics = Metrics( repository=repos[0] )
-        metrics.aggregate_pull_requests()
+        metrics.get_metrics_for_prs()
 
     if visualize_statistics and repository is not None:
         raise NotImplementedError

@@ -100,14 +100,10 @@ class Metrics:
             metrics.loc[idx, 'mtta_time'] = np.median( metrics['tta'][:idx+1] )
             metrics.loc[idx, 'mttfr_time'] = np.median( metrics['ttfr'][:idx+1] )
 
-        ttm_score = np.poly1d( np.polyfit(metrics['date'], metrics['ttm'], 10) )
-        print( f"should be minimal: {1301294.0 - ttm_score(1592385103)}" )
-        print( metrics )
-        # pd.Series( metrics['ttm'], index=metrics['date']).plot()
-        # plt.show()
-        # ts = pd.Series(metrics['ttm'], index=pd.date_range("1/1/2000", periods=1000))
-        # ts = ts.cumsum()
         metrics[ 'datetime' ] = metrics.apply( lambda x: datetime.fromtimestamp( x['date'] ), axis=1 )
+
+        ttm_score = np.poly1d( np.polyfit(metrics['date'], metrics['mttm_time'], 10) )
+
         trendline_pts = np.linspace( metrics.loc[0, 'date'].astype( int ), metrics.loc[ len(metrics.index)-1, 'date'].astype( int ), 100)
         plt.plot(   metrics['datetime'], metrics['ttm'].apply(lambda x: x/3600), '.',
                     metrics['datetime'], metrics['mttm_time'].apply(lambda x: x/3600), '--',
