@@ -570,3 +570,11 @@ all the things that you see...
 * Multiple entities now passed as comma sep. string (#296)
 ### Improvements
 * Add title and body attributes for inspection (#298)
+
+## Release 2.3.1 (2021-01-29T10:47:25)
+### Features
+* Check if readme exists (#319)
+* Check that patch can be None (#320)
+* :arrow_up: Automatic update of dependencies by kebechet. (#312)
+### Improvements
+* Add requirements for PyPI, remove unnecessary dependencies (#310)
