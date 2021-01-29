@@ -159,9 +159,9 @@ class Metrics:
         Current supported metrics are tta, ttm and tffr, with their time counterparts
         being calculated along the scores as well.
 
-        Scores are based on calculating the difference between the
-        last known metric and the last prediction of fitted polynomial on metrics.
-        Therefore, if the score is negative, we expect repository health to worsen in following week,
+        Scores are based on calculating the difference between the latest time metric
+        and the last prediction of fitted polynomial on metrics. Therefore, if the score
+        is negative, we expect repository health to worsen in following week,
         on the other hand if the score is positive, we expect the health to be better.
         """
         self.pr_metrics = self.get_aggregated_pull_requests_with_known_metrics()[["date", "ttm", "tta", "ttfr"]].copy()
