@@ -55,9 +55,10 @@ class Metrics:
 
     def get_aggregated_pull_requests_with_known_metrics(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
-        
+
         Known metrics (meaning they can be calculated while looking on single Pull
-        Request) are currently tta, ttm and ttfr (see entity README for more information)."""
+        Request) are currently tta, ttm and ttfr (see entity README for more information).
+        """
         data = []
         overall_ttfr = []
         overall_ttm = []
