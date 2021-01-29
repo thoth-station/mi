@@ -53,8 +53,11 @@ class Metrics:
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
         self.visualize = visuaize
 
-    def get_aggregated_pull_requests_with_metrics(self) -> pd.DataFrame:
-        """Aggregate analysed data, calculate metrics from it and return DataFrame."""
+    def get_aggregated_pull_requests_with_known_metrics(self) -> pd.DataFrame:
+        """Aggregate analysed data, calculate known metrics from it and return DataFrame.
+        
+        Known metrics (meaning they can be calculated while looking on single Pull
+        Request) are currently tta, ttm and ttfr (see entity README for more information)."""
         data = []
         overall_ttfr = []
         overall_ttm = []
@@ -91,7 +94,7 @@ class Metrics:
         return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
     def save_graph_for_metrics(self, metrics_name: str, time_metrics_name: str):
-        """Calculate metrics score and plot graph."""
+        """Save graph for known metrics, time metrics and their scores."""
         score_fit = self.get_least_square_polynomial_fit(time_metrics_name)
 
         one_week_ahead_timestamp = int(time.time()) + 3600 * 24 * 7
@@ -149,16 +152,18 @@ class Metrics:
             self.pr_metrics["date"].append(pd.Series([int(time.time()) * 3600 * 24 for i in range(1, days_ahead + 1)]))
         )
 
-    def get_metrics_for_prs(self) -> Dict[str, int]:
-        """Get metrics for Pull Requests.
+    def evaluate_scores_for_pull_requests(self) -> Dict[str, int]:
+        """Get scores for Pull Requests.
 
-        Current metrics are scores for tta, ttm and tffr.
-        These scores are based on calculating the difference between the
+        Current supported metrics are tta, ttm and tffr, with their time counterparts
+        being calculated along the scores as well.
+
+        Scores are based on calculating the difference between the
         last known metric and the last prediction of fitted polynomial on metrics.
         Therefore, if the score is negative, we expect repository health to worsen in following week,
         on the other hand if the score is positive, we expect the health to be better.
         """
-        self.pr_metrics = self.get_aggregated_pull_requests_with_metrics()[["date", "ttm", "tta", "ttfr"]].copy()
+        self.pr_metrics = self.get_aggregated_pull_requests_with_known_metrics()[["date", "ttm", "tta", "ttfr"]].copy()
 
         self.pr_metrics["mttm_time"] = float()
         self.pr_metrics["mtta_time"] = float()

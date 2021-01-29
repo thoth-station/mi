@@ -137,7 +137,7 @@ def cli(
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0], visuaize=visualize_statistics)
-        scores = repo_metrics.get_metrics_for_prs()
+        scores = repo_metrics.evaluate_scores_for_pull_requests()
 
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/scores")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
