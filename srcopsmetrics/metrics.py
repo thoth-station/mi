@@ -53,7 +53,7 @@ class Metrics:
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
         self.visualize = visuaize
 
-    def get_aggregated_pull_requests(self) -> pd.DataFrame:
+    def get_aggregated_pull_requests_with_metrics(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate metrics from it and return DataFrame."""
         data = []
         overall_ttfr = []
@@ -90,7 +90,7 @@ class Metrics:
         normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
         return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
-    def plot_graph_for_metrics(self, metrics_name: str, time_metrics_name: str):
+    def save_graph_for_metrics(self, metrics_name: str, time_metrics_name: str):
         """Calculate metrics score and plot graph."""
         score_fit = self.get_least_square_polynomial_fit(time_metrics_name)
 
@@ -158,7 +158,7 @@ class Metrics:
         Therefore, if the score is negative, we expect repository health to worsen in following week,
         on the other hand if the score is positive, we expect the health to be better.
         """
-        self.pr_metrics = self.get_aggregated_pull_requests()[["date", "ttm", "tta", "ttfr"]].copy()
+        self.pr_metrics = self.get_aggregated_pull_requests_with_metrics()[["date", "ttm", "tta", "ttfr"]].copy()
 
         self.pr_metrics["mttm_time"] = float()
         self.pr_metrics["mtta_time"] = float()
@@ -172,9 +172,9 @@ class Metrics:
         self.pr_metrics["datetime"] = self.pr_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
 
         if self.visualize:
-            self.plot_graph_for_metrics("ttm", "mttm_time")
-            self.plot_graph_for_metrics("tta", "mtta_time")
-            self.plot_graph_for_metrics("ttfr", "mttfr_time")
+            self.save_graph_for_metrics("ttm", "mttm_time")
+            self.save_graph_for_metrics("tta", "mtta_time")
+            self.save_graph_for_metrics("ttfr", "mttfr_time")
 
         metrics = {"mttm_time", "mtta_time", "mttfr_time"}
         scores = {k: 0 for k in metrics}
