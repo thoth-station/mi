@@ -21,8 +21,10 @@
 import logging
 from typing import List
 
+from github import UnknownObjectException
 from github.ContentFile import ContentFile as GithubContentFile
 from voluptuous.schema_builder import Schema
+from datetime import datetime
 
 from srcopsmetrics.entities import Entity
 
@@ -32,31 +34,40 @@ _LOGGER = logging.getLogger(__name__)
 class ReadMe(Entity):
     """GitHub ReadMe entity."""
 
-    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "license": str, "size": int,})
+    entity_schema = Schema({"name": str, "path": str, "content": str, "type": str, "size": int})
 
     def analyse(self) -> List[GithubContentFile]:
         """Override :func:`~Entity.analyse`."""
         # TODO: recursive Readme analysis - is that a good idea?
+        readme = self.get_raw_github_data()
 
         if self.previous_knowledge is None or len(self.previous_knowledge) == 0:
-            return [self.get_raw_github_data()]
+            return [readme]
 
-        if self.previous_knowledge["readme"]["size"] == self.repository.get_readme().size:
+        if not readme or (
+            "README" in self.previous_knowledge
+            and readme.decoded_content.decode("utf-8") == self.previous_knowledge["README"]["content"]
+            and readme.path == self.previous_knowledge["README"]["path"]
+        ):
             return []
 
-        return [self.get_raw_github_data()]
+        return [readme]
 
     def store(self, content_file: GithubContentFile):
         """Override :func:`~Entity.store`."""
-        self.stored_entities[content_file.path] = {
+        last_modified = int(datetime.strptime(content_file.last_modified, "%a, %d %b %Y %X %Z").timestamp())
+        self.stored_entities["README"] = {
             "name": content_file.name,
             "path": content_file.path,
             "content": content_file.decoded_content.decode("utf-8"),
             "type": content_file.type,
-            "license": content_file.license,
             "size": content_file.size,
+            "date": last_modified,
         }
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_readme()
+        try:
+            return self.repository.get_readme()
+        except UnknownObjectException:
+            return []
