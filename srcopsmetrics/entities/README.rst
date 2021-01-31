@@ -88,4 +88,17 @@ Time To Respond Score (ttre_score)
 -------------------------------
 similar to ttci_score
 
+
+Open/Closed Issue ratio
+-----------------------
+
+
+Open/Merged PullRequest ratio
+------------------------------
+
+
+Open/Rejected PullRequest ratio
+-------------------------------
+
+
 TODO: insert graphs for each set of scores
