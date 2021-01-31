@@ -73,4 +73,19 @@ Time To Merge Score (ttm_score)
 -------------------------------
 similar to ttci_score
 
+
+Time To Respond (ttre)
+-------------------
+Time for any repository contributor to respond to Issue or Pull Request.
+
+
+Median Time to Respond (mttre_time)
+--------------------------------
+similar to mttci_time
+
+
+Time To Respond Score (ttre_score)
+-------------------------------
+similar to ttci_score
+
 TODO: insert graphs for each set of scores
