@@ -101,4 +101,34 @@ Open/Rejected PullRequest ratio
 -------------------------------
 
 
+Kebechet Metrics
+================
+
+Number of Opened Issues by Manager
+----------------------------------
+
+
+Number of Closed Issues by Manager
+----------------------------------
+
+
+Number of Opened PRs by Manager
+-------------------------------
+
+
+Number of Closed PRs by Manager
+-------------------------------
+
+
+Number of Opened PRs by Manager and closed by Human
+---------------------------------------------------
+
+
+Open/Merged PullRequest ratio
+------------------------------
+
+
+Open/Rejected PullRequest ratio
+-------------------------------
+
 TODO: insert graphs for each set of scores
