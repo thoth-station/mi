@@ -50,10 +50,10 @@ class Metrics:
 
         self.repo_name = repository
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
-        self.github_issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
+        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
         self.visualize = visualize
 
-    def process_pull_requests(self) -> pd.DataFrame:
+    def process_issues(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
 
         Known metrics (meaning they can be calculated while looking on single Pull
@@ -79,7 +79,7 @@ class Metrics:
         normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
         return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
-    def get_aggregated_pull_requests_with_known_metrics(self) -> pd.DataFrame:
+    def process_pull_requests(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
 
         Known metrics (meaning they can be calculated while looking on single Pull
@@ -183,29 +183,29 @@ class Metrics:
         is negative, we expect repository health to worsen in following week,
         on the other hand if the score is positive, we expect the health to be better.
         """
-        self.pr_metrics = self.get_aggregated_pull_requests_with_known_metrics()[["date", "ttm", "tta", "ttfr"]].copy()
+        self.prs_metrics = self.process_pull_requests()[["date", "ttm", "tta", "ttfr"]].copy()
 
-        self.pr_metrics["mttm_time"] = float()
-        self.pr_metrics["mtta_time"] = float()
-        self.pr_metrics["mttfr_time"] = float()
+        self.prs_metrics["mttm_time"] = float()
+        self.prs_metrics["mtta_time"] = float()
+        self.prs_metrics["mttfr_time"] = float()
 
-        for idx in self.pr_metrics.index:
-            self.pr_metrics.loc[idx, "mttm_time"] = np.median(self.pr_metrics["ttm"][: idx + 1])
-            self.pr_metrics.loc[idx, "mtta_time"] = np.nanmedian(self.pr_metrics["tta"][: idx + 1])
-            self.pr_metrics.loc[idx, "mttfr_time"] = np.nanmedian(self.pr_metrics["ttfr"][: idx + 1])
+        for idx in self.prs_metrics.index:
+            self.prs_metrics.loc[idx, "mttm_time"] = np.median(self.prs_metrics["ttm"][: idx + 1])
+            self.prs_metrics.loc[idx, "mtta_time"] = np.nanmedian(self.prs_metrics["tta"][: idx + 1])
+            self.prs_metrics.loc[idx, "mttfr_time"] = np.nanmedian(self.prs_metrics["ttfr"][: idx + 1])
 
-        self.pr_metrics["datetime"] = self.pr_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
+        self.prs_metrics["datetime"] = self.prs_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
 
         if self.visualize:
-            self.save_graph_for_metrics(self.pr_metrics, "ttm", "mttm_time")
-            self.save_graph_for_metrics(self.pr_metrics, "tta", "mtta_time")
-            self.save_graph_for_metrics(self.pr_metrics, "ttfr", "mttfr_time")
+            self.save_graph_for_metrics(self.prs_metrics, "ttm", "mttm_time")
+            self.save_graph_for_metrics(self.prs_metrics, "tta", "mtta_time")
+            self.save_graph_for_metrics(self.prs_metrics, "ttfr", "mttfr_time")
 
         metrics = {"mttm_time", "mtta_time", "mttfr_time"}
         scores = {k: 0 for k in metrics}
         for metric in metrics:
-            prediction = self.compute_predictions(self.pr_metrics, metric)[-1]
-            last_known_metric = self.pr_metrics.loc[len(self.pr_metrics.index) - 1, metric]
+            prediction = self.compute_predictions(self.prs_metrics, metric)[-1]
+            last_known_metric = self.prs_metrics.loc[len(self.prs_metrics.index) - 1, metric]
             scores[metric] = last_known_metric - prediction
 
         return scores
@@ -221,23 +221,23 @@ class Metrics:
         is negative, we expect repository health to worsen in following week,
         on the other hand if the score is positive, we expect the health to be better.
         """
-        self.issues = self.process_pull_requests()[["date", "ttci"]].copy()
+        self.issues_metrics = self.process_issues()[["date", "ttci"]].copy()
 
-        self.issues["mttci_time"] = float()
+        self.issues_metrics["mttci_time"] = float()
 
-        for idx in self.issues.index:
-            self.issues.loc[idx, "mttci_time"] = np.median(self.issues["ttci"][: idx + 1])
+        for idx in self.issues_metrics.index:
+            self.issues_metrics.loc[idx, "mttci_time"] = np.median(self.issues_metrics["ttci"][: idx + 1])
 
-        self.issues["datetime"] = self.issues.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
+        self.issues_metrics["datetime"] = self.issues_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
 
         if self.visualize:
-            self.save_graph_for_metrics(self.issues, "ttci", "mttci_time")
+            self.save_graph_for_metrics(self.issues_metrics, "ttci", "mttci_time")
 
         metrics = {"mttci_time"}
         scores = {k: 0 for k in metrics}
         for metric in metrics:
-            prediction = self.compute_predictions(self.issues, metric)[-1]
-            last_known_metric = self.issues.loc[len(self.issues.index) - 1, metric]
+            prediction = self.compute_predictions(self.issues_metrics, metric)[-1]
+            last_known_metric = self.issues_metrics.loc[len(self.issues_metrics.index) - 1, metric]
             scores[metric] = last_known_metric - prediction
 
         return scores
