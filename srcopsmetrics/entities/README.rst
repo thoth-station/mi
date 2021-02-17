@@ -13,80 +13,80 @@ Meta-information Indicators Metrics
 For every repository we want to gather following metrics:
 
 
-Time to Close an Issue (ttci)
+Time to Close an Issue (TTCI)
 -----------------------------
 For every closed Issue in repository.
 
 
-Median Time to Close an Issue (mttci_time)
+Median Time to Close an Issue (MTTCI_TIME)
 ------------------------------------------
-Each Issue ttci can be compared to the metrics of Issues closed before.
-Therefore, median ttci for every Issue in repository.
+Each Issue TTCI can be compared to the metrics of Issues closed before.
+Therefore, median TTCI for every Issue in repository.
 
 
-Time to Close an Issue Score (ttci_score)
+Time to Close an Issue Score (TTCI_SCORE)
 -----------------------------------------
-Score from "future", based on the least squares Polynomial model that fits the mttci_time data.
+Score from "future", based on the least squares Polynomial model that fits the MTTCI_TIME data.
 
 
-Time To First Review (ttfr)
+Time To First Review (TTFR)
 ---------------------------
 For every PR, extract the time of its first review.
 
 
-Median Time to First Review (mttfr_time)
+Median Time to First Review (MTFFR_TIME)
 ----------------------------------------
-similar to mttci_time
+similar to MTTCI_TIME
 
 
-Time To First Review Score (ttfr_score)
+Time To First Review Score (TTFR_SCORE)
 ---------------------------------------
-similar to ttci_score
+similar to TTCI_SCORE
 
 
-Time To Approve (tta)
+Time To Approve (TTA)
 ---------------------
 Time to approve Pull Request for every PR in repository.
 
 
-Median Time to Approve (mtta_time)
+Median Time to Approve (MTTA_TIME)
 ----------------------------------
-similar to mttci_time
+similar to MTTCI_TIME
 
 
-Time To Approve Score (tta_score)
+Time To Approve Score (TTA_SCORE)
 ---------------------------------
-similar to ttci_score
+similar to TTCI_SCORE
 
 
-Time To Merge (ttm)
+Time To Merge (TTM)
 -------------------
 Time to merge Pull Request for every PR.
 
 
-Median Time to Merge (mttm_time)
+Median Time to Merge (MTTM_TIME)
 --------------------------------
-similar to mttci_time
+similar to MTTCI_TIME
 
 
-Time To Merge Score (ttm_score)
+Time To Merge Score (TTM_SCORE)
 -------------------------------
-similar to ttci_score
+similar to TTCI_SCORE
 
 
-Time To Respond (ttre)
+Time To Respond (TTRE)
 -------------------
 Time for any repository contributor to respond to Issue or Pull Request.
 
 
-Median Time to Respond (mttre_time)
+Median Time to Respond (MTTRE_TIME)
 --------------------------------
-similar to mttci_time
+similar to MTTCI_TIME
 
 
-Time To Respond Score (ttre_score)
+Time To Respond Score (TTRE_SCORE)
 -------------------------------
-similar to ttci_score
+similar to TTCI_SCORE
 
 
 Open/Closed Issue ratio
