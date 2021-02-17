@@ -44,14 +44,40 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 class Metrics:
     """Metrics used in MI."""
 
-    def __init__(self, repository: str, visuaize: bool = False):
+    def __init__(self, repository: str, visualize: bool = False):
         """Initialize with collected knowledge."""
         gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
 
         self.repo_name = repository
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
-        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
-        self.visualize = visuaize
+        self.github_issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
+        self.visualize = visualize
+
+    def process_pull_requests(self) -> pd.DataFrame:
+        """Aggregate analysed data, calculate known metrics from it and return DataFrame.
+
+        Known metrics (meaning they can be calculated while looking on single Pull
+        Request) are currently tta, ttm and ttfr (see entity README for more information).
+        """
+        data = []
+
+        for pr in self.prs.values():
+
+            if not pr["merged_at"]:
+                continue
+
+            created_at = int(pr["created_at"])
+            closed_at = int(pr["closed_at"]) if pr["closed_at"] else None
+            ttci = closed_at - created_at if closed_at else None
+
+            data.append([created_at, ttci])
+
+        aggregated = pd.DataFrame(data)
+        aggregated.columns = ["date", "ttci"]
+
+        factor = aggregated["ttci"]
+        normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
+        return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
     def get_aggregated_pull_requests_with_known_metrics(self) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
@@ -94,16 +120,16 @@ class Metrics:
         normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
         return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
-    def save_graph_for_metrics(self, metrics_name: str, time_metrics_name: str):
+    def save_graph_for_metrics(self, entity, metrics_name: str, time_metrics_name: str):
         """Save graph for known metrics, time metrics and their scores."""
-        score_fit = self.get_least_square_polynomial_fit(time_metrics_name)
+        score_fit = self.get_least_square_polynomial_fit(entity, time_metrics_name)
 
         one_week_ahead_timestamp = int(time.time()) + 3600 * 24 * 7
 
         trendline_pts = np.linspace(
-            self.pr_metrics.loc[0, "date"].astype(int),
+            entity.loc[0, "date"].astype(int),
             one_week_ahead_timestamp,
-            len(self.pr_metrics.index) + 7,  # because we are making one week ahead prediction
+            len(entity.index) + 7,  # because we are making one week ahead prediction
         )
 
         plt.xlabel("Pull requests creation date")
@@ -111,16 +137,10 @@ class Metrics:
 
         plt.xticks(rotation=45, ha="right")
         plt.plot(
-            self.pr_metrics["datetime"],
-            self.pr_metrics[metrics_name].apply(lambda x: x / 3600),
-            ".",
-            label=metrics_name,
+            entity["datetime"], entity[metrics_name].apply(lambda x: x / 3600), ".", label=metrics_name,
         )
         plt.plot(
-            self.pr_metrics["datetime"],
-            self.pr_metrics[time_metrics_name].apply(lambda x: x / 3600),
-            "--",
-            label=time_metrics_name,
+            entity["datetime"], entity[time_metrics_name].apply(lambda x: x / 3600), "--", label=time_metrics_name,
         )
         plt.plot(
             [datetime.fromtimestamp(t) for t in trendline_pts],
@@ -132,26 +152,25 @@ class Metrics:
 
         path = f"./srcopsmetrics/knowledge_statistics/{self.repo_name}"
         check_directory(Path(path))
-        plt.savefig(f"{path}/{metrics_name}", dpi=300)
+        # plt.savefig(f"{path}/{metrics_name}", dpi=300)
+        plt.show()
         _LOGGER.info("Saved visualization %s", path)
         plt.clf()
 
-    def get_least_square_polynomial_fit(self, time_metrics_name: str, degree: int = 3):
+    def get_least_square_polynomial_fit(self, entity, time_metrics_name: str, degree: int = 3):
         """Apply least square polynomial fit on time metrics data."""
         # TODO: score should be calculated from e.g. weekly stats, not overall
         # TODO: what degree would be best?
-        return np.poly1d(np.polyfit(self.pr_metrics["date"], self.pr_metrics[time_metrics_name], degree))
+        return np.poly1d(np.polyfit(entity["date"], entity[time_metrics_name], degree))
 
-    def compute_predictions(self, time_metrics_name: str, days_ahead: int = 7) -> np.array:
+    def compute_predictions(self, entity, time_metrics_name: str, days_ahead: int = 7) -> np.array:
         """Compute estimation of the mean metrics in time for future score.
 
         Return numpy.array with prediciton for all the available dates
-        in self.pr_metrics plus specified days_ahead
+        in entity plus specified days_ahead
         """
-        score = self.get_least_square_polynomial_fit(time_metrics_name)
-        return score(
-            self.pr_metrics["date"].append(pd.Series([int(time.time()) * 3600 * 24 for i in range(1, days_ahead + 1)]))
-        )
+        score = self.get_least_square_polynomial_fit(entity, time_metrics_name)
+        return score(entity["date"].append(pd.Series([int(time.time()) * 3600 * 24 for i in range(1, days_ahead + 1)])))
 
     def evaluate_scores_for_pull_requests(self) -> Dict[str, int]:
         """Get scores for Pull Requests.
@@ -178,15 +197,47 @@ class Metrics:
         self.pr_metrics["datetime"] = self.pr_metrics.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
 
         if self.visualize:
-            self.save_graph_for_metrics("ttm", "mttm_time")
-            self.save_graph_for_metrics("tta", "mtta_time")
-            self.save_graph_for_metrics("ttfr", "mttfr_time")
+            self.save_graph_for_metrics(self.pr_metrics, "ttm", "mttm_time")
+            self.save_graph_for_metrics(self.pr_metrics, "tta", "mtta_time")
+            self.save_graph_for_metrics(self.pr_metrics, "ttfr", "mttfr_time")
 
         metrics = {"mttm_time", "mtta_time", "mttfr_time"}
         scores = {k: 0 for k in metrics}
         for metric in metrics:
-            prediction = self.compute_predictions(metric)[-1]
-            last_known_metric = self.pr_metrics.loc[len(self.pr_metrics.index) - 1, "mttm_time"]
+            prediction = self.compute_predictions(self.pr_metrics, metric)[-1]
+            last_known_metric = self.pr_metrics.loc[len(self.pr_metrics.index) - 1, metric]
+            scores[metric] = last_known_metric - prediction
+
+        return scores
+
+    def evaluate_scores_for_issues(self) -> Dict[str, int]:
+        """Get scores for Pull Requests.
+
+        Current supported metrics are tta, ttm and tffr, with their time counterparts
+        being calculated along the scores as well.
+
+        Scores are based on calculating the difference between the latest time metric
+        and the last prediction of fitted polynomial on metrics. Therefore, if the score
+        is negative, we expect repository health to worsen in following week,
+        on the other hand if the score is positive, we expect the health to be better.
+        """
+        self.issues = self.process_pull_requests()[["date", "ttci"]].copy()
+
+        self.issues["mttci_time"] = float()
+
+        for idx in self.issues.index:
+            self.issues.loc[idx, "mttci_time"] = np.median(self.issues["ttci"][: idx + 1])
+
+        self.issues["datetime"] = self.issues.apply(lambda x: datetime.fromtimestamp(x["date"]), axis=1)
+
+        if self.visualize:
+            self.save_graph_for_metrics(self.issues, "ttci", "mttci_time")
+
+        metrics = {"mttci_time"}
+        scores = {k: 0 for k in metrics}
+        for metric in metrics:
+            prediction = self.compute_predictions(self.issues, metric)[-1]
+            last_known_metric = self.issues.loc[len(self.issues.index) - 1, metric]
             scores[metric] = last_known_metric - prediction
 
         return scores

@@ -136,11 +136,15 @@ def cli(
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if metrics:
-        repo_metrics = Metrics(repository=repos[0], visuaize=visualize_statistics)
+        repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
         scores = repo_metrics.evaluate_scores_for_pull_requests()
 
-        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/scores")
+        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
+
+        scores_issues = repo_metrics.evaluate_scores_for_issues()
+        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
+        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
 
 if __name__ == "__main__":
