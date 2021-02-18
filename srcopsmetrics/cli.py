@@ -19,6 +19,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import List, Optional
 
 import click
@@ -27,6 +28,8 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.metrics import Metrics
+from srcopsmetrics.storage import KnowledgeStorage
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +101,9 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             are stored. Default knowledge path is {StoragePath.DEFAULT.value}
             """,
 )
+@click.option(
+    "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -108,6 +114,7 @@ def cli(
     visualize_statistics: bool,
     reviewer_reccomender: bool,
     knowledge_path: str,
+    metrics: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -124,16 +131,24 @@ def cli(
     for project in repos:
         os.environ["PROJECT"] = project
 
-        if visualize_statistics:
-            raise NotImplementedError
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
-    if visualize_statistics and repository is not None:
-        raise NotImplementedError
-    elif visualize_statistics and organization is not None:
-        raise NotImplementedError
+    if metrics:
+        repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
+
+        repo_metrics.get_metrics_outliers_pull_requests()
+        repo_metrics.get_metrics_outliers_issues()
+
+        scores = repo_metrics.evaluate_scores_for_pull_requests()
+
+        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
+        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
+
+        scores_issues = repo_metrics.evaluate_scores_for_issues()
+        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
+        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
 
 if __name__ == "__main__":
