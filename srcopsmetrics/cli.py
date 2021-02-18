@@ -27,6 +27,7 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.kebechet_metrics import KebechetMetrics
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +99,12 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             are stored. Default knowledge path is {StoragePath.DEFAULT.value}
             """,
 )
+@click.option(
+    "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+)
+@click.option(
+    "--kebechet", "-K", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -108,6 +115,8 @@ def cli(
     visualize_statistics: bool,
     reviewer_reccomender: bool,
     knowledge_path: str,
+    metrics: bool,
+    kebechet: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -124,16 +133,13 @@ def cli(
     for project in repos:
         os.environ["PROJECT"] = project
 
-        if visualize_statistics:
-            raise NotImplementedError
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
-    if visualize_statistics and repository is not None:
-        raise NotImplementedError
-    elif visualize_statistics and organization is not None:
-        raise NotImplementedError
+    if kebechet:
+        kebechet_metrics = KebechetMetrics(repository=repos[0], today=True)
+        kebechet_metrics.evaluate_and_store_kebechet_metrics(is_local=is_local)
 
 
 if __name__ == "__main__":
