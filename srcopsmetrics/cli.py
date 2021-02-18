@@ -100,10 +100,11 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             """,
 )
 @click.option(
-    "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
-)
-@click.option(
-    "--kebechet", "-K", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+    "--thoth",
+    "-T",
+    is_flag=True,
+    required=False,
+    help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository.""",
 )
 def cli(
     repository: Optional[str],
@@ -115,8 +116,7 @@ def cli(
     visualize_statistics: bool,
     reviewer_reccomender: bool,
     knowledge_path: str,
-    metrics: bool,
-    kebechet: bool,
+    thoth: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -137,7 +137,7 @@ def cli(
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
-    if kebechet:
+    if thoth:
         kebechet_metrics = KebechetMetrics(repository=repos[0], today=True)
         kebechet_metrics.evaluate_and_store_kebechet_metrics(is_local=is_local)
 
