@@ -28,6 +28,7 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.kebechet_metrics import KebechetMetrics
 from srcopsmetrics.metrics import Metrics
 from srcopsmetrics.storage import KnowledgeStorage
 
@@ -104,6 +105,9 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
 @click.option(
     "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
 )
+@click.option(
+    "--kebechet", "-K", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -115,6 +119,7 @@ def cli(
     reviewer_reccomender: bool,
     knowledge_path: str,
     metrics: bool,
+    kebechet: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -137,6 +142,10 @@ def cli(
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
+
+        repo_metrics.get_metrics_outliers_pull_requests()
+        repo_metrics.get_metrics_outliers_issues()
+
         scores = repo_metrics.evaluate_scores_for_pull_requests()
 
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
@@ -145,6 +154,10 @@ def cli(
         scores_issues = repo_metrics.evaluate_scores_for_issues()
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
+
+    if kebechet:
+        kebechet_metrics = KebechetMetrics(repository=repos[0])
+        kebechet_metrics.evaluate_and_store_kebechet_metrics(is_local=is_local)
 
 
 if __name__ == "__main__":

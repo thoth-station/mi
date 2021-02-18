@@ -46,40 +46,43 @@ class Metrics:
 
     def __init__(self, repository: str, visualize: bool = False):
         """Initialize with collected knowledge."""
-        gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
+        self.gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
 
         self.repo_name = repository
-        self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
-        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
+        self.prs = PullRequest(self.gh_repo).load_previous_knowledge(is_local=True)
+        self.issues = Issue(self.gh_repo).load_previous_knowledge(is_local=True)
         self.visualize = visualize
 
-    def process_issues(self) -> pd.DataFrame:
+    def process_issues(self, remove_outliers: bool = True) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
 
         Known metrics (meaning they can be calculated while looking on single Pull
-        Request) are currently tta, ttm and ttfr (see entity README for more information).
+        Request) are currently TTA, TTM and TTFR (see entity README for more information).
         """
         data = []
 
-        for pr in self.prs.values():
+        for issue_id, issue in self.prs.items():
 
-            if not pr["merged_at"]:
+            if not issue["merged_at"]:
                 continue
 
-            created_at = int(pr["created_at"])
-            closed_at = int(pr["closed_at"]) if pr["closed_at"] else None
+            created_at = int(issue["created_at"])
+            closed_at = int(issue["closed_at"]) if issue["closed_at"] else None
             ttci = closed_at - created_at if closed_at else None
 
-            data.append([created_at, ttci])
+            data.append([issue_id, created_at, ttci])
 
         aggregated = pd.DataFrame(data)
-        aggregated.columns = ["date", "ttci"]
+        aggregated.columns = ["issue_id", "date", "ttci"]
 
-        factor = aggregated["ttci"]
-        normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
-        return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
+        if remove_outliers:
+            factor = aggregated["ttci"]
+            normal = factor.between(factor.quantile(0.95), factor.quantile(1))
+            return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
 
-    def process_pull_requests(self) -> pd.DataFrame:
+        return aggregated.sort_values(by=["date"]).reset_index(drop=True)
+
+    def process_pull_requests(self, remove_outliers: bool = True) -> pd.DataFrame:
         """Aggregate analysed data, calculate known metrics from it and return DataFrame.
 
         Known metrics (meaning they can be calculated while looking on single Pull
@@ -89,7 +92,7 @@ class Metrics:
         overall_ttfr = []
         overall_ttm = []
 
-        for pr in self.prs.values():
+        for pr_id, pr in self.prs.items():
 
             if not pr["merged_at"]:
                 continue
@@ -111,14 +114,65 @@ class Metrics:
 
             labels = [k for k in pr["labels"].keys()]
 
-            data.append([created_at, pr["created_by"], pr["size"], labels, reviewers, ttm, ttfr, tta])
+            data.append([pr_id, created_at, pr["created_by"], pr["size"], labels, reviewers, ttm, ttfr, tta])
 
         aggregated = pd.DataFrame(data)
-        aggregated.columns = ["date", "author", "size", "labels", "reviewers", "ttm", "ttfr", "tta"]
+        aggregated.columns = ["pr_id", "date", "author", "size", "labels", "reviewers", "ttm", "ttfr", "tta"]
 
-        factor = aggregated["ttm"]
-        normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
-        return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
+        if remove_outliers:
+            factor = aggregated["ttm"]
+            normal = factor.between(factor.quantile(0.05), factor.quantile(0.95))
+            return aggregated[normal].sort_values(by=["date"]).reset_index(drop=True)
+
+        return aggregated.sort_values(by=["date"]).reset_index(drop=True)
+
+    def get_metrics_outliers_pull_requests(self, filter_closed: bool = True):
+        """Get outliers for every PR metric."""
+        processed = self.process_pull_requests(remove_outliers=False)
+
+        state = "OPENED" if filter_closed else "ALL"
+        _LOGGER.info("----------Detected %s PRs with outlier metrics (95%% quantile)----------", state)
+        for metric in ["ttm", "tta", "ttfr"]:
+            factor = processed[metric]
+            normal = factor.between(factor.quantile(0.95), factor.quantile(1))
+            outliers = processed[~normal].sort_values(by=["date"]).reset_index(drop=True)
+
+            median = np.nanmedian(processed[normal][metric])
+
+            for idx in outliers.index:
+                pr_id = int(outliers.loc[idx, "pr_id"])
+                gh_pr = self.gh_repo.get_pull(pr_id)
+                if filter_closed:
+                    if gh_pr.state == "closed":
+                        continue
+
+                diff = abs(median - int(outliers.loc[idx, metric]))
+
+                _LOGGER.info("PR #%d is %d above %s median (%s)" % (pr_id, diff, metric, gh_pr.html_url))
+
+    def get_metrics_outliers_issues(self, filter_closed: bool = True):
+        """Get outliers for every Issue metric."""
+        processed = self.process_issues(remove_outliers=False)
+
+        state = "OPENED" if filter_closed else "ALL"
+        _LOGGER.info("----------Detected %s Issues with outlier metrics (95%% quantile)----------", state)
+        for metric in ["ttci"]:
+            factor = processed[metric]
+            normal = factor.between(factor.quantile(0.95), factor.quantile(1))
+            outliers = processed[~normal].sort_values(by=["date"]).reset_index(drop=True)
+
+            median = np.nanmedian(processed[normal][metric])
+
+            for idx in outliers.index:
+                issue_id = int(outliers.loc[idx, "issue_id"])
+                gh_pr = self.gh_repo.get_issue(issue_id)
+                if filter_closed:
+                    if gh_pr.state == "closed":
+                        continue
+
+                diff = abs(median - int(outliers.loc[idx, metric]))
+
+                _LOGGER.info("Issue #%d is %d above %s median (%s)" % (issue_id, diff, metric, gh_pr.html_url))
 
     def save_graph_for_metrics(self, entity, metrics_name: str, time_metrics_name: str):
         """Save graph for known metrics, time metrics and their scores."""
