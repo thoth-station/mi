@@ -173,7 +173,7 @@ class KebechetMetrics:
 
             day["rejected"] = len(prs_day[np.isnan(prs_day["ttm"])])
             day["rejected_by_bot"] = len(prs_day[prs_day["rejected_by_bot"] == 1])
-            stats["rejected_by_other"] = day["rejected"] - day["rejected_by_bot"]
+            day["rejected_by_other"] = day["rejected"] - day["rejected_by_bot"]
 
             day["merged"] = len(prs_day) - day["rejected"]
             day["merged_by_bot"] = len(prs_day[prs_day["merged_by_bot"] == 1])
@@ -194,7 +194,7 @@ class KebechetMetrics:
         """Calculate and store update manager metrics."""
         overall_stats = self.get_overall_stats_update_manager()
         daily_stats = self.get_daily_stats_update_manager()
-        return [overall_stats, daily_stats]
+        return {"overall": overall_stats, "daily": daily_stats}
 
     def label_bot_manager(self):
         """Calculate and store label bot manager metrics."""
