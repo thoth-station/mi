@@ -132,13 +132,13 @@ class KebechetMetrics:
 
             rejected = 1 if ttm is None and pr["closed_at"] is not None else 0
             closed_by_bot = 1 if rejected is not None and pr["closed_by"] in BOT_NAMES else 0
-            merged_by_bot = 1 if closed_by_bot and not rejected else 0
-            rejected_by_bot = 1 if closed_by_bot and rejected else 0
+            merged_by_kebechet_bot = 1 if closed_by_bot and not rejected else 0
+            rejected_by_kebechet_bot = 1 if closed_by_bot and rejected else 0
 
-            data.append([created_at, pr_type, ttm, ttfr, tta, merged_by_bot, rejected_by_bot])
+            data.append([created_at, pr_type, ttm, ttfr, tta, merged_by_kebechet_bot, rejected_by_kebechet_bot])
 
         df = pd.DataFrame(data)
-        df.columns = ["date", "type", "ttm", "ttfr", "tta", "merged_by_bot", "rejected_by_bot"]
+        df.columns = ["date", "type", "ttm", "ttfr", "tta", "merged_by_kebechet_bot", "rejected_by_kebechet_bot"]
 
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
@@ -150,12 +150,12 @@ class KebechetMetrics:
         stats["created_pull_requests"] = len(prs)
 
         stats["rejected"] = len(prs[np.isnan(prs["ttm"])])
-        stats["rejected_by_bot"] = len(prs[prs["rejected_by_bot"] == 1])
-        stats["rejected_by_other"] = stats["rejected"] - stats["rejected_by_bot"]
+        stats["rejected_by_kebechet_bot"] = len(prs[prs["rejected_by_kebechet_bot"] == 1])
+        stats["rejected_by_other"] = stats["rejected"] - stats["rejected_by_kebechet_bot"]
 
         stats["merged"] = len(prs) - stats["rejected"]
-        stats["merged_by_bot"] = len(prs[prs["merged_by_bot"] == 1])
-        stats["merged_by_other"] = stats["merged"] - stats["merged_by_bot"]
+        stats["merged_by_kebechet_bot"] = len(prs[prs["merged_by_kebechet_bot"] == 1])
+        stats["merged_by_other"] = stats["merged"] - stats["merged_by_kebechet_bot"]
 
         return stats
 
@@ -172,12 +172,12 @@ class KebechetMetrics:
             day["created_pull_requests"] = len(prs_day)
 
             day["rejected"] = len(prs_day[np.isnan(prs_day["ttm"])])
-            day["rejected_by_bot"] = len(prs_day[prs_day["rejected_by_bot"] == 1])
-            day["rejected_by_other"] = day["rejected"] - day["rejected_by_bot"]
+            day["rejected_by_kebechet_bot"] = len(prs_day[prs_day["rejected_by_kebechet_bot"] == 1])
+            day["rejected_by_other"] = day["rejected"] - day["rejected_by_kebechet_bot"]
 
             day["merged"] = len(prs_day) - day["rejected"]
-            day["merged_by_bot"] = len(prs_day[prs_day["merged_by_bot"] == 1])
-            day["merged_by_other"] = day["merged"] - day["merged_by_bot"]
+            day["merged_by_kebechet_bot"] = len(prs_day[prs_day["merged_by_kebechet_bot"] == 1])
+            day["merged_by_other"] = day["merged"] - day["merged_by_kebechet_bot"]
 
             stats[str(date)] = day
 
