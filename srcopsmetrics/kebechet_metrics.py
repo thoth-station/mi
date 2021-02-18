@@ -218,7 +218,7 @@ class KebechetMetrics:
         """Calculate and store thoth advise manager metrics."""
         raise NotImplementedError
 
-    def thoth_promenance(self):
+    def thoth_provenance(self):
         """Calculate and store promenance manager metrics."""
         raise NotImplementedError
 
