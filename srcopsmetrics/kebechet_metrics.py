@@ -158,6 +158,9 @@ class KebechetMetrics:
         stats["merged_by_kebechet_bot"] = len(prs[prs["merged_by_kebechet_bot"] == 1])
         stats["merged_by_other"] = stats["merged"] - stats["merged_by_kebechet_bot"]
 
+        median_time = prs["ttm"].median()
+        stats["median_ttm"] = median_time if not np.isnan(median_time) else 0
+
         return stats
 
     def get_daily_stats_update_manager(self):
@@ -167,9 +170,10 @@ class KebechetMetrics:
         """
         prs = self._get_update_manager_pull_requests()
         prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
+        today = datetime.now().date()
 
         stats: Dict[datetime, Any] = {}
-        day_range = [datetime.now().date()] if self.today else prs["days"].unique()
+        day_range = [today] if self.today else prs["days"].unique()
         for date in day_range:
             prs_day = prs[prs["days"] == date]
 
@@ -184,7 +188,11 @@ class KebechetMetrics:
             day["merged_by_kebechet_bot"] = len(prs_day[prs_day["merged_by_kebechet_bot"] == 1])
             day["merged_by_other"] = day["merged"] - day["merged_by_kebechet_bot"]
 
+            # TODO consider adding median_time to every day statistics (rolling windown maybe?)
+
             if self.today:
+                median_time = prs[prs["days"] == today]["ttm"].median()
+                day["median_ttm"] = median_time if not np.isnan(median_time) else 0
                 return day
 
             stats[str(date)] = day
