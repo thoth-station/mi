@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 from github import Github
 
+from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.storage import KnowledgeStorage
@@ -42,6 +43,7 @@ UPDATE_TYPES_AND_KEYWORDS = {
 
 _LOGGER = logging.getLogger(__name__)
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+_ROOT_DIR = "kebechet-update-manager"
 
 
 class KebechetMetrics:
@@ -204,13 +206,16 @@ class KebechetMetrics:
         for get_stats in [self.update_manager]:
             stats = get_stats()
 
-            path = f"./srcopsmetrics/metrics/{self.repo_name}/kebechet_{get_stats.__name__}"
+            path = Path(f"./{_ROOT_DIR}/{self.repo_name}/")
+            utils.check_directory(path)
+
+            file_name = f"kebechet_{get_stats.__name__}"
             if self.today:
                 curr_day = datetime.now().date()
-                path += f"_{str(curr_day)}"
-            path += ".json"
+                file_name += f"_{str(curr_day)}"
+            file_name += ".json"
 
-            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=Path(path), data=stats)
+            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path.joinpath(file_name), data=stats)
 
     def update_manager(self):
         """Calculate and store update manager metrics."""
