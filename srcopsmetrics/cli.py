@@ -163,5 +163,6 @@ def cli(
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
+
 if __name__ == "__main__":
     cli()
