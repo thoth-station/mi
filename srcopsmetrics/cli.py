@@ -28,6 +28,7 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
+from srcopsmetrics.kebechet_metrics import KebechetMetrics
 from srcopsmetrics.metrics import Metrics
 from srcopsmetrics.storage import KnowledgeStorage
 
@@ -102,6 +103,13 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             """,
 )
 @click.option(
+    "--thoth",
+    "-T",
+    is_flag=True,
+    required=False,
+    help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository.""",
+)
+@click.option(
     "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
 )
 def cli(
@@ -114,6 +122,7 @@ def cli(
     visualize_statistics: bool,
     reviewer_reccomender: bool,
     knowledge_path: str,
+    thoth: bool,
     metrics: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
@@ -134,6 +143,10 @@ def cli(
         if reviewer_reccomender:
             reviewer_assigner = ReviewerAssigner()
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
+
+    if thoth:
+        kebechet_metrics = KebechetMetrics(repository=repos[0], today=True)
+        kebechet_metrics.evaluate_and_store_kebechet_metrics(is_local=is_local)
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
