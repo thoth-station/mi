@@ -24,7 +24,7 @@ Each Issue TTCI can be compared to the metrics of Issues closed before.
 Therefore, median TTCI for every Issue in repository.
 
 
-Time to Close an Issue Score (TTCI_SCORE)
+Time to Close an Issue Score (TTCIS)
 -----------------------------------------
 Score from "future", based on the least squares Polynomial model that fits the MTTCI data.
 
@@ -39,9 +39,9 @@ Median Time to First Review (MTFFR)
 similar to MTTCI
 
 
-Time To First Review Score (TTFR_SCORE)
+Time To First Review Score (TTFRS)
 ---------------------------------------
-similar to TTCI_SCORE
+similar to TTCIS
 
 
 Time To Approve (TTA)
@@ -54,9 +54,9 @@ Median Time to Approve (MTTA)
 similar to MTTCI
 
 
-Time To Approve Score (TTA_SCORE)
+Time To Approve Score (TTAS)
 ---------------------------------
-similar to TTCI_SCORE
+similar to TTCIS
 
 
 Time To Merge (TTM)
@@ -69,9 +69,9 @@ Median Time to Merge (MTTM)
 similar to MTTCI
 
 
-Time To Merge Score (TTM_SCORE)
+Time To Merge Score (TTMS)
 -------------------------------
-similar to TTCI_SCORE
+similar to TTCIS
 
 
 Time To Respond (TTRE)
@@ -84,9 +84,9 @@ Median Time to Respond (MTTRE)
 similar to MTTCI
 
 
-Time To Respond Score (TTRE_SCORE)
+Time To Respond Score (TTRES)
 -------------------------------
-similar to TTCI_SCORE
+similar to TTCIS
 
 
 Open/Closed Issue ratio
