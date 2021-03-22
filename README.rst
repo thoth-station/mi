@@ -104,42 +104,13 @@ Usage - Visualize Project Statistics
 
     PYTHONPATH=. pipenv run srcopsmetrics/cli.py --organization <org_name> -v
 
-Examples
-=========
-For each repository is possible to obtain the following plots:
-
-`MTTFR-in-time.png` --> Mean time to First Review (MTTFR) variation after each PR approved in time.
-
-`MTTR-in-time.png` --> Mean time to Review (MTTR) variation after each PR approved in time.
-
-`TTCI-in-time.png` --> Time to Close an Issue (TTCI) variation after each PR approved in time.
-
-`TTFR-in-time.png` --> Time to First Review (TTFR) variation after each PR approved in time.
-
-`TTR-in-time.png` --> Time to Review (TTR) variation after each PR approved in time.
-
-`TTR-per-PR-length.png` --> Time to Review (TTR) variation after each PR length.
-
-`TTR-per-PR.png` --> Time to Review (TTR) variation after each PR.
-
-`TTFR-per-PR-length.png` --> Time to First Review (TTFR) variation after each PR length.
-
-`TTFR-per-PR.png` --> Time to First Review (TTFR) variation after each PR.
-
 Entity
 ======
-Throughout the project, the objects with name "entities" are mentioned. Entity is essentialy a repository metadata that is being inspected during the process of analysis (e.g. Issue or Pull Request). Then, specified *features* are extracted from this entity and are saved as knowledge afterwards.
+Throughout the project, the objects with name "entities" are mentioned.
+Entity is essentialy a repository metadata that is being inspected during the process of analysis (e.g. Issue or Pull Request).
+Then, specified *features* are extracted from this entity and are saved as knowledge afterwards.
+For more information go to srcopsmetrics/entities page
 
-Entity Criteria
----------------
-
-Any entity satisfies these criteria:
-
-- schema for entity is available in `entity_schema.Schemas` class
-- name of the entity is in the `enums.EntityTypeEnum` class
-- name of the saved entities knowledge file is specified in `storage.KnowledgeStorage._FILENAME_ENTITY`
-- method named `analyse_<entity_name>()` and its 'sub-part' method named `store_<entity_name>` is implemented in `github_knowledge.GitHubKnowledge` class. This concept of an `analyse` and `storage` method is used because of the GitHub pagination. These two methods are used in `iterator.KnowledgeAnalysis` context manager for *safe storage* saving, meaning that if any exception of type `GithubException` or `KeyboardInterrupt` raises during the process of iterating through paginated lists, the context manager tries to save the already analysed (cached) knowledge that should be in valid state (by comparing it to the defined schema in `entity_schema.Schemas`). This saves time, resources and also the GitHub API rate limit.
-- method `analyse_entity` is then called in `bot_knowledge.analyse_projects` with entity enum from `enums.EntityTypeEnum` passed as a parameter.
 
 Usage - Reviewer Reccomender
 ============================
