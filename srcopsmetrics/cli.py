@@ -104,7 +104,7 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
 )
 @click.option(
     "--thoth",
-    "-T",
+    "-t",
     is_flag=True,
     required=False,
     help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository.""",
@@ -165,4 +165,4 @@ def cli(
 
 
 if __name__ == "__main__":
-    cli()
+    cli(auto_envvar_prefix="MI")
