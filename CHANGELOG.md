@@ -578,3 +578,14 @@ all the things that you see...
 * :arrow_up: Automatic update of dependencies by kebechet. (#312)
 ### Improvements
 * Add requirements for PyPI, remove unnecessary dependencies (#310)
+
+## Release 2.3.2 (2021-03-25T22:20:35)
+### Features
+* Allow setting cli options by envvars (#348)
+* :arrow_up: Automatic update of dependencies by Kebechet (#347)
+* Documentation/metrics (#316)
+* Add .prow (#344)
+* Add metrics/scores evaluation and cli option (#333)
+* :arrow_up: Automatic update of dependencies by Kebechet (#330)
+### Improvements
+* Add Kebechet metrics class and cli option (#332)
