@@ -37,7 +37,7 @@ class Issue(Entity):
     entity_schema = Schema(
         {
             "title": str,
-            "body": str,
+            "body": Any(None, str),
             "created_by": str,
             "created_at": int,
             "closed_by": Any(None, str),
