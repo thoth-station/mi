@@ -589,3 +589,8 @@ all the things that you see...
 * :arrow_up: Automatic update of dependencies by Kebechet (#330)
 ### Improvements
 * Add Kebechet metrics class and cli option (#332)
+
+## Release 2.3.3 (2021-03-29T14:23:06)
+### Features
+* Fix local loading (#353)
+* Fix issue body, make it optional (#351)
