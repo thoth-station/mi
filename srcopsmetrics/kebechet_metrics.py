@@ -49,14 +49,15 @@ _ROOT_DIR = "kebechet-update-manager"
 class KebechetMetrics:
     """Kebechet Metrics inspected by MI."""
 
-    def __init__(self, repository: str, today: bool = False):
+    def __init__(self, repository: str, today: bool = False, is_local: bool = False):
         """Initialize with collected knowledge."""
         gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
 
         self.repo_name = repository
-        self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
-        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=True)
+        self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=is_local)
+        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=is_local)
         self.today = today
+        self.is_local = is_local
 
     def _get_least_square_polynomial_fit(self, x_series: pd.Series, y_series: pd.Series, degree: int = 3):
         """Apply least square polynomial fit on time metrics data."""
@@ -201,7 +202,7 @@ class KebechetMetrics:
 
         return stats
 
-    def evaluate_and_store_kebechet_metrics(self, is_local: bool):
+    def evaluate_and_store_kebechet_metrics(self):
         """Calculate and store metrics for every kebechet manager in repository."""
         for get_stats in [self.update_manager]:
             stats = get_stats()
@@ -215,7 +216,7 @@ class KebechetMetrics:
                 file_name += f"_{str(curr_day)}"
             file_name += ".json"
 
-            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path.joinpath(file_name), data=stats)
+            KnowledgeStorage(is_local=self.is_local).save_knowledge(file_path=path.joinpath(file_name), data=stats)
 
     def update_manager(self):
         """Calculate and store update manager metrics."""

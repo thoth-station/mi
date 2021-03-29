@@ -145,8 +145,8 @@ def cli(
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if thoth:
-        kebechet_metrics = KebechetMetrics(repository=repos[0], today=True)
-        kebechet_metrics.evaluate_and_store_kebechet_metrics(is_local=is_local)
+        kebechet_metrics = KebechetMetrics(repository=repos[0], today=True, is_local=is_local)
+        kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
