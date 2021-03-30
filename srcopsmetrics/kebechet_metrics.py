@@ -143,7 +143,7 @@ class KebechetMetrics:
             data.append([created_at, pr_type, ttm, ttfr, tta, merged_by_kebechet_bot, rejected_by_kebechet_bot])
 
         if not data:
-            return []
+            return pd.DataFrame()
 
         df = pd.DataFrame(data)
         df.columns = ["date", "type", "ttm", "ttfr", "tta", "merged_by_kebechet_bot", "rejected_by_kebechet_bot"]
@@ -154,7 +154,7 @@ class KebechetMetrics:
         """Return stats over whole repository age."""
         prs = self._get_update_manager_pull_requests()
 
-        if not prs:
+        if prs.empty:
             return {}
 
         stats: Dict[str, Any] = {}
@@ -180,7 +180,7 @@ class KebechetMetrics:
         """
         prs = self._get_update_manager_pull_requests()
 
-        if not prs:
+        if prs.empty:
             return {}
 
         prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
