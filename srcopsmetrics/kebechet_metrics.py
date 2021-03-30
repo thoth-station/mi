@@ -30,7 +30,8 @@ from github import Github
 
 from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
-from srcopsmetrics.entities.pull_request import PullRequest
+from srcopsmetrics.entities.pull_request import (
+    PullRequest)
 from srcopsmetrics.storage import KnowledgeStorage
 
 BOT_NAMES = {"sesheta"}
@@ -149,12 +150,12 @@ class KebechetMetrics:
 
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
-    def get_overall_stats_update_manager(self):
+    def get_overall_stats_update_manager(self) -> Dict[str, Any]:
         """Return stats over whole repository age."""
         prs = self._get_update_manager_pull_requests()
 
         if not prs:
-            return []
+            return {}
 
         stats: Dict[str, Any] = {}
         stats["created_pull_requests"] = len(prs)
@@ -172,7 +173,7 @@ class KebechetMetrics:
 
         return stats
 
-    def get_daily_stats_update_manager(self):
+    def get_daily_stats_update_manager(self) -> Dict[str, Any]:
         """Get daily stats.
 
         If self.today set to true, return only stats for current day.
@@ -180,7 +181,7 @@ class KebechetMetrics:
         prs = self._get_update_manager_pull_requests()
 
         if not prs:
-            return []
+            return {}
 
         prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
         today = datetime.now().date()
