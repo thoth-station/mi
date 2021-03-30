@@ -594,3 +594,7 @@ all the things that you see...
 ### Features
 * Fix local loading (#353)
 * Fix issue body, make it optional (#351)
+
+## Release 2.3.4 (2021-03-30T13:25:11)
+### Features
+* Include empty repo check (#357)
