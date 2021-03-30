@@ -114,7 +114,7 @@ class KebechetMetrics:
 
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
-    def _get_update_manager_pull_requests(self):
+    def _get_update_manager_pull_requests(self) -> pd.DataFrame:
         data = []
         for pr in self.prs.values():
             pr_type = KebechetMetrics._get_update_manager_request_type(pr)
@@ -141,14 +141,20 @@ class KebechetMetrics:
 
             data.append([created_at, pr_type, ttm, ttfr, tta, merged_by_kebechet_bot, rejected_by_kebechet_bot])
 
+        if not data:
+            return pd.DataFrame()
+
         df = pd.DataFrame(data)
         df.columns = ["date", "type", "ttm", "ttfr", "tta", "merged_by_kebechet_bot", "rejected_by_kebechet_bot"]
 
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
-    def get_overall_stats_update_manager(self):
+    def get_overall_stats_update_manager(self) -> Dict[str, Any]:
         """Return stats over whole repository age."""
         prs = self._get_update_manager_pull_requests()
+
+        if prs.empty:
+            return {}
 
         stats: Dict[str, Any] = {}
         stats["created_pull_requests"] = len(prs)
@@ -166,16 +172,20 @@ class KebechetMetrics:
 
         return stats
 
-    def get_daily_stats_update_manager(self):
+    def get_daily_stats_update_manager(self) -> Dict[str, Any]:
         """Get daily stats.
 
         If self.today set to true, return only stats for current day.
         """
         prs = self._get_update_manager_pull_requests()
+
+        if prs.empty:
+            return {}
+
         prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
         today = datetime.now().date()
 
-        stats: Dict[datetime, Any] = {}
+        stats: Dict[str, Any] = {}
         day_range = [today] if self.today else prs["days"].unique()
         for date in day_range:
             prs_day = prs[prs["days"] == date]
