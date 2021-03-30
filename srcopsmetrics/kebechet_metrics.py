@@ -30,8 +30,7 @@ from github import Github
 
 from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
-from srcopsmetrics.entities.pull_request import (
-    PullRequest)
+from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.storage import KnowledgeStorage
 
 BOT_NAMES = {"sesheta"}
@@ -115,7 +114,7 @@ class KebechetMetrics:
 
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
-    def _get_update_manager_pull_requests(self):
+    def _get_update_manager_pull_requests(self) -> pd.DataFrame:
         data = []
         for pr in self.prs.values():
             pr_type = KebechetMetrics._get_update_manager_request_type(pr)
@@ -186,7 +185,7 @@ class KebechetMetrics:
         prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
         today = datetime.now().date()
 
-        stats: Dict[datetime, Any] = {}
+        stats: Dict[str, Any] = {}
         day_range = [today] if self.today else prs["days"].unique()
         for date in day_range:
             prs_day = prs[prs["days"] == date]
