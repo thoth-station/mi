@@ -17,16 +17,17 @@
 
 """Knowledge storage tools and classes."""
 
-import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics.enums import StoragePath
+
+import pandas as pd
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,22 +66,25 @@ class KnowledgeStorage:
         return s3
 
     @staticmethod
-    def load_locally(file_path: Path) -> Optional[Dict[str, Any]]:
+    def load_locally(file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")
-        if not file_path.exists() or os.path.getsize(file_path) == 0:
-            _LOGGER.debug("Knowledge %s not found locally" % file_path)
-            return None
-        with open(file_path, "r") as f:
-            data = json.load(f)
-        return data
+        try:
+            return pd.read_csv(file_path, index_col=0)
 
-    def load_remotely(self, file_path: Path) -> Optional[Dict[str, Any]]:
+        except FileNotFoundError:
+            _LOGGER.debug("Knowledge %s not found locally" % file_path)
+            return pd.DataFrame()
+
+    def load_remotely(self, file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from Ceph storage."""
         _LOGGER.info("Loading knowledge from Ceph")
+
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
-            return self.get_ceph_store().retrieve_document(ceph_filename)
+            data = self.get_ceph_store().retrieve_document(ceph_filename)
+            return pd.DataFrame(data)
+
         except NotFoundError:
-            _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
-            return None
+            _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
+            return pd.DataFrame()
