@@ -69,12 +69,15 @@ class KnowledgeStorage:
     def load_locally(file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")
-        try:
-            return pd.read_csv(file_path, index_col=0)
 
-        except FileNotFoundError:
+        if not file_path.exists():
             _LOGGER.debug("Knowledge %s not found locally" % file_path)
             return pd.DataFrame()
+
+        df = pd.read_json(file_path, orient="records", lines=True)
+        if not df.empty:
+            df = df.set_index("id")
+        return df
 
     def load_remotely(self, file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from Ceph storage."""
@@ -83,7 +86,7 @@ class KnowledgeStorage:
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
             data = self.get_ceph_store().retrieve_document(ceph_filename)
-            return pd.DataFrame(data)
+            return pd.DataFrame.from_records(data, index="id")
 
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
