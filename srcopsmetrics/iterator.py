@@ -65,6 +65,17 @@ class KnowledgeAnalysis:
         """Every entity must have a previous knowledge initialization method."""
         self.entity.previous_knowledge = self.entity.load_previous_knowledge(is_local=self.is_local)
 
+    @staticmethod
+    def sleep_until_github_api_reset(github):
+        """Sleep until GitHub API rate is reset."""
+        gh_time = github.get_rate_limit().core.reset
+        local_time = datetime.now(tz=timezone.utc)
+
+        wait_time = gh_time - local_time.replace(tzinfo=None)
+
+        _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
+        time.sleep(wait_time.seconds)
+
     def run(self):
         """Iterate through entities of given repository and accumulate them."""
         github = Github(self._GITHUB_ACCESS_TOKEN)
@@ -72,24 +83,19 @@ class KnowledgeAnalysis:
 
         try:
             entities = self.entity.analyse()
+            entities_length = entities.totalCount
             for idx, entity in enumerate(entities, 1):
                 self.knowledge_updated = True
 
                 remaining = github.get_rate_limit().core.remaining
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
-                    gh_time = github.get_rate_limit().core.reset
-                    local_time = datetime.now(tz=timezone.utc)
-
-                    wait_time = gh_time - local_time.replace(tzinfo=None)
-
-                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
-                    time.sleep(wait_time.seconds)
+                    KnowledgeAnalysis.sleep_until_github_api_reset(github)
 
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, entities.totalCount))
+                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, entities_length))
 
                 backup = copy.deepcopy(self.entity.stored_entities)
                 self.entity.store(entity)
