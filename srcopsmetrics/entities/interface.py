@@ -99,10 +99,10 @@ class Entity(metaclass=ABCMeta):
         project_path = path.joinpath("./" + self.repository.full_name)
         utils.check_directory(project_path)
 
-        appendix = ".csv"  # if as_csv else ".json" TODO implement as_csv bool
+        appendix = ".json"  # if as_csv else ".json" TODO implement as_csv bool
         return project_path.joinpath("./" + self.filename + appendix)
 
-    def save_knowledge(self, file_path: Path = None, is_local: bool = False, as_csv: bool = True):
+    def save_knowledge(self, file_path: Path = None, is_local: bool = False, as_csv: bool = False):
         """Save collected knowledge as json."""
         if self.stored_entities is None or len(self.stored_entities) == 0:
             _LOGGER.info("Nothing to store.")
@@ -113,19 +113,21 @@ class Entity(metaclass=ABCMeta):
             file_path = self.file_path
 
         self.entities_schema()(self.stored_entities)  # check for entities schema
-        to_save = {**self.previous_knowledge, **self.stored_entities}
+
+        new_data = pd.DataFrame.from_dict(self.stored_entities).T
+        to_save = pd.concat([new_data, self.previous_knowledge])
 
         _LOGGER.info("Knowledge file %s", (os.path.basename(file_path)))
         _LOGGER.info("new %d entities", len(self.stored_entities))
         _LOGGER.info("(overall %d entities)", len(to_save))
 
-        df = pd.DataFrame(to_save).T
-        # df['github_id'] = df.index
-        # df = df.reset_index()
         if as_csv:
-            to_save = df.to_csv()
+            to_save = to_save.to_csv()
         else:
-            to_save = df.to_json(orient="records")
+            # index labels not preserved with records encoding
+            # therefore duplicating index column
+            to_save["id"] = to_save.index
+            to_save = to_save.to_json(orient="records", lines=True)
 
         if not is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
@@ -137,25 +139,26 @@ class Entity(metaclass=ABCMeta):
                 f.write(str(to_save))
             _LOGGER.info("Saved locally at %s" % file_path)
 
-    def load_previous_knowledge(self, is_local: bool = False, as_csv: bool = True) -> pd.DataFrame:
+    def load_previous_knowledge(self, is_local: bool = False, as_csv: bool = False) -> pd.DataFrame:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory."""
         if self.file_path is None and self.repository is None:
             raise ValueError("Either filepath or project name have to be specified.")
 
-        data = (
+        df = (
             KnowledgeStorage().load_locally(self.file_path)
             if is_local
             else KnowledgeStorage().load_remotely(self.file_path)
         )
 
-        if data is None:
+        if df.empty:
             _LOGGER.info("No previous knowledge of type %s found" % self.name())
             return pd.DataFrame()
 
         _LOGGER.info(
-            "Found previous %s knowledge for %s with %d records" % (self.name(), self.repository.full_name, len(data))
+            "Found previous %s knowledge for %s with %d records"
+            % (self.name(), self.repository.full_name, len(df.index))
         )
-        return data
+        return df
 
     @abstractmethod
     def get_raw_github_data(self) -> pd.DataFrame:
