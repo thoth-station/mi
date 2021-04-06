@@ -226,7 +226,7 @@ class KebechetMetrics:
                 file_name += f"_{str(curr_day)}"
             file_name += ".json"
 
-            KnowledgeStorage(is_local=self.is_local).save_knowledge(file_path=path.joinpath(file_name), data=stats)
+            KnowledgeStorage(is_local=self.is_local).save_data(file_path=path.joinpath(file_name), data=stats)
 
     @staticmethod
     def merge_kebechet_metrics_today(is_local: bool = False):

@@ -113,8 +113,8 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
 )
 @click.option(
-    "--merge-kebechet",
-    "-M",
+    "--merge",
+    "-m",
     is_flag=True,
     required=False,
     help=f"""Merge all of the aggregated data under given KNOWLEDGE_PATH.""",
@@ -131,7 +131,7 @@ def cli(
     knowledge_path: str,
     thoth: bool,
     metrics: bool,
-    merge_kebechet: bool,
+    merge: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -153,8 +153,9 @@ def cli(
             reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
 
     if thoth:
-        kebechet_metrics = KebechetMetrics(repository=repos[0], today=True, is_local=is_local)
-        kebechet_metrics.evaluate_and_store_kebechet_metrics()
+        if repository and not merge:
+            kebechet_metrics = KebechetMetrics(repository=repos[0], today=True, is_local=is_local)
+            kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
     if metrics:
         repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
@@ -171,8 +172,11 @@ def cli(
         path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
         KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
-    if merge_kebechet:
-        KebechetMetrics.merge_kebechet_metrics_today(is_local=is_local)
+    if merge:
+        if thoth:
+            KebechetMetrics.merge_kebechet_metrics_today(is_local=is_local)
+        else:
+            raise NotImplementedError
 
 
 if __name__ == "__main__":
