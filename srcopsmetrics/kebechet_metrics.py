@@ -31,7 +31,7 @@ from github import Github
 from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
-from srcopsmetrics.storage import KnowledgeStorage
+from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 
 BOT_NAMES = {"sesheta"}
 
@@ -226,7 +226,44 @@ class KebechetMetrics:
                 file_name += f"_{str(curr_day)}"
             file_name += ".json"
 
-            KnowledgeStorage(is_local=self.is_local).save_knowledge(file_path=path.joinpath(file_name), data=stats)
+            KnowledgeStorage(is_local=self.is_local).save_data(file_path=path.joinpath(file_name), data=stats)
+
+    @staticmethod
+    def merge_kebechet_metrics_today(is_local: bool = False):
+        """Merge all the collected metrics under given parent directory."""
+        today = str(datetime.now().date())
+
+        overall_today = {
+            "created_pull_requests": 0,
+            "rejected": 0,
+            "rejected_by_kebechet_bot": 0,
+            "rejected_by_other": 0,
+            "merged": 0,
+            "merged_by_kebechet_bot": 0,
+            "merged_by_other": 0,
+        }
+        ttms = []
+
+        ks = KnowledgeStorage(is_local=is_local)
+        for manager_name in ["update_manager"]:
+
+            file_name = f"kebechet_{manager_name}_{today}.json"
+
+            for path in Path(Path(f"./{_ROOT_DIR}/")).rglob(f"*{file_name}"):
+                if path.name == f"overall_{file_name}":
+                    continue
+                data = ks.load_data(file_path=path)
+                for k in data["daily"]:
+                    if k == "median_ttm":
+                        ttms.append(data["daily"][k])
+                    else:
+                        overall_today[k] += data["daily"][k]
+
+            ttm_median = np.nanmedian(ttms)
+            overall_today["median_ttm"] = ttm_median if not np.isnan(ttm_median) else None
+
+            path = Path(f"./{_ROOT_DIR}/overall_{file_name}")
+            ks.save_data(path, overall_today)
 
     def update_manager(self):
         """Calculate and store update manager metrics."""
