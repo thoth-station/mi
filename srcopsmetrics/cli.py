@@ -26,7 +26,6 @@ import click
 
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
-from srcopsmetrics.evaluate_scores import ReviewerAssigner
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
 from srcopsmetrics.metrics import Metrics
@@ -46,7 +45,13 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
 
 @click.command()
 @click.option(
-    "--repository", "-r", type=str, required=False, help="Repository to be analysed (e.g thoth-station/performance)",
+    "--repository",
+    "-r",
+    type=str,
+    required=False,
+    help="""Repository to be analysed (e.g thoth-station/performance)
+            Multiple repositories are supported - just separate repos
+            by comma (e.g. -r x/foo,y/bar,z/qua)""",
 )
 @click.option(
     "--organization", "-o", type=str, required=False, help="All repositories of an Organization to be analysed",
@@ -137,7 +142,13 @@ def cli(
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
     os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
 
-    repos = GitHubKnowledge.get_repositories(repository=repository, organization=organization)
+    repos = []
+
+    if repository:
+        for rep in repository.split(","):
+            repos.extend(GitHubKnowledge.get_repositories(repository=rep.strip()))
+    if organization:
+        repos.extend(GitHubKnowledge.get_repositories(organization=organization))
 
     entities_args = get_entities_as_list(entities)
 
@@ -148,29 +159,25 @@ def cli(
     for project in repos:
         os.environ["PROJECT"] = project
 
-        if reviewer_reccomender:
-            reviewer_assigner = ReviewerAssigner()
-            reviewer_assigner.evaluate_reviewers_scores(project=project, is_local=is_local)
-
     if thoth:
         if repository and not merge:
             kebechet_metrics = KebechetMetrics(repository=repos[0], today=True, is_local=is_local)
             kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
-    if metrics:
-        repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
+        if metrics:
+            repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
 
-        repo_metrics.get_metrics_outliers_pull_requests()
-        repo_metrics.get_metrics_outliers_issues()
+            repo_metrics.get_metrics_outliers_pull_requests()
+            repo_metrics.get_metrics_outliers_issues()
 
-        scores = repo_metrics.evaluate_scores_for_pull_requests()
+            scores = repo_metrics.evaluate_scores_for_pull_requests()
 
-        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
-        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
+            path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
+            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
 
-        scores_issues = repo_metrics.evaluate_scores_for_issues()
-        path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
-        KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
+            scores_issues = repo_metrics.evaluate_scores_for_issues()
+            path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
+            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
     if merge:
         if thoth:
