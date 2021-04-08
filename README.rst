@@ -113,7 +113,7 @@ For more information go to srcopsmetrics/entities page
 
 Meta-Information Indicators
 ===========================
-If you want to know more about data analyzed and collected, check `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_ 
+If you want to know more about data analyzed and collected, check `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
 
 Usage - Reviewer Reccomender
