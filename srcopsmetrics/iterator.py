@@ -84,7 +84,7 @@ class KnowledgeAnalysis:
                     wait_time = gh_time - local_time.replace(tzinfo=None)
 
                     _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
-                    time.sleep(wait_time.seconds)
+                    time.sleep(wait_time.seconds + 60)
 
                 if idx % 10 == 0:
                     _LOGGER.info("[ API requests remaining: %d ]" % remaining)
