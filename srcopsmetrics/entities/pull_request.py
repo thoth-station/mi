@@ -52,8 +52,11 @@ class PullRequest(Entity):
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
             "commits_number": int,
+            "files_number": int,
             "interactions": {str: int},
             "reviews": PullRequestReviews,
+            "commits": [str],
+            "files": [str],
         }
     )
 
@@ -64,8 +67,6 @@ class PullRequest(Entity):
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
         _LOGGER.info("Extracting PR #%d", pull_request.number)
-
-        commits = pull_request.commits
 
         created_at = int(pull_request.created_at.timestamp())
         closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None
@@ -93,10 +94,13 @@ class PullRequest(Entity):
             "closed_at": closed_at,
             "closed_by": closed_by,
             "merged_at": merged_at,
-            "commits_number": commits,
+            "commits_number": pull_request.commits,
+            "files_number": pull_request.changed_files,
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "labels": labels,
+            "commits": [c.sha for c in pull_request.get_commits()],
+            "changed_files": [f.filename for f in pull_request.get_files()],
         }
 
     def get_raw_github_data(self):
