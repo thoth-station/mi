@@ -18,6 +18,7 @@
 """This is the CLI for SrcOpsMetrics to create, visualize, use bot knowledge."""
 
 import logging
+from tqdm.contrib.logging import logging_redirect_tqdm
 import os
 from pathlib import Path
 from typing import List, Optional
@@ -187,4 +188,5 @@ def cli(
 
 
 if __name__ == "__main__":
-    cli(auto_envvar_prefix="MI")
+    with logging_redirect_tqdm():
+        cli(auto_envvar_prefix="MI")
