@@ -95,7 +95,7 @@ class PullRequest(Entity):
             "closed_by": closed_by,
             "merged_at": merged_at,
             "commits_number": pull_request.commits,
-            "files_number": pull_request.changed_files,
+            "changed_files_number": pull_request.changed_files,
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "labels": labels,
