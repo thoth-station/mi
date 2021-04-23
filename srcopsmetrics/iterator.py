@@ -20,12 +20,10 @@
 import logging
 import os
 import time
-import copy
 from datetime import datetime, timezone
 
 from github import Github
 from github.GithubException import GithubException
-from voluptuous.error import MultipleInvalid
 
 from srcopsmetrics.entities import Entity
 
@@ -91,19 +89,10 @@ class KnowledgeAnalysis:
 
                 _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(entities)))
 
-                backup = copy.deepcopy(self.entity.stored_entities)
                 self.entity.store(entity)
 
         except (GithubException, KeyboardInterrupt):
-            _LOGGER.info("Problem occured, checking knowledge consistency")
-            try:
-                self.entity.entities_schema()(self.entity.stored_entities)
-                _LOGGER.info("Knowledge consistent")
-            except MultipleInvalid:
-                _LOGGER.info("Knowledge inconsistent, restoring cached knowledge")
-                self.entity.entities_schema()(backup)
-                self.entity.stored_entities = backup
-                _LOGGER.info("Knowledge restored")
+            _LOGGER.warning("Problem occured, cached data will be saved")
 
     def save_analysed_knowledge(self):
         """Save analysed knowledge if new information was extracted."""
