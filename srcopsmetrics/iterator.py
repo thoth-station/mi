@@ -27,6 +27,8 @@ from github.GithubException import GithubException
 
 from srcopsmetrics.entities import Entity
 
+from tqdm import tqdm
+
 _LOGGER = logging.getLogger(__name__)
 
 API_RATE_MINIMAL_REMAINING = 20
@@ -49,6 +51,7 @@ class KnowledgeAnalysis:
         self.entity = entity
         self.knowledge_updated = False
         self.is_local = is_local
+        self.github = Github(self._GITHUB_ACCESS_TOKEN)
 
     def __enter__(self):
         """Context manager enter method."""
@@ -63,31 +66,35 @@ class KnowledgeAnalysis:
         """Every entity must have a previous knowledge initialization method."""
         self.entity.previous_knowledge = self.entity.load_previous_knowledge(is_local=self.is_local)
 
+    def wait_until_api_reset(self):
+        """Wait until the GitHub API rate limit is reset."""
+        gh_time = self.github.get_rate_limit().core.reset
+        local_time = datetime.now(tz=timezone.utc)
+
+        wait_time = (gh_time - local_time.replace(tzinfo=None)).seconds
+        wait_time += 60
+
+        _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
+        time.sleep(wait_time)
+
     def run(self):
         """Iterate through entities of given repository and accumulate them."""
-        github = Github(self._GITHUB_ACCESS_TOKEN)
         _LOGGER.info("-------------%s Analysis-------------" % self.entity.name())
 
         try:
             entities = self.entity.analyse()
-            for idx, entity in enumerate(entities, 1):
+            for idx, entity in enumerate(tqdm(entities), 1):
                 self.knowledge_updated = True
 
-                remaining = github.get_rate_limit().core.remaining
+                remaining = self.github.get_rate_limit().core.remaining
 
                 if remaining <= API_RATE_MINIMAL_REMAINING:
-                    gh_time = github.get_rate_limit().core.reset
-                    local_time = datetime.now(tz=timezone.utc)
-
-                    wait_time = gh_time - local_time.replace(tzinfo=None)
-
-                    _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
-                    time.sleep(wait_time.seconds)
+                    self.wait_until_api_reset()
 
                 if idx % 10 == 0:
-                    _LOGGER.info("[ API requests remaining: %d ]" % remaining)
+                    _LOGGER.info("[API requests remaining: %d]" % remaining)
 
-                _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(entities)))
+                # _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(entities)))
 
                 self.entity.store(entity)
 
