@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Collection, Dict
 
 from github.Repository import Repository
+from voluptuous.error import MultipleInvalid
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics import utils
@@ -111,7 +112,12 @@ class Entity(metaclass=ABCMeta):
         if not file_path:
             file_path = self.file_path
 
-        self.entities_schema()(self.stored_entities)  # check for entities schema
+        try:
+            self.entities_schema()(self.stored_entities)  # check for entities schema
+        except MultipleInvalid as e:
+            _LOGGER.warning("Data found to be inconsistent with its schema, original message:")
+            _LOGGER.warning(str(e))
+
         to_save = {**self.previous_knowledge, **self.stored_entities}
 
         _LOGGER.info("Knowledge file %s", (os.path.basename(file_path)))
