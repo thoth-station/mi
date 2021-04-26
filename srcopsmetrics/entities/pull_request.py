@@ -52,7 +52,7 @@ class PullRequest(Entity):
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
             "commits_number": int,
-            "files_number": int,
+            "changed_files_number": int,
             "interactions": {str: int},
             "reviews": PullRequestReviews,
             "commits": [str],
