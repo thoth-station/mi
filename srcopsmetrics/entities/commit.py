@@ -19,12 +19,14 @@
 
 from typing import Dict, List
 
-from github.Commit import Commit as GithubCommit
 from voluptuous.schema_builder import Schema
 from voluptuous import Any
 from datetime import datetime
 
 from srcopsmetrics.entities import Entity
+
+from pydriller import RepositoryMining
+from pydriller import Commit as GitCommit
 
 
 class Commit(Entity):
@@ -42,11 +44,11 @@ class Commit(Entity):
         }
     )
 
-    def analyse(self) -> List[GithubCommit]:
+    def analyse(self) -> List[GitCommit]:
         """Override :func:`~Entity.analyse`."""
         return [c for c in self.get_raw_github_data() if c.sha not in self.previous_knowledge]
 
-    def store(self, commit: GithubCommit):
+    def store(self, commit: GitCommit):
         """Override :func:`~Entity.store`."""
         pull_request_id = commit.get_pulls()[0].number if commit.get_pulls().totalCount != 0 else None
 
@@ -61,10 +63,10 @@ class Commit(Entity):
         }
 
     @staticmethod
-    def get_patches_for_files(commit: GithubCommit) -> Dict[str, str]:
+    def get_patches_for_files(commit: GitCommit) -> Dict[str, str]:
         """Inspect whole patch according to specific files."""
         return {f.filename: f.patch for f in commit.files}
 
-    def get_raw_github_data(self) -> List[GithubCommit]:
+    def get_raw_github_data(self) -> List[GitCommit]:
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_commits()
+        return RepositoryMining(self.repository.full_name).traverse_commits()
