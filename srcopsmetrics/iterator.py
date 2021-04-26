@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 _LOGGER = logging.getLogger(__name__)
 
-API_RATE_MINIMAL_REMAINING = 20
+API_RATE_MINIMAL_REMAINING = 80
 
 
 class KnowledgeAnalysis:
@@ -74,7 +74,7 @@ class KnowledgeAnalysis:
         wait_time = (gh_time - local_time.replace(tzinfo=None)).seconds
         wait_time += 60
 
-        _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time.seconds // 60))
+        _LOGGER.info("API rate limit REACHED, will now wait for %d minutes" % (wait_time // 60))
         time.sleep(wait_time)
 
     def run(self):
@@ -91,14 +91,13 @@ class KnowledgeAnalysis:
                 if remaining <= API_RATE_MINIMAL_REMAINING:
                     self.wait_until_api_reset()
 
-                if idx % 10 == 0:
+                if idx % 5 == 0:
                     _LOGGER.info("[API requests remaining: %d]" % remaining)
-
-                # _LOGGER.info("Analysing %s no. %d/%d" % (self.entity.name(), idx, len(entities)))
 
                 self.entity.store(entity)
 
-        except (GithubException, KeyboardInterrupt):
+        except (GithubException, KeyboardInterrupt) as e:
+            _LOGGER.warning(str(e))
             _LOGGER.warning("Problem occured, cached data will be saved")
 
     def save_analysed_knowledge(self):
