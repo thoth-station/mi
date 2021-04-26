@@ -50,7 +50,7 @@ Meta-information Indicators (MI)
 This repository contains functions to store knowledge for the bot,
 primary goal is to use the knowledge to evaluate repository statistics.
 
-Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`,
+Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`_,
 which schedules the workflows for thoth-station/mi project.
 
 Pre-Usage
@@ -110,6 +110,10 @@ Throughout the project, the objects with name "entities" are mentioned.
 Entity is essentialy a repository metadata that is being inspected during the process of analysis (e.g. Issue or Pull Request).
 Then, specified *features* are extracted from this entity and are saved as knowledge afterwards.
 For more information go to srcopsmetrics/entities page
+
+Meta-Information Indicators
+===========================
+If you want to know more about data analyzed and collected, check `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
 
 Usage - Reviewer Reccomender

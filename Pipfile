@@ -3,7 +3,6 @@ url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
 numpy = "*"
 pandas = "*"
@@ -12,12 +11,17 @@ thoth-storages = "*"
 semver = "*"
 voluptuous = "*"
 matplotlib = "*"
-
+tqdm = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-timeout = "*"
 pytest-cov = "*"
+hypothesis-auto = "*"
+hypothesis = "*"
+pytest-mypy = "*"
+mypy = "*"
+pre-commit = "*"
 twine = "*"
 autopep8 = "*"
 rope = "*"

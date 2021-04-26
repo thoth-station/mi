@@ -598,3 +598,19 @@ all the things that you see...
 ## Release 2.3.4 (2021-03-30T13:25:11)
 ### Features
 * Include empty repo check (#357)
+
+## Release 2.4.0 (2021-04-07T14:10:03)
+### Features
+* Add statistics aggregation for daily data (#364)
+* :arrow_up: Automatic update of dependencies by Kebechet (#365)
+* Remove codeowners file (#362)
+* Support multiple repositories (#361)
+
+## Release 2.4.1 (2021-04-24T13:18:17)
+### Features
+* Save data even though it can be inconsistent (#376)
+* :arrow_up: Automatic update of dependencies by Kebechet (#374)
+* :arrow_up: Automatic update of dependencies by Kebechet (#372)
+* Link README with MI Indicators (#370)
+### Improvements
+* Add 60 seconds to waiting time, use tqdm for logger (#375)

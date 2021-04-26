@@ -20,7 +20,9 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
+
+import json
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
@@ -64,6 +66,51 @@ class KnowledgeStorage:
         )
         s3.connect()
         return s3
+
+    def save_data(self, file_path: Path, data: Dict[str, Any]):
+        """Save data as json.
+
+        Arguments:
+            file_path {Path} -- where the knowledge should be saved
+            data {Dict[str, Any]} -- collected knowledge. Should be json compatible
+
+        """
+        _LOGGER.info("Saving knowledge file %s of size %d" % (os.path.basename(file_path), len(data)))
+
+        if not self.is_local:
+            ceph_filename = os.path.relpath(file_path).replace("./", "")
+            s3 = self.get_ceph_store()
+            s3.store_document(data, ceph_filename)
+            _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
+        else:
+            with open(file_path, "w") as f:
+                json.dump(data, f)
+            _LOGGER.info("Saved locally at %s" % file_path)
+
+    def load_data(self, file_path: Optional[Path] = None) -> Dict[str, Any]:
+        """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
+
+        Arguments:
+            file_path {Optional[Path]} -- path to previously stored knowledge from
+                               inspected github repository. If None is passed, the used path will
+                               be :value:`~enums.StoragePath.DEFAULT`
+
+        Returns:
+            Dict[str, Any] -- previusly collected knowledge.
+                            Empty dict if the knowledge does not exist.
+
+        """
+        if file_path is None:
+            raise ValueError("Filepath has to be specified.")
+
+        results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
+
+        if results is None:
+            _LOGGER.info("File does not exist.")
+            return {}
+
+        _LOGGER.info("Data from file %s loaded")
+        return results
 
     @staticmethod
     def load_locally(file_path: Path, as_csv: bool = True) -> pd.DataFrame:

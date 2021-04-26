@@ -26,6 +26,7 @@ from typing import Collection
 
 import pandas as pd
 from github.Repository import Repository
+from voluptuous.error import MultipleInvalid
 from voluptuous.schema_builder import Schema
 
 from srcopsmetrics import utils
@@ -112,7 +113,11 @@ class Entity(metaclass=ABCMeta):
         if not file_path:
             file_path = self.file_path
 
-        self.entities_schema()(self.stored_entities)  # check for entities schema
+        try:
+            self.entities_schema()(self.stored_entities)  # check for entities schema
+        except MultipleInvalid as e:
+            _LOGGER.warning("Data found to be inconsistent with its schema, original message:")
+            _LOGGER.warning(str(e))
 
         new_data = pd.DataFrame.from_dict(self.stored_entities).T
         to_save = pd.concat([new_data, self.previous_knowledge])
