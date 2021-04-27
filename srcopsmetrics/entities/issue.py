@@ -53,6 +53,9 @@ class Issue(Entity):
 
     def store(self, issue: GithubIssue):
         """Override :func:`~Entity.store`."""
+        if issue.number in self.previous_knowledge.index:
+            return  # if in previous knowledge, no need to analyse
+
         if issue.pull_request is not None:
             return  # we analyze issues and prs differentely
 
@@ -66,10 +69,6 @@ class Issue(Entity):
             "labels": GitHubKnowledge.get_labels(issue),
             "interactions": GitHubKnowledge.get_interactions(issue.get_comments()),
         }
-
-    def previous_knowledge(self):
-        """Override :func:`~Entity.previous_knowledge`."""
-        return self.previous_knowledge
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""

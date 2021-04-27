@@ -43,9 +43,9 @@ class PullRequest(Entity):
     entity_schema = Schema(
         {
             "title": str,
-            "body": str,
+            "body": Any(None, str),
             "size": str,
-            "labels": {str: {str: Any(int, str)}},
+            # "labels": [str],
             "created_by": str,
             "created_at": int,
             "closed_at": Any(None, int),
@@ -61,10 +61,14 @@ class PullRequest(Entity):
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
-        return self.get_only_new_entities()
+        return self.get_raw_github_data()
 
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
+        if pull_request.number in self.previous_knowledge.index:
+            _LOGGER.debug("PullRequest %s already analysed, skipping")
+            return
+
         commits = pull_request.commits
 
         created_at = int(pull_request.created_at.timestamp())
@@ -98,7 +102,7 @@ class PullRequest(Entity):
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
             "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
-            "labels": GitHubKnowledge.get_labels(pull_request.as_issue()),
+            "labels": labels,
         }
 
     def get_raw_github_data(self):
