@@ -52,10 +52,10 @@ class PullRequest(Entity):
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
             "commits_number": int,
-            # "referenced_issues": [int],
-            # "interactions": {str: int},
-            # "reviews": PullRequestReviews,
-            # "requested_reviewers": [str],
+            "referenced_issues": [int],
+            "interactions": {str: int},
+            "reviews": PullRequestReviews,
+            "requested_reviewers": [str],
         }
     )
 
@@ -98,11 +98,11 @@ class PullRequest(Entity):
             "closed_by": closed_by,
             "merged_at": merged_at,
             "commits_number": commits,
-            # "referenced_issues": PullRequest.get_referenced_issues(pull_request),
-            # "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
-            # "reviews": self.extract_pull_request_reviews(pull_request),
-            # "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
-            # "labels": labels,
+            "referenced_issues": PullRequest.get_referenced_issues(pull_request),
+            "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
+            "reviews": self.extract_pull_request_reviews(pull_request),
+            "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
+            "labels": labels,
         }
 
     def get_raw_github_data(self):
