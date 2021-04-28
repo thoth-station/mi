@@ -2,12 +2,35 @@
 Meta-information Indicators (MI)
 ================================
 
+
+Overview
+--------
+**MI** project collects data from GitHub repositories. You can use it to either collect data stored locally or within Amazon's S3 cloud.
+For personal usage, checkout <Usage> section.
+
+Together with **MI-Scheduler**, we provide automated data extraction pipeline
+for data minig of requested repositories and organizations. This pipeline can
+be scheduled customly, e.g. to run daily, weekly, and so on.
+
+To request data extraction, see <Data Extraction request>.
+
+
+Data extraction request
+-----------------------
+To request data extraction for repository or organization,
+create **Data Extraction** Issue in **MI-Scheduler** repository. Use this link
+
+
+Data extraction Pipeline (diagram)
+----------------------------------
+**MI** pipeline is simple to understand, see diagram below
+
 .. code-block::
 
-                    +---------+
-                    |ConfigMap|
-                    +----+----+
-                            |
+                      +---------+
+                      |ConfigMap|
+                      +----+----+
+                           |
                 +--+-------+--------+--+
                 |  |                |  |
                 |  |  mi-scheduler  |  |
@@ -52,6 +75,17 @@ primary goal is to use the knowledge to evaluate repository statistics.
 
 Remember to also checkout `mi-scheduler <https://github.com/thoth-station/mi-scheduler>`_,
 which schedules the workflows for thoth-station/mi project.
+
+
+What can **MI** extract from GitHub?
+---------------
+**MI** analyses entities specified on the srcopsmetrics/entities page
+Entity is essentialy a repository metadata that is being inspected (e.g. Issue or Pull Request),
+from which specified *features* are extracted and are stored to dataframe.
+
+**MI** is essentialy wrapped around PyGitHub module to provide careless data
+extraction with API rate limit handling and data updating.
+
 
 Pre-Usage
 =========
