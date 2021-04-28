@@ -43,7 +43,7 @@ class PullRequest(Entity):
     entity_schema = Schema(
         {
             "title": str,
-            "body": str,
+            "body": Any(None, str),
             "size": str,
             "labels": [str],
             "created_by": str,
@@ -62,11 +62,15 @@ class PullRequest(Entity):
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
-        return self.get_only_new_entities()
+        return self.get_raw_github_data()
 
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
         _LOGGER.info("Extracting PR #%d", pull_request.number)
+
+        if pull_request.number in self.previous_knowledge.index:
+            _LOGGER.debug("PullRequest %s already analysed, skipping")
+            return
 
         created_at = int(pull_request.created_at.timestamp())
         closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None

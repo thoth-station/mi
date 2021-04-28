@@ -17,16 +17,19 @@
 
 """Knowledge storage tools and classes."""
 
-import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional, Dict, Any
+
+import json
 
 from thoth.storages.ceph import CephStore
 from thoth.storages.exceptions import NotFoundError
 
 from srcopsmetrics.enums import StoragePath
+
+import pandas as pd
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,22 +113,28 @@ class KnowledgeStorage:
         return results
 
     @staticmethod
-    def load_locally(file_path: Path) -> Optional[Dict[str, Any]]:
+    def load_locally(file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")
-        if not file_path.exists() or os.path.getsize(file_path) == 0:
-            _LOGGER.debug("Knowledge %s not found locally" % file_path)
-            return None
-        with open(file_path, "r") as f:
-            data = json.load(f)
-        return data
 
-    def load_remotely(self, file_path: Path) -> Optional[Dict[str, Any]]:
+        if not file_path.exists():
+            _LOGGER.debug("Knowledge %s not found locally" % file_path)
+            return pd.DataFrame()
+
+        df = pd.read_json(file_path, orient="records", lines=True)
+        if not df.empty:
+            df = df.set_index("id")
+        return df
+
+    def load_remotely(self, file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from Ceph storage."""
         _LOGGER.info("Loading knowledge from Ceph")
+
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
-            return self.get_ceph_store().retrieve_document(ceph_filename)
+            data = self.get_ceph_store().retrieve_document(ceph_filename)
+            return pd.DataFrame.from_records(data, index="id")
+
         except NotFoundError:
-            _LOGGER.debug("Knowledge %s not found on Ceph" % file_path)
-            return None
+            _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
+            return pd.DataFrame()
