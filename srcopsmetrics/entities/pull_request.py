@@ -31,7 +31,7 @@ from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
 
-PullRequestReview = Schema({"author": str, "words_count": int, "submitted_at": int, "state": str})
+PullRequestReview = Schema({"author": Any(None, str), "words_count": int, "submitted_at": int, "state": str})
 PullRequestReviews = Schema({str: PullRequestReview})
 
 ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
@@ -45,17 +45,18 @@ class PullRequest(Entity):
             "title": str,
             "body": Any(None, str),
             "size": str,
-            # "labels": [str],
+            "labels": [str],
             "created_by": str,
             "created_at": int,
             "closed_at": Any(None, int),
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
             "commits_number": int,
-            "referenced_issues": [int],
+            "changed_files_number": int,
             "interactions": {str: int},
             "reviews": PullRequestReviews,
-            "requested_reviewers": [str],
+            "commits": [str],
+            "files": [str],
         }
     )
 
@@ -65,11 +66,11 @@ class PullRequest(Entity):
 
     def store(self, pull_request: GithubPullRequest):
         """Override :func:`~Entity.store`."""
+        _LOGGER.info("Extracting PR #%d", pull_request.number)
+
         if pull_request.number in self.previous_knowledge.index:
             _LOGGER.debug("PullRequest %s already analysed, skipping")
             return
-
-        commits = pull_request.commits
 
         created_at = int(pull_request.created_at.timestamp())
         closed_at = int(pull_request.closed_at.timestamp()) if pull_request.closed_at is not None else None
@@ -97,12 +98,13 @@ class PullRequest(Entity):
             "closed_at": closed_at,
             "closed_by": closed_by,
             "merged_at": merged_at,
-            "commits_number": commits,
-            "referenced_issues": PullRequest.get_referenced_issues(pull_request),
+            "commits_number": pull_request.commits,
+            "changed_files_number": pull_request.changed_files,
             "interactions": GitHubKnowledge.get_interactions(pull_request.get_issue_comments()),
             "reviews": self.extract_pull_request_reviews(pull_request),
-            "requested_reviewers": self.extract_pull_request_review_requests(pull_request),
             "labels": labels,
+            "commits": [c.sha for c in pull_request.get_commits()],
+            "changed_files": [f.filename for f in pull_request.get_files()],
         }
 
     def get_raw_github_data(self):
@@ -142,13 +144,13 @@ class PullRequest(Entity):
 
         """
         reviews = pull_request.get_reviews()
-        _LOGGER.info("  -num of reviews found: %d" % reviews.totalCount)
+        _LOGGER.debug("  -num of reviews found: %d" % reviews.totalCount)
 
         results = {}
         for idx, review in enumerate(reviews, 1):
             _LOGGER.info("      -analysing review no. %d/%d" % (idx, reviews.totalCount))
             results[str(review.id)] = {
-                "author": review.user.login,
+                "author": review.user.login if review.user and review.user.login else None,
                 "words_count": len(review.body.split(" ")),
                 "submitted_at": int(review.submitted_at.timestamp()),
                 "state": review.state,
