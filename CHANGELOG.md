@@ -614,3 +614,10 @@ all the things that you see...
 * Link README with MI Indicators (#370)
 ### Improvements
 * Add 60 seconds to waiting time, use tqdm for logger (#375)
+
+## Release 2.5.0 (2021-04-29T12:30:48)
+### Features
+* :arrow_up: Automatic update of dependencies by Kebechet (#384)
+* Feature - Use pandas dataframes (#363)
+### Improvements
+* Change PR structure (#377)
