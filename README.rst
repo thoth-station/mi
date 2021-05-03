@@ -23,7 +23,7 @@ Data extraction Pipeline (diagram)
 ----------------------------------
 **MI** pipeline is simple to understand, see diagram below
 
-.. code-block:: console
+.. code-block::
 
                       +---------+
                       |ConfigMap|
