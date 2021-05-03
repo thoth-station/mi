@@ -49,7 +49,7 @@ _ROOT_DIR = "kebechet-update-manager"
 
 def get_update_manager_request_type(title: str) -> Optional[str]:
     """Get the type of the update request."""
-    if title == "Kebechet update":
+    if title == UPDATE_TYPES_AND_KEYWORDS["manual"]:
         return "manual"
 
     for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
@@ -166,7 +166,6 @@ class KebechetMetrics:
         if prs.empty:
             return {}
 
-        # prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["created_at"]).date(), axis=1)
         prs["date"] = pd.to_datetime(prs.created_at).dt.date
 
         stats: Dict[str, Any] = {}
