@@ -621,3 +621,9 @@ all the things that you see...
 * Feature - Use pandas dataframes (#363)
 ### Improvements
 * Change PR structure (#377)
+
+## Release 2.5.1 (2021-05-03T15:30:07)
+### Features
+* Fix/pr storing (#393)
+* :arrow_up: Automatic update of dependencies by Kebechet (#391)
+* :arrow_up: Automatic update of dependencies by Kebechet (#387)
