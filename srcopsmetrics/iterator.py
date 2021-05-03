@@ -83,7 +83,7 @@ class KnowledgeAnalysis:
 
         try:
             entities = self.entity.analyse()
-            for idx, entity in enumerate(tqdm(entities), 1):
+            for idx, entity in enumerate(tqdm(entities, total=entities.totalCount), 1):
                 self.knowledge_updated = True
 
                 remaining = self.github.get_rate_limit().core.remaining
