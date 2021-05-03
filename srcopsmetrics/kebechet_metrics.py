@@ -119,9 +119,9 @@ class KebechetMetrics:
 
         self.prs["type"] = self.prs["title"].apply(lambda x: get_update_manager_request_type(x))
 
-        requests = self.prs[~self.prs["type"].isnull()]
+        requests = self.prs[~self.prs["type"].isnull()].copy()
 
-        requests["ttm"] = requests.merged_at - requests.created_at
+        requests["ttm"] = requests.merged_at.sub(requests.created_at)
         requests["tta"] = requests.first_approve_at - requests.created_at
         requests["ttfr"] = requests.created_at - requests.first_review_at
 
