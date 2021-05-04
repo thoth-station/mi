@@ -24,10 +24,10 @@ from datetime import datetime, timezone
 
 from github import Github
 from github.GithubException import GithubException
+from github.PaginatedList import PaginatedList
+from tqdm import tqdm
 
 from srcopsmetrics.entities import Entity
-
-from tqdm import tqdm
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +83,8 @@ class KnowledgeAnalysis:
 
         try:
             entities = self.entity.analyse()
-            for idx, entity in enumerate(tqdm(entities, total=entities.totalCount), 1):
+            length = entities.totalCount if isinstance(entities, PaginatedList) else len(entities)
+            for idx, entity in enumerate(tqdm(entities, total=length), 1):
                 self.knowledge_updated = True
 
                 remaining = self.github.get_rate_limit().core.remaining
