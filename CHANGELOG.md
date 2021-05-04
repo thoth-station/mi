@@ -627,3 +627,7 @@ all the things that you see...
 * Fix/pr storing (#393)
 * :arrow_up: Automatic update of dependencies by Kebechet (#391)
 * :arrow_up: Automatic update of dependencies by Kebechet (#387)
+
+## Release 2.5.2 (2021-05-04T14:44:11)
+### Bug Fixes
+* Use len() in case of entities not being PaginatedList (#398)
