@@ -20,7 +20,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
 import json
 
@@ -32,6 +32,14 @@ from srcopsmetrics.enums import StoragePath
 import pandas as pd
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def load_data_frame(path_or_buf: Union[Path, str]) -> pd.DataFrame:
+    """Load DataFrame from either string data or path."""
+    df = pd.read_json(path_or_buf, orient="records", lines=True)
+    if not df.empty:
+        df = df.set_index("id")
+    return df
 
 
 class KnowledgeStorage:
@@ -121,10 +129,7 @@ class KnowledgeStorage:
             _LOGGER.debug("Knowledge %s not found locally" % file_path)
             return pd.DataFrame()
 
-        df = pd.read_json(file_path, orient="records", lines=True)
-        if not df.empty:
-            df = df.set_index("id")
-        return df
+        return load_data_frame(file_path)
 
     def load_remotely(self, file_path: Path, as_csv: bool = True) -> pd.DataFrame:
         """Load knowledge file from Ceph storage."""
@@ -133,7 +138,7 @@ class KnowledgeStorage:
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
             data = self.get_ceph_store().retrieve_document(ceph_filename)
-            return pd.DataFrame.from_records(data, index="id")
+            return load_data_frame(data)
 
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
