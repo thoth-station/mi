@@ -12,6 +12,7 @@ semver = "*"
 voluptuous = "*"
 matplotlib = "*"
 tqdm = "*"
+pydriller = "*"
 
 [dev-packages]
 pytest = "*"

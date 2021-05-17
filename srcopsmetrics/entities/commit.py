@@ -17,14 +17,37 @@
 
 """Commit entity."""
 
-from typing import Dict, List
+from typing import List
 
-from github.Commit import Commit as GithubCommit
 from voluptuous.schema_builder import Schema
 from voluptuous import Any
-from datetime import datetime
 
 from srcopsmetrics.entities import Entity
+
+from pydriller import Repository
+from pydriller import Commit as GitCommit
+
+
+class GeneratorWrapper:
+    """
+    Wrapper for pydriller generator.
+
+    Used for mi logger to print out progressbar of commit
+    extraction.
+    """
+
+    def __init__(self, generator, length):
+        """Initialize with traverse_commits() generator and its length."""
+        self.generator = generator
+        self.length = length
+
+    def __len__(self):
+        """Return generator length initialized from a duplicate generator."""
+        return self.length
+
+    def __iter__(self):
+        """Iterate through pydriller generator."""
+        return self.generator
 
 
 class Commit(Entity):
@@ -42,29 +65,40 @@ class Commit(Entity):
         }
     )
 
-    def analyse(self) -> List[GithubCommit]:
+    def analyse(self):
         """Override :func:`~Entity.analyse`."""
-        return [c for c in self.get_raw_github_data() if c.sha not in self.previous_knowledge]
+        length = len([c for c in self.get_raw_github_data()])
+        return GeneratorWrapper(self.get_raw_github_data(), length)
 
-    def store(self, commit: GithubCommit):
+    def store(self, commit: GitCommit):
         """Override :func:`~Entity.store`."""
-        pull_request_id = commit.get_pulls()[0].number if commit.get_pulls().totalCount != 0 else None
+        if commit.hash in self.previous_knowledge:
+            return
 
-        self.stored_entities[commit.sha] = {
-            "pull_request": pull_request_id,
-            "patch": Commit.get_patches_for_files(commit),
-            "author": commit.author.login if commit.author else commit.commit.author.name,
-            "message": commit.commit.message,
-            "date": int(datetime.strptime(commit.last_modified, "%a, %d %b %Y %X %Z").timestamp()),
-            "additions": commit.stats.additions,
-            "deletions": commit.stats.deletions,
+        github_commit = self.repository.get_commit(commit.hash)
+        pull_request_ids = [pr.number for pr in github_commit.get_pulls()]
+        author_login = (github_commit.author.login if github_commit.author else github_commit.commit.author.name,)
+
+        patches = {}
+        for mod in commit.modified_files:
+            changed_methods = [method.name for method in mod.changed_methods]
+            patches[mod.filename] = {
+                "type": mod.change_type,
+                "changed_methods": changed_methods,
+                "patch_added": mod.diff_parsed["added"],
+                "patch_deleted": mod.diff_parsed["deleted"],
+            }
+
+        self.stored_entities[commit.hash] = {
+            "pull_request": pull_request_ids,
+            "author": author_login,
+            "message": commit.msg,
+            "date": commit.committer_date.timestamp(),
+            "additions": commit.insertions,
+            "deletions": commit.deletions,
+            "files": commit.files,
         }
 
-    @staticmethod
-    def get_patches_for_files(commit: GithubCommit) -> Dict[str, str]:
-        """Inspect whole patch according to specific files."""
-        return {f.filename: f.patch for f in commit.files}
-
-    def get_raw_github_data(self) -> List[GithubCommit]:
+    def get_raw_github_data(self) -> List[GitCommit]:
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_commits()
+        return Repository(self.repository.clone_url).traverse_commits()
