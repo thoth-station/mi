@@ -97,7 +97,6 @@ class Commit(Entity):
             "additions": commit.insertions,
             "deletions": commit.deletions,
             "files": commit.files,
-            # "patches": patches,
         }
 
     def get_raw_github_data(self) -> List[GitCommit]:
