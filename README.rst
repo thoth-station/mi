@@ -111,18 +111,18 @@ Usage
 Setup
 -----
 
-To store data locally, use `-l` when calling CLI or set is_local=True when using **MI** as a module.
+To store data locally, use ``-l`` when calling CLI or set is_local=True when using **MI** as a module.
 
 By default **MI** will try to store the data on Ceph.
 In order to store on Ceph you need to provide the following env variables:
 
-- `S3_ENDPOINT_URL` Ceph Host name
-- `CEPH_BUCKET` Ceph Bucket name
-- `CEPH_BUCKET_PREFIX` Ceph Prefix
-- `CEPH_KEY_ID` Ceph Key ID
-- `CEPH_SECRET_KEY` Ceph Secret Key
+- ``S3_ENDPOINT_URL`` Ceph Host name
+- ``CEPH_BUCKET`` Ceph Bucket name
+- ``CEPH_BUCKET_PREFIX`` Ceph Prefix
+- ``CEPH_KEY_ID`` Ceph Key ID
+- ``CEPH_SECRET_KEY`` Ceph Secret Key
 
-For more information about Ceph storing see `https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html`
+For more information about Ceph storing look `here <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html>`_
 
 
 CLI
@@ -170,18 +170,25 @@ Get multiple entity data locally
     srcopsmetrics -clr foo_repo -e PullRequest,Issue,Commit
 
 
-Meta-Information Entities
-=========================
-If you want to know more about data analyzed and collected, check `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
+Meta-Information Entities Metrics
+=================================
+To know more about indicators that are extracted from data, check out `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
 
 How to contribute
 =================
 Always feel free to open new Issues or engage in already existing ones!
 
-I want to add new Entity
-------------------------
-If you want to contribute by adding new entity that will be analysed from GitHub repositories and stored as a knowledge,
-your implementation has to meet with Entity criteria described above. Always remember to first create Issue and describe
-why do you think this new entity should be analysed and stored and what are the benefits of doing so according to the goal
-of thoth-station/mi project. Do not forget to reference the Issue in your Pull Request.
+Custom Entities & Metrics
+=========================
+If you want to contribute by adding new entity or metric that will be analysed from GitHub repositories,
+feel free to open up an Issue and describe why do you think this new entity should be analysed and what
+are the benefits of doing so according to the goal of ``thoth-station/mi project``.
+
+After creating Issue, you can wait for the response of ``thoth-station`` devs
+Do not forget to reference the Issue in your Pull Request.
+
+Implementation
+--------------
+Look at `Template entity <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_
+to get an idea for requirements that need to be satisfied for custom entity implementation.
