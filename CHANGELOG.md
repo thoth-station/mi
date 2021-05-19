@@ -614,3 +614,26 @@ all the things that you see...
 * Link README with MI Indicators (#370)
 ### Improvements
 * Add 60 seconds to waiting time, use tqdm for logger (#375)
+
+## Release 2.5.0 (2021-04-29T12:30:48)
+### Features
+* :arrow_up: Automatic update of dependencies by Kebechet (#384)
+* Feature - Use pandas dataframes (#363)
+### Improvements
+* Change PR structure (#377)
+
+## Release 2.5.1 (2021-05-03T15:30:07)
+### Features
+* Fix/pr storing (#393)
+* :arrow_up: Automatic update of dependencies by Kebechet (#391)
+* :arrow_up: Automatic update of dependencies by Kebechet (#387)
+
+## Release 2.5.2 (2021-05-04T14:44:11)
+### Bug Fixes
+* Use len() in case of entities not being PaginatedList (#398)
+
+## Release 2.5.3 (2021-05-17T13:26:20)
+### Features
+* Change pygithub commmit enttiy to pydriller commit (#381)
+* :arrow_up: Automatic update of dependencies by Kebechet (#404)
+* Fix loading dataframes remotely (#402)

@@ -12,9 +12,12 @@ presubmits:
             - "run"
             - "--all-files"
           resources:
+            limits:
+              cpu: 500m
+              memory: 1000Mi
             requests:
-              memory: "2Gi"
-              cpu: "2"
+              cpu: 300m
+              memory: 400Mi
   - name: thoth-pytest-py38
     decorate: true
     skip_report: false
@@ -26,6 +29,9 @@ presubmits:
           command:
              - "/bin/run-pytest"
           resources:
+            limits:
+              cpu: 500m
+              memory: 1000Mi
             requests:
-              memory: "2Gi"
-              cpu: "2"
+              cpu: 300m
+              memory: 400Mi

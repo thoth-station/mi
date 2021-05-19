@@ -80,7 +80,7 @@ extraction with API rate limit handling and data updating.
 
 
 Install
-=======
+========
 
 pip
 ---

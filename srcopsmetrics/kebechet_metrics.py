@@ -36,6 +36,7 @@ from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 BOT_NAMES = {"sesheta"}
 
 UPDATE_TYPES_AND_KEYWORDS = {
+    "manual": "Kebechet update",
     "automatic": "Automatic update of dependency",
     "failure_notification": "Failed to update dependencies to their latest version",
     "initial_lock": "Initial dependency lock",
@@ -44,6 +45,18 @@ UPDATE_TYPES_AND_KEYWORDS = {
 _LOGGER = logging.getLogger(__name__)
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 _ROOT_DIR = "kebechet-update-manager"
+
+
+def get_update_manager_request_type(title: str) -> Optional[str]:
+    """Get the type of the update request."""
+    if title == UPDATE_TYPES_AND_KEYWORDS["manual"]:
+        return "manual"
+
+    for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
+        if keyword in title:
+            return request_type
+
+    return None
 
 
 class KebechetMetrics:
@@ -79,18 +92,6 @@ class KebechetMetrics:
                 return int(comment["created_at"])
         return None
 
-    @staticmethod
-    def _get_update_manager_request_type(issue) -> Optional[str]:
-        """Get the type of the update request."""
-        if issue["title"] == "Kebechet update":
-            return "manual"
-
-        for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
-            if keyword in issue["title"]:
-                return request_type
-
-        return None
-
     def _get_update_manager_issues(self):
         data = []
         for issue in self.issues.values():
@@ -115,39 +116,22 @@ class KebechetMetrics:
         return df.sort_values(by=["date"]).reset_index(drop=True)
 
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
-        data = []
-        for pr in self.prs.values():
-            pr_type = KebechetMetrics._get_update_manager_request_type(pr)
-            if not pr_type:
-                continue
 
-            created_at = int(pr["created_at"])
+        self.prs["type"] = self.prs["title"].apply(lambda x: get_update_manager_request_type(x))
 
-            ttm = int(pr["merged_at"]) - created_at if pr["merged_at"] else None
+        requests = self.prs[~self.prs["type"].isnull()].copy()
 
-            # TODO: include stats of reviewers?
-            # reviewers = [pr["reviews"][r]["author"] for r in pr["reviews"]]
-            review_times = [int(pr["reviews"][r]["submitted_at"]) for r in pr["reviews"]]
-            ttfr = min(review_times) - created_at if review_times else None
+        requests["ttm"] = requests.merged_at.sub(requests.created_at)
+        requests["tta"] = requests.first_approve_at - requests.created_at
+        requests["ttfr"] = requests.created_at - requests.first_review_at
 
-            reviews = [r for r in pr["reviews"].values()]
-            approvals = [r["submitted_at"] for r in reviews if r["state"] == "APPROVED"]
-            tta = min(approvals) - created_at if approvals else None
+        not_merged = requests["merged_at"].isna()
+        closed_by_bot = requests.closed_by.isin(BOT_NAMES)
 
-            rejected = 1 if ttm is None and pr["closed_at"] is not None else 0
-            closed_by_bot = 1 if rejected is not None and pr["closed_by"] in BOT_NAMES else 0
-            merged_by_kebechet_bot = 1 if closed_by_bot and not rejected else 0
-            rejected_by_kebechet_bot = 1 if closed_by_bot and rejected else 0
+        requests["merged_by_kebechet_bot"] = requests.merged_by.isin(BOT_NAMES)
+        requests["rejected_by_kebechet_bot"] = not_merged & closed_by_bot
 
-            data.append([created_at, pr_type, ttm, ttfr, tta, merged_by_kebechet_bot, rejected_by_kebechet_bot])
-
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame(data)
-        df.columns = ["date", "type", "ttm", "ttfr", "tta", "merged_by_kebechet_bot", "rejected_by_kebechet_bot"]
-
-        return df.sort_values(by=["date"]).reset_index(drop=True)
+        return requests.sort_values(by=["created_at"]).reset_index(drop=True)
 
     def get_overall_stats_update_manager(self) -> Dict[str, Any]:
         """Return stats over whole repository age."""
@@ -168,7 +152,7 @@ class KebechetMetrics:
         stats["merged_by_other"] = stats["merged"] - stats["merged_by_kebechet_bot"]
 
         median_time = prs["ttm"].median()
-        stats["median_ttm"] = median_time if not np.isnan(median_time) else 0
+        stats["median_ttm"] = median_time.total_seconds() if not pd.isna(median_time) else 0
 
         return stats
 
@@ -182,23 +166,26 @@ class KebechetMetrics:
         if prs.empty:
             return {}
 
-        prs["days"] = prs.apply(lambda x: datetime.fromtimestamp(x["date"]).date(), axis=1)
-        today = datetime.now().date()
+        prs["date"] = pd.to_datetime(prs.created_at).dt.date
 
         stats: Dict[str, Any] = {}
-        day_range = [today] if self.today else prs["days"].unique()
-        for date in day_range:
+
+        today = datetime.now().date()
+        if self.today:
+            prs = prs[prs.date == today]
+
+        for date in prs.date.unique():
             prs_day = prs[prs["days"] == date]
 
             day = {}
             day["created_pull_requests"] = len(prs_day)
 
             day["rejected"] = len(prs_day[np.isnan(prs_day["ttm"])])
-            day["rejected_by_kebechet_bot"] = len(prs_day[prs_day["rejected_by_kebechet_bot"] == 1])
+            day["rejected_by_kebechet_bot"] = len(prs_day[~prs_day["rejected_by_kebechet_bot"].isnull()])
             day["rejected_by_other"] = day["rejected"] - day["rejected_by_kebechet_bot"]
 
             day["merged"] = len(prs_day) - day["rejected"]
-            day["merged_by_kebechet_bot"] = len(prs_day[prs_day["merged_by_kebechet_bot"] == 1])
+            day["merged_by_kebechet_bot"] = len(prs_day[~prs_day["merged_by_kebechet_bot"].isnull()])
             day["merged_by_other"] = day["merged"] - day["merged_by_kebechet_bot"]
 
             # TODO consider adding median_time to every day statistics (rolling windown maybe?)
