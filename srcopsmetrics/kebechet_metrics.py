@@ -20,7 +20,7 @@
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -62,14 +62,14 @@ def get_update_manager_request_type(title: str) -> Optional[str]:
 class KebechetMetrics:
     """Kebechet Metrics inspected by MI."""
 
-    def __init__(self, repository: str, today: bool = False, is_local: bool = False):
+    def __init__(self, repository: str, is_local: bool = False, day: Optional[date] = None):
         """Initialize with collected knowledge."""
         gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
 
         self.repo_name = repository
         self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=is_local)
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=is_local)
-        self.today = today
+        self.day = day
         self.is_local = is_local
 
     def _get_least_square_polynomial_fit(self, x_series: pd.Series, y_series: pd.Series, degree: int = 3):
@@ -159,7 +159,7 @@ class KebechetMetrics:
     def get_daily_stats_update_manager(self) -> Dict[str, Any]:
         """Get daily stats.
 
-        If self.today set to true, return only stats for current day.
+        If self.day is set, return only stats for that day.
         """
         prs = self._get_update_manager_pull_requests()
 
@@ -170,12 +170,11 @@ class KebechetMetrics:
 
         stats: Dict[str, Any] = {}
 
-        today = datetime.now().date()
-        if self.today:
-            prs = prs[prs.date == today]
+        if self.day:
+            prs = prs[prs.date == self.day]
 
-        for date in prs.date.unique():
-            prs_day = prs[prs["days"] == date]
+        for specific_date in prs.date.unique():
+            prs_day = prs[prs["days"] == specific_date]
 
             day = {}
             day["created_pull_requests"] = len(prs_day)
@@ -190,12 +189,12 @@ class KebechetMetrics:
 
             # TODO consider adding median_time to every day statistics (rolling windown maybe?)
 
-            if self.today:
-                median_time = prs[prs["days"] == today]["ttm"].median()
+            if self.day:
+                median_time = prs[prs["days"] == self.day]["ttm"].median()
                 day["median_ttm"] = median_time if not np.isnan(median_time) else 0
                 return day
 
-            stats[str(date)] = day
+            stats[str(specific_date)] = day
 
         return stats
 
@@ -208,18 +207,15 @@ class KebechetMetrics:
             utils.check_directory(path)
 
             file_name = f"kebechet_{get_stats.__name__}"
-            if self.today:
-                curr_day = datetime.now().date()
-                file_name += f"_{str(curr_day)}"
+            if self.day:
+                file_name += f"_{str(self.day)}"
             file_name += ".json"
 
             KnowledgeStorage(is_local=self.is_local).save_data(file_path=path.joinpath(file_name), data=stats)
 
     @staticmethod
-    def merge_kebechet_metrics_today(is_local: bool = False):
+    def merge_kebechet_metrics_for_day(day: date, is_local: bool = False):
         """Merge all the collected metrics under given parent directory."""
-        today = str(datetime.now().date())
-
         overall_today = {
             "created_pull_requests": 0,
             "rejected": 0,
@@ -234,12 +230,12 @@ class KebechetMetrics:
         ks = KnowledgeStorage(is_local=is_local)
         for manager_name in ["update_manager"]:
 
-            file_name = f"kebechet_{manager_name}_{today}.json"
+            file_name = f"kebechet_{manager_name}_{str(day)}.json"
 
             for path in Path(Path(f"./{_ROOT_DIR}/")).rglob(f"*{file_name}"):
                 if path.name == f"overall_{file_name}":
                     continue
-                data = ks.load_data(file_path=path)
+                data = ks.load_data(file_path=path, as_json=True)
                 for k in data["daily"]:
                     if k == "median_ttm":
                         ttms.append(data["daily"][k])
