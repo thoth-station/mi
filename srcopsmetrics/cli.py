@@ -18,12 +18,13 @@
 """This is the CLI for SrcOpsMetrics to create, visualize, use bot knowledge."""
 
 import logging
-from tqdm.contrib.logging import logging_redirect_tqdm
 import os
+from datetime import date, timedelta
 from pathlib import Path
 from typing import List, Optional
 
 import click
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
@@ -113,7 +114,7 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     "-t",
     is_flag=True,
     required=False,
-    help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository.""",
+    help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository for yesterday.""",
 )
 @click.option(
     "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
@@ -160,9 +161,12 @@ def cli(
     for project in repos:
         os.environ["PROJECT"] = project
 
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+
     if thoth:
         if repository and not merge:
-            kebechet_metrics = KebechetMetrics(repository=repos[0], today=True, is_local=is_local)
+            kebechet_metrics = KebechetMetrics(repository=repos[0], day=yesterday, is_local=is_local)
             kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
         if metrics:
@@ -182,7 +186,7 @@ def cli(
 
     if merge:
         if thoth:
-            KebechetMetrics.merge_kebechet_metrics_today(is_local=is_local)
+            KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError
 

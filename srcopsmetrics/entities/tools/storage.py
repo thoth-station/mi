@@ -34,12 +34,21 @@ import pandas as pd
 _LOGGER = logging.getLogger(__name__)
 
 
-def load_data_frame(path_or_buf: Union[Path, str]) -> pd.DataFrame:
+def load_data_frame(path_or_buf: Union[Path, Any]) -> pd.DataFrame:
     """Load DataFrame from either string data or path."""
     df = pd.read_json(path_or_buf, orient="records", lines=True)
     if not df.empty:
         df = df.set_index("id")
     return df
+
+
+def load_json(path_or_buf: Union[Path, str]) -> Any:
+    """Load json data from string or filepath."""
+    if isinstance(path_or_buf, Path):
+        with open(path_or_buf, "r") as f:
+            return json.loads(f.read())
+
+    return json.loads(path_or_buf)
 
 
 class KnowledgeStorage:
@@ -95,13 +104,15 @@ class KnowledgeStorage:
                 json.dump(data, f)
             _LOGGER.info("Saved locally at %s" % file_path)
 
-    def load_data(self, file_path: Optional[Path] = None) -> Dict[str, Any]:
+    def load_data(self, file_path: Optional[Path] = None, as_json: bool = False) -> Dict[str, Any]:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
             file_path {Optional[Path]} -- path to previously stored knowledge from
                                inspected github repository. If None is passed, the used path will
                                be :value:`~enums.StoragePath.DEFAULT`
+
+            as_json {bool} -- load data as a plain json file
 
         Returns:
             Dict[str, Any] -- previusly collected knowledge.
@@ -111,7 +122,11 @@ class KnowledgeStorage:
         if file_path is None:
             raise ValueError("Filepath has to be specified.")
 
-        results = self.load_locally(file_path) if self.is_local else self.load_remotely(file_path)
+        results = (
+            self.load_locally(file_path, as_json=as_json)
+            if self.is_local
+            else self.load_remotely(file_path, as_json=as_json)
+        )
 
         if results is None:
             _LOGGER.info("File does not exist.")
@@ -121,7 +136,7 @@ class KnowledgeStorage:
         return results
 
     @staticmethod
-    def load_locally(file_path: Path, as_csv: bool = True) -> pd.DataFrame:
+    def load_locally(file_path: Path, as_json: bool = False) -> pd.DataFrame:
         """Load knowledge file from local storage."""
         _LOGGER.info("Loading knowledge locally")
 
@@ -129,16 +144,20 @@ class KnowledgeStorage:
             _LOGGER.debug("Knowledge %s not found locally" % file_path)
             return pd.DataFrame()
 
+        if as_json:
+            return load_json(file_path)
         return load_data_frame(file_path)
 
-    def load_remotely(self, file_path: Path, as_csv: bool = True) -> pd.DataFrame:
+    def load_remotely(self, file_path: Path, as_json: bool = False) -> pd.DataFrame:
         """Load knowledge file from Ceph storage."""
         _LOGGER.info("Loading knowledge from Ceph")
 
         ceph_filename = os.path.relpath(file_path).replace("./", "")
         try:
             data = self.get_ceph_store().retrieve_document(ceph_filename)
-            return load_data_frame(data)
+            if not as_json:
+                data = load_data_frame(data)
+            return data
 
         except NotFoundError:
             _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
