@@ -166,7 +166,6 @@ def cli(
 
     if thoth:
         if repository and not merge:
-            today = date.today()
             kebechet_metrics = KebechetMetrics(repository=repos[0], day=yesterday, is_local=is_local)
             kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
