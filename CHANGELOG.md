@@ -637,3 +637,19 @@ all the things that you see...
 * Change pygithub commmit enttiy to pydriller commit (#381)
 * :arrow_up: Automatic update of dependencies by Kebechet (#404)
 * Fix loading dataframes remotely (#402)
+
+## Release 2.6.0 (2021-06-01T14:51:04)
+### Features
+* Sync method calling in cli.py for new method name
+* Remove duplicitly declared variable
+* Change today parameter for any specific day
+* Add as_csv option for data loading
+* Delete .coafile
+* Documentation/update readme (#394)
+* :arrow_up: Automatic update of dependencies by Kebechet (#408)
+### Bug Fixes
+* fix a typo
+* Change resources configuration according to fix (#409)
+### Improvements
+* Change for to per in method name
+* Fix yesterday variable definition
