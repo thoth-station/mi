@@ -19,7 +19,7 @@
 
 import logging
 import os
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -162,7 +162,7 @@ def cli(
         os.environ["PROJECT"] = project
 
     today = date.today()
-    yesterday = today.replace(day=today.day - 1)
+    yesterday = today - timedelta(days=1)
 
     if thoth:
         if repository and not merge:
