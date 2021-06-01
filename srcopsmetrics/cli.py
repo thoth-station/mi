@@ -186,7 +186,7 @@ def cli(
 
     if merge:
         if thoth:
-            KebechetMetrics.merge_kebechet_metrics_for_day(day=yesterday, is_local=is_local)
+            KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError
 
