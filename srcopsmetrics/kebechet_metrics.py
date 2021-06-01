@@ -214,7 +214,7 @@ class KebechetMetrics:
             KnowledgeStorage(is_local=self.is_local).save_data(file_path=path.joinpath(file_name), data=stats)
 
     @staticmethod
-    def merge_kebechet_metrics_for_day(day: date, is_local: bool = False):
+    def merge_kebechet_metrics_per_day(day: date, is_local: bool = False):
         """Merge all the collected metrics under given parent directory."""
         overall_today = {
             "created_pull_requests": 0,
