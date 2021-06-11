@@ -653,3 +653,8 @@ all the things that you see...
 ### Improvements
 * Change for to per in method name
 * Fix yesterday variable definition
+
+## Release 2.6.1 (2021-06-11T11:46:59)
+### Features
+* Return empty dictionary if none prs
+* :arrow_up: Automatic update of dependencies by Kebechet
