@@ -117,6 +117,9 @@ class KebechetMetrics:
 
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
 
+        if self.prs.empty:
+            return pd.DataFrame()
+
         self.prs["type"] = self.prs["title"].apply(lambda x: get_update_manager_request_type(x))
 
         requests = self.prs[~self.prs["type"].isnull()].copy()
