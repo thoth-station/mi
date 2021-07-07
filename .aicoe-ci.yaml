@@ -13,4 +13,4 @@ deploy:
   project-org: thoth-station
   project-name: thoth-application
   image-name: mi
-  overlay-contextpath: mi-scheduler/overlays/test/imagestreamtag.yaml
+  overlay-contextpath: mi-scheduler/overlays/zero-test/imagestreamtag.yaml
