@@ -18,11 +18,11 @@
 """Exceptions for SrcOpsMetrics."""
 
 
-class MissingPreviousKnowledge(Exception):
+class MissingPreviousKnowledgeError(Exception):
     """An exception when no previous knowledge has been extracted for a project."""
 
 
-class NotKnownEntities(Exception):
+class NotKnownEntitiesError(Exception):
     """An exception when Entities requested are not known."""
 
     def __init__(self, message, specified_entities, available_entities):
