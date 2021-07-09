@@ -19,7 +19,7 @@
 """Pull Request entity class."""
 
 import logging
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Optional
 
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
@@ -37,13 +37,13 @@ PullRequestReviews = Schema({str: PullRequestReview})
 ISSUE_KEYWORDS = {"close", "closes", "closed", "fix", "fixes", "fixed", "resolve", "resolves", "resolved"}
 
 
-def get_first_review_time(reviews: Dict[Any, Any]):
+def get_first_review_time(reviews: Dict[Any, Any]) -> Optional[int]:
     """Return timestamp of the first PR review."""
     rev_times = [int(rev["submitted_at"]) for rev in reviews.values()]
     return min(rev_times) if rev_times else None
 
 
-def get_approve_time(reviews: Dict[Any, Any]):
+def get_approve_time(reviews: Dict[Any, Any]) -> Optional[int]:
     """Return timestamp of the first PR approve review."""
     approvals = [rev["submitted_at"] for rev in reviews.values() if rev["state"] == "APPROVED"]
     return min(approvals) if approvals else None
@@ -63,12 +63,16 @@ class PullRequest(Entity):
             "closed_at": Any(None, int),
             "closed_by": Any(None, str),
             "merged_at": Any(None, int),
+            "merged_by": Any(None, str),
             "commits_number": int,
+            "changed_files": [str],
             "changed_files_number": int,
             "interactions": {str: int},
             "reviews": PullRequestReviews,
             "commits": [str],
             "files": [str],
+            "first_review_at": Any(None, int),
+            "first_approve_at": Any(None, int),
         }
     )
 
