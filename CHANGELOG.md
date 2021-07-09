@@ -658,3 +658,10 @@ all the things that you see...
 ### Features
 * Return empty dictionary if none prs
 * :arrow_up: Automatic update of dependencies by Kebechet
+
+## Release 2.6.2 (2021-07-09T16:55:41)
+### Features
+* Add Error suffix for custom exceptions
+* Add missing features to schema
+* change overlay contextpath to zero-test (#424)
+* :arrow_up: Automatic update of dependencies by Kebechet
