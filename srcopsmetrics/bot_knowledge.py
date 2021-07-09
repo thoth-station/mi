@@ -25,7 +25,7 @@ from pkgutil import iter_modules
 from typing import List, Optional, Tuple
 
 from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
-from srcopsmetrics.exceptions import NotKnownEntities
+from srcopsmetrics.exceptions import NotKnownEntitiesError
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics import utils
 
@@ -80,7 +80,9 @@ def analyse_projects(
         if entities:
             specified_entities = [e for e in allowed_entities if e.__name__ in entities]
             if specified_entities == []:
-                raise NotKnownEntities(message="", specified_entities=entities, available_entities=allowed_entities)
+                raise NotKnownEntitiesError(
+                    message="", specified_entities=entities, available_entities=allowed_entities
+                )
 
         inspected_entities = specified_entities or allowed_entities
 
