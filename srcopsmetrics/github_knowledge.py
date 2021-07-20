@@ -25,8 +25,9 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 from github import ContentFile, Github, PaginatedList
 from github.Repository import Repository
 
-from srcopsmetrics.iterator import KnowledgeAnalysis
 from srcopsmetrics.entities import Entity
+from srcopsmetrics.github_handling import GITHUB_TIMEOUT_SECONDS, github_handler
+from srcopsmetrics.iterator import KnowledgeAnalysis
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,20 +41,21 @@ class GitHubKnowledge:
 
     _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests", "ContentFile": "content_file"}
 
+    @github_handler
     def connect_to_source(self, project: Tuple[str, str]) -> Repository:
         """Connect to GitHub.
 
         :param project: Tuple source repo and repo name.
         """
         # Connect using PyGitHub
-        g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
+        g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
         repo_name = project[0] + "/" + project[1]
         repo = g.get_repo(repo_name)
 
         return repo
 
-    @staticmethod
-    def get_repositories(repository: Optional[str] = None, organization: Optional[str] = None) -> List[str]:
+    @github_handler
+    def get_repositories(self, repository: Optional[str] = None, organization: Optional[str] = None) -> List[str]:
         """Get overall repositories to be inspected.
 
         :param repository:str:
@@ -62,7 +64,7 @@ class GitHubKnowledge:
         :rtype: List of all repositories (repository + repositories in organization)
         """
         repos = []
-        gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50)
+        gh = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
 
         if repository is not None:
             repos.append(gh.get_repo(repository).full_name)
