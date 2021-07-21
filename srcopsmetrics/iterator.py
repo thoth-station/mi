@@ -28,6 +28,7 @@ from github.PaginatedList import PaginatedList
 from tqdm import tqdm
 
 from srcopsmetrics.entities import Entity
+from srcopsmetrics.github_handling import GithubHandler
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ class KnowledgeAnalysis:
         self.knowledge_updated = False
         self.is_local = is_local
         self.github = Github(self._GITHUB_ACCESS_TOKEN)
+        self.handler = GithubHandler(self.github)
 
     def __enter__(self):
         """Context manager enter method."""
@@ -84,16 +86,13 @@ class KnowledgeAnalysis:
         try:
             entities = self.entity.analyse()
             length = entities.totalCount if isinstance(entities, PaginatedList) else len(entities)
-            for idx, entity in enumerate(tqdm(entities, total=length), 1):
+
+            progressbar = tqdm(entities, total=length)
+            for idx, entity in enumerate(progressbar, 1):
                 self.knowledge_updated = True
 
-                remaining = self.github.get_rate_limit().core.remaining
-
-                if remaining <= API_RATE_MINIMAL_REMAINING:
-                    self.wait_until_api_reset()
-
-                if idx % 5 == 0:
-                    _LOGGER.info("[API requests remaining: %d]" % remaining)
+                self.handler.check_and_wait_for_api()
+                progressbar.set_postfix(ordered_dict={"RATE remaining": self.handler.remaining})
 
                 self.entity.store(entity)
 

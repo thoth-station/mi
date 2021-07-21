@@ -46,6 +46,7 @@ repos:
     rev: 19.10b0
     hooks:
       - id: black
+        args: ['--target-version', 'py38']
 
   - repo: https://gitlab.com/PyCQA/flake8
     rev: '3.7.8'

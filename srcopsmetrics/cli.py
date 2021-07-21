@@ -148,9 +148,9 @@ def cli(
 
     if repository:
         for rep in repository.split(","):
-            repos.extend(GitHubKnowledge.get_repositories(repository=rep.strip()))
+            repos.extend(GitHubKnowledge().get_repositories(repository=rep.strip()))
     if organization:
-        repos.extend(GitHubKnowledge.get_repositories(organization=organization))
+        repos.extend(GitHubKnowledge().get_repositories(organization=organization))
 
     entities_args = get_entities_as_list(entities)
 
