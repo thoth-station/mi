@@ -33,6 +33,16 @@ from srcopsmetrics.enums import StoragePath
 _LOGGER = logging.getLogger(__name__)
 
 
+def get_knowledge_path():
+    """Return knowledge path value."""
+    return os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.KNOWLEDGE_PATH.value)
+
+
+def get_merge_path():
+    """Return merge path value."""
+    return os.getenv(StoragePath.MERGE_LOCATION_ENVVAR_NAME.value, StoragePath.MERGE_PATH.value)
+
+
 class ProcessedKnowledge:
     """Decorator for Processing() methods implemented as a descriptor.
 
