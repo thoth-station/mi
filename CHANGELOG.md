@@ -665,3 +665,10 @@ all the things that you see...
 * Add missing features to schema
 * change overlay contextpath to zero-test (#424)
 * :arrow_up: Automatic update of dependencies by Kebechet
+
+## Release 2.6.3 (2021-07-22T14:04:54)
+### Features
+* Remove API checking, add better progressbar
+* Use GitHubKnowledge properly
+* Remove handling logic from knowledge module
+* Add github_handling module
