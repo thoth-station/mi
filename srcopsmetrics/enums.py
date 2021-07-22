@@ -47,8 +47,11 @@ class StoragePath(Enum):
 
     DEFAULT = "./srcopsmetrics/"
     LOCATION_VAR = "KNOWLEDGE_PATH"
+    MERGE_LOCATION_ENVVAR_NAME = "MERGE_PATH"
     KNOWLEDGE = "bot_knowledge"
+    MERGE = "metrics"
     PROCESSED = "processed"
 
     KNOWLEDGE_PATH = DEFAULT + KNOWLEDGE
+    MERGE_PATH = DEFAULT + MERGE
     PROCESSED_PATH = DEFAULT + PROCESSED
