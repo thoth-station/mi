@@ -126,6 +126,13 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     required=False,
     help=f"""Merge all of the aggregated data under given KNOWLEDGE_PATH.""",
 )
+@click.option(
+    "--merge-path",
+    "-M",
+    required=False,
+    default=StoragePath.MERGE_PATH.value,
+    help=f"""Data/statistics are stored under this path.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -139,10 +146,12 @@ def cli(
     thoth: bool,
     metrics: bool,
     merge: bool,
+    merge_path: str,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
     os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
+    os.environ[StoragePath.MERGE_LOCATION_ENVVAR_NAME.value] = merge_path
 
     repos = []
 

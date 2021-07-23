@@ -32,6 +32,7 @@ from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
+from srcopsmetrics.storage import get_merge_path
 
 BOT_NAMES = {"sesheta"}
 
@@ -44,7 +45,6 @@ UPDATE_TYPES_AND_KEYWORDS = {
 
 _LOGGER = logging.getLogger(__name__)
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
-_ROOT_DIR = "kebechet-update-manager"
 
 
 def get_update_manager_request_type(title: str) -> Optional[str]:
@@ -71,6 +71,7 @@ class KebechetMetrics:
         self.issues = Issue(gh_repo).load_previous_knowledge(is_local=is_local)
         self.day = day
         self.is_local = is_local
+        self.root_dir = get_merge_path()
 
     def _get_least_square_polynomial_fit(self, x_series: pd.Series, y_series: pd.Series, degree: int = 3):
         """Apply least square polynomial fit on time metrics data."""
@@ -206,7 +207,7 @@ class KebechetMetrics:
         for get_stats in [self.update_manager]:
             stats = get_stats()
 
-            path = Path(f"./{_ROOT_DIR}/{self.repo_name}/")
+            path = Path(f"./{self.root_dir}/{self.repo_name}/")
             utils.check_directory(path)
 
             file_name = f"kebechet_{get_stats.__name__}"
@@ -235,7 +236,7 @@ class KebechetMetrics:
 
             file_name = f"kebechet_{manager_name}_{str(day)}.json"
 
-            for path in Path(Path(f"./{_ROOT_DIR}/")).rglob(f"*{file_name}"):
+            for path in Path(Path(f"./{get_merge_path()}/")).rglob(f"*{file_name}"):
                 if path.name == f"overall_{file_name}":
                     continue
                 data = ks.load_data(file_path=path, as_json=True)
@@ -248,7 +249,7 @@ class KebechetMetrics:
             ttm_median = np.nanmedian(ttms)
             overall_today["median_ttm"] = ttm_median if not np.isnan(ttm_median) else None
 
-            path = Path(f"./{_ROOT_DIR}/overall_{file_name}")
+            path = Path(f"./{get_merge_path()}/overall_{file_name}")
             ks.save_data(path, overall_today)
 
     def update_manager(self):
