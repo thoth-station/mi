@@ -672,3 +672,11 @@ all the things that you see...
 * Use GitHubKnowledge properly
 * Remove handling logic from knowledge module
 * Add github_handling module
+
+## Release 2.7.0 (2021-07-27T10:57:44)
+### Features
+* :arrow_up: Automatic update of dependencies by Kebechet
+* Use merge path inside kebechet metrics
+* Add merge path as an cli option
+### Improvements
+* Add get_envvar methods for path variables
