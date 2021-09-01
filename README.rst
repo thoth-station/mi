@@ -174,6 +174,20 @@ Meta-Information Entities Metrics
 =================================
 To know more about indicators that are extracted from data, check out `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
+Data loading using modules
+--------------------------
+
+.. code-block:: console
+
+    from srcopsmetrics.entities.pull_request import PullRequest
+
+    pulls = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
+    ## returns pandas dataframe
+    pulls.head()
+
+Any other entity is loaded in the similar way.
+If you intend to load remote data from Ceph, all of the Ceph variables need to be specified (see more in Setup section).
+
 
 How to contribute
 =================
