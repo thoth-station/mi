@@ -58,10 +58,10 @@ class IssueEvent(Entity):
         """Override :func:`~Entity.store`."""
         id = event.id
 
-        raw_response = event.raw_data
-        raw_response.__delitem("id")
+        raw_response_dict = event.raw_data
+        raw_response_dict.__delitem__("id")
 
-        self.stored_entities[id] = {raw_response}
+        self.stored_entities[id] = raw_response_dict
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
