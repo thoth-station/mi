@@ -41,7 +41,7 @@ class TemplateEntity(Entity):
 
     def store(self, github_entity):
         """Override :func:`~Entity.store`."""
-        self.stored["key"] = {
+        self.stored_entities["key"] = {
             "extracted_information": github_entity.attribute,
         }
 
