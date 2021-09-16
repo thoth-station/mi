@@ -17,9 +17,10 @@
 
 """Template entity class."""
 
-from typing import Any, List
+from typing import List
 
 from voluptuous.schema_builder import Schema
+from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 
@@ -34,7 +35,8 @@ class TemplateEntity(Entity):
     or PullRequest.
     """
 
-    entity_schema = Schema({"extracted_information": Any})
+    # general json entity schema
+    entity_schema = Schema({int: {str: Any(str, int)}})
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
