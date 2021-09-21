@@ -152,9 +152,9 @@ class Entity(metaclass=ABCMeta):
                 f.write(str(to_save))
             _LOGGER.info("Saved locally at %s" % file_path)
 
-    def load_previous_knowledge(self, is_local: bool = False, as_csv: bool = False) -> pd.DataFrame:
+    def load_previous_knowledge(self, is_local: bool = False) -> pd.DataFrame:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory."""
-        df = KnowledgeStorage(is_local=is_local).load_data(self.file_path, as_json=True)
+        df = KnowledgeStorage(is_local=is_local).load_data(self.file_path)
 
         if df.empty:
             _LOGGER.info("No previous knowledge of type %s found" % self.name())
