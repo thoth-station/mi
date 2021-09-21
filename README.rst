@@ -170,7 +170,7 @@ Get multiple entity data locally
     srcopsmetrics -clr foo_repo -e PullRequest,Issue,Commit
 
 
-Meta-Information Entities Metrics
+Meta-Information Entities Data
 =================================
 To know more about indicators that are extracted from data, check out `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
@@ -179,11 +179,21 @@ Data loading using modules
 
 .. code-block:: console
 
-    from srcopsmetrics.entities.pull_request import PullRequest
+    >>> from srcopsmetrics.entities.pull_request import PullRequest
 
-    pulls = PullRequest(gh_repo).load_previous_knowledge(is_local=True)
-    ## returns pandas dataframe
-    pulls.head()
+    >>> full_repo_slug = "thoth-station/mi"
+    >>> pr = PullRequest(full_repo_slug)
+
+    >>> # for local data in default mi data path
+    >>> data = load_previous_knowledge(is_local=True)
+    >>> data.head()
+                                           title                                               body size  ...   changed_files     first_review_at    first_approve_at
+    id                                                                                                        ...
+    97                   ⬆️ Bump rsa from 4.0 to 4.7  Bumps [rsa](https://github.com/sybrenstuvel/py...    L  ...  [Pipfile.lock]                 NaT                 NaT
+    96              ⬆️ Bump pyyaml from 5.3.1 to 5.4  Bumps [pyyaml](https://github.com/yaml/pyyaml)...    L  ...  [Pipfile.lock]                 NaT                 NaT
+    95                   ⬆️ Bump rsa from 4.0 to 4.1  Bumps [rsa](https://github.com/sybrenstuvel/py...    L  ...  [Pipfile.lock]                 NaT                 NaT
+    94  Automatic update of dependencies by Kebechet  Kebechet has updated the depedencies to the la...    L  ...  [Pipfile.lock] 2021-03-22 08:00:14 2021-03-22 08:00:14
+    93  Automatic update of dependencies by Kebechet  Kebechet has updated the depedencies to the la...    L  ...  [Pipfile.lock] 202
 
 Any other entity is loaded in the similar way.
 If you intend to load remote data from Ceph, all of the Ceph variables need to be specified (see more in Setup section).
