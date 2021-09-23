@@ -29,6 +29,9 @@ from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 
+# GitHub related keys from API response
+TRAFFIC_KEYS = {"count", "uniques", "type", "referrer", "path", "title"}
+
 
 class Traffic(Entity):
     """Traffic entity."""
@@ -46,7 +49,7 @@ class Traffic(Entity):
         today = datetime.today().date()
 
         if isinstance(github_entity, View):
-            id = github_entity.timestamp
+            id = github_entity.timestamp.date()
 
             # today statistics of view and clones are never complete, have to wait for tomorrow
             if id == today:
@@ -54,7 +57,7 @@ class Traffic(Entity):
 
             type = "view"
         elif isinstance(github_entity, Clones):
-            id = github_entity.timestamp
+            id = github_entity.timestamp.date()
 
             if id == today:
                 return
@@ -69,9 +72,7 @@ class Traffic(Entity):
 
         date_id = str(id)
 
-        if date_id not in self.previous_knowledge:
-            self.previous_knowledge[date_id] = {}
-        elif type in self.previous_knowledge[date_id]:
+        if date_id in self.previous_knowledge:
             return
 
         if date_id not in self.stored_entities:
@@ -84,6 +85,11 @@ class Traffic(Entity):
             data.__delitem__("timestamp")
 
         self.stored_entities[date_id] = data
+
+        # Make dataframe complete with all the other keys set to None
+        for key in TRAFFIC_KEYS:
+            if key not in self.stored_entities[date_id]:
+                self.stored_entities[date_id][key] = None
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
