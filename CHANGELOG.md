@@ -1,5 +1,20 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.8.0 (2021-10-11T15:49:56)
+### Features
+* Fix traffic entities, add their standalone classes
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Add all of the traffic data
+* Change schema to general json
+* Use raw resposne as dict
+* Add initial implementation of IssueEvent
+* Use correct name stored entities in template
+* Add data loading section
+* :arrow_up: Automatic update of dependencies by Kebechet (#446)
+### Improvements
+* Add class
+
 ## [0.1.0] - 2019-Sep-11 - goern
 
 ### Added
