@@ -53,8 +53,7 @@ class Entity(metaclass=ABCMeta):
         elif repository:
             self.repository_name = repository.full_name
         else:
-            _LOGGER.info("Repository object or slug is required")
-            return None
+            raise ValueError("Repository object or slug is required")
 
     @classmethod
     def name(cls) -> str:
