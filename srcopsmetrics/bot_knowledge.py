@@ -29,6 +29,8 @@ from srcopsmetrics.exceptions import NotKnownEntitiesError
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics import utils
 
+from srcopsmetrics import github_handling
+
 import inspect
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,7 +57,7 @@ def _get_all_entities():
     return entities_classes
 
 
-def analyse_projects(projects: List[str], is_local: bool = False, entities: Optional[List[str]] = None) -> None:
+def analyse_projects(repositories: List[str], is_local: bool = False, entities: Optional[List[str]] = None) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:
@@ -65,9 +67,9 @@ def analyse_projects(projects: List[str], is_local: bool = False, entities: Opti
 
     """
     path = Path.cwd().joinpath("./srcopsmetrics/bot_knowledge")
-    for project in projects:
-        _LOGGER.info("######################## Analysing %s ########################\n" % "/".join(project))
-        github_repo = github_knowledge.connect_to_source(project=project)
+    for repo in repositories:
+        _LOGGER.info("######################## Analysing %s ########################\n" % repo)
+        github_repo = github_handling.connect_to_source(repo)
 
         project_path = path.joinpath("./" + github_repo.full_name)
         utils.check_directory(project_path)

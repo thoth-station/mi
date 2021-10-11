@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from github import Github
+from github.Repository import Repository
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,3 +77,16 @@ def github_handler(original_funcion):
         return original_funcion(*args, **kwargs)
 
     return _wrapper
+
+
+@github_handler
+def connect_to_source(self, repository_name: str) -> Repository:
+    """Connect to GitHub.
+
+    :param project: Tuple source repo and repo name.
+    """
+    # Connect using PyGitHub
+    g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
+    repo = g.get_repo(repository_name)
+
+    return repo

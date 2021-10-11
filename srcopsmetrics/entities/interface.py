@@ -29,7 +29,7 @@ from github.Repository import Repository
 from voluptuous.error import MultipleInvalid
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics import utils
+from srcopsmetrics import github_handling, utils
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.enums import StoragePath
 
@@ -46,7 +46,6 @@ class Entity(metaclass=ABCMeta):
         """
         self.stored_entities = self.entities_schema()({})
         self.previous_knowledge = self.entities_schema()({})
-        self.repository = repository
 
         if repository_name:
             self.repository_name = repository_name
@@ -54,6 +53,10 @@ class Entity(metaclass=ABCMeta):
             self.repository_name = repository.full_name
         else:
             raise ValueError("Repository object or slug is required")
+
+        self.repository = repository
+        if not repository:
+            self.repository = github_handling.connect_to_source(repository_name)
 
     @classmethod
     def name(cls) -> str:
