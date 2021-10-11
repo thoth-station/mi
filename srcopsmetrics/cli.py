@@ -56,7 +56,11 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             by comma (e.g. -r x/foo,y/bar,z/qua)""",
 )
 @click.option(
-    "--organization", "-o", type=str, required=False, help="All repositories of an Organization to be analysed",
+    "--organization",
+    "-o",
+    type=str,
+    required=False,
+    help="All repositories of an Organization to be analysed",
 )
 @click.option(
     "--create-knowledge",
@@ -74,7 +78,10 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             Storage location is {StoragePath.PROCESSED.value}""",
 )
 @click.option(
-    "--is-local", "-l", is_flag=True, help="Use local for knowledge loading and storing.",
+    "--is-local",
+    "-l",
+    is_flag=True,
+    help="Use local for knowledge loading and storing.",
 )
 @click.option(
     "--entities",
@@ -114,24 +121,28 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     "-t",
     is_flag=True,
     required=False,
-    help=f"""Launch performance analysis of Thoth Kebechet managers for specified repository for yesterday.""",
+    help="""Launch performance analysis of Thoth Kebechet managers for specified repository for yesterday.""",
 )
 @click.option(
-    "--metrics", "-m", is_flag=True, required=False, help=f"""Launch Metrics Calculation for specified repository.""",
+    "--metrics",
+    "-m",
+    is_flag=True,
+    required=False,
+    help="""Launch Metrics Calculation for specified repository.""",
 )
 @click.option(
     "--merge",
     "-m",
     is_flag=True,
     required=False,
-    help=f"""Merge all of the aggregated data under given KNOWLEDGE_PATH.""",
+    help="""Merge all of the aggregated data under given KNOWLEDGE_PATH.""",
 )
 @click.option(
     "--merge-path",
     "-M",
     required=False,
     default=StoragePath.MERGE_PATH.value,
-    help=f"""Data/statistics are stored under this path.""",
+    help="""Data/statistics are stored under this path.""",
 )
 def cli(
     repository: Optional[str],

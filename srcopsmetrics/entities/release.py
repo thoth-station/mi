@@ -34,7 +34,12 @@ _LOGGER = logging.getLogger(__name__)
 class Release(Entity):
     """Release entity."""
 
-    entity_schema = Schema({"release_date": int, "note": str,})
+    entity_schema = Schema(
+        {
+            "release_date": int,
+            "note": str,
+        }
+    )
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""

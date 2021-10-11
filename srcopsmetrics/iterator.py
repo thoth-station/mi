@@ -46,7 +46,9 @@ class KnowledgeAnalysis:
     _BUCKET = os.getenv("CEPH_BUCKET")
 
     def __init__(
-        self, entity: Entity, is_local: bool = False,
+        self,
+        entity: Entity,
+        is_local: bool = False,
     ):
         """Initialize with previous and new knowledge of an entity."""
         self.entity = entity
