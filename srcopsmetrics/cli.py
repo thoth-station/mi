@@ -175,7 +175,7 @@ def cli(
     entities_args = get_entities_as_list(entities)
 
     if create_knowledge:
-        analyse_projects(projects=repos, is_local=is_local, entities=entities_args)
+        analyse_projects(repositories=repos, is_local=is_local, entities=entities_args)
 
     for project in repos:
         os.environ["PROJECT"] = project
