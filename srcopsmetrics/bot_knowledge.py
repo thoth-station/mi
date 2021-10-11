@@ -22,7 +22,7 @@ import os
 from importlib import import_module
 from pathlib import Path
 from pkgutil import iter_modules
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
 from srcopsmetrics.exceptions import NotKnownEntitiesError
@@ -55,9 +55,7 @@ def _get_all_entities():
     return entities_classes
 
 
-def analyse_projects(
-    projects: List[Tuple[str, str]], is_local: bool = False, entities: Optional[List[str]] = None
-) -> None:
+def analyse_projects(projects: List[str], is_local: bool = False, entities: Optional[List[str]] = None) -> None:
     """Run Issues (that are not PRs), PRs, PR Reviews analysis on specified projects.
 
     Arguments:

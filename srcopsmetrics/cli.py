@@ -175,8 +175,7 @@ def cli(
     entities_args = get_entities_as_list(entities)
 
     if create_knowledge:
-        tupled_repos = [(lambda x: (x[0], x[1]))(repo.split("/")) for repo in repos]
-        analyse_projects(projects=tupled_repos, is_local=is_local, entities=entities_args)
+        analyse_projects(projects=repos, is_local=is_local, entities=entities_args)
 
     for project in repos:
         os.environ["PROJECT"] = project
