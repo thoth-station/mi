@@ -191,10 +191,16 @@ class Metrics:
 
         plt.xticks(rotation=45, ha="right")
         plt.plot(
-            entity["datetime"], entity[metrics_name].apply(lambda x: x / 3600), ".", label=metrics_name,
+            entity["datetime"],
+            entity[metrics_name].apply(lambda x: x / 3600),
+            ".",
+            label=metrics_name,
         )
         plt.plot(
-            entity["datetime"], entity[time_metrics_name].apply(lambda x: x / 3600), "--", label=time_metrics_name,
+            entity["datetime"],
+            entity[time_metrics_name].apply(lambda x: x / 3600),
+            "--",
+            label=time_metrics_name,
         )
         plt.plot(
             [datetime.fromtimestamp(t) for t in trendline_pts],

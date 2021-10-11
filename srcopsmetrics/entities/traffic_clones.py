@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Dominik Tuchyna
+# Copyright (C) 2021 Dominik Tuchyna
 #
 # This file is part of thoth-station/mi - Meta-information Indicators.
 #
@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Template entity class."""
+"""Traffic Clones stats class."""
 
+from datetime import datetime
 from typing import List
 
 from voluptuous.schema_builder import Schema
@@ -25,28 +26,39 @@ from voluptuous.validators import Any
 from srcopsmetrics.entities import Entity
 
 
-class TemplateEntity(Entity):
-    """Template entity.
+class TrafficClones(Entity):
+    """Traffic entity."""
 
-    Serves as a skelet for implementing a new entity so the contributor
-    does not have to spend time copying everything from interface class.
-
-    For further inspiration look at other implemented entities like Issue
-    or PullRequest.
-    """
-
-    # general json entity schema
     entity_schema = Schema({int: {str: Any(str, int)}})
 
     def analyse(self) -> List[Any]:
         """Override :func:`~Entity.analyse`."""
+        return self.get_raw_github_data()
 
     def store(self, github_entity):
         """Override :func:`~Entity.store`."""
-        self.stored_entities["key"] = {
-            "extracted_information": github_entity.attribute,
-        }
+        id = github_entity.timestamp.date()
+        date_id = str(id)
+
+        if id == datetime.today().date():
+            return
+
+        if date_id in self.previous_knowledge and self.previous_knowledge["uniques"] is not None:
+            return
+
+        if date_id not in self.stored_entities:
+            self.stored_entities[date_id] = {}
+
+        self.stored_entities[date_id]["uniques"] = github_entity.uniques
+        self.stored_entities[date_id]["count"] = github_entity.count
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return self.repository.get_entity()
+        github_clones = self.repository.get_clones_traffic()
+        self.stored_entities[str(datetime.today().date())] = {
+            "uniques": None,
+            "count": None,
+            "last_two_weeks_uniques": github_clones["uniques"],
+            "last_two_weeks_count": github_clones["count"],
+        }
+        return github_clones["clones"]
