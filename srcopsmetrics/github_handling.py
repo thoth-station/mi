@@ -80,7 +80,7 @@ def github_handler(original_funcion):
 
 
 @github_handler
-def connect_to_source(self, repository_name: str) -> Repository:
+def connect_to_source(repository_name: str) -> Repository:
     """Connect to GitHub.
 
     :param project: Tuple source repo and repo name.
