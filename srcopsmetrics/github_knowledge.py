@@ -20,7 +20,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Type
 
 from github import ContentFile, Github, PaginatedList
 from github.Repository import Repository
@@ -42,15 +42,14 @@ class GitHubKnowledge:
     _FILENAME_ENTITY = {"Issue": "issues", "PullRequest": "pull_requests", "ContentFile": "content_file"}
 
     @github_handler
-    def connect_to_source(self, project: Tuple[str, str]) -> Repository:
+    def connect_to_source(self, project: str) -> Repository:
         """Connect to GitHub.
 
         :param project: Tuple source repo and repo name.
         """
         # Connect using PyGitHub
         g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
-        repo_name = project[0] + "/" + project[1]
-        repo = g.get_repo(repo_name)
+        repo = g.get_repo(project)
 
         return repo
 
