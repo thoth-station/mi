@@ -175,10 +175,11 @@ Meta-Information Entities Data
 
 How to load data
 ----------------
-`Using pandas <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#using-pandas>`_
-`Using mi entities <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#using-mi-modules>`_
+- `Using pandas <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#using-pandas>`_
+- `Using mi entities <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#using-mi-modules>`_
 
-
+Indicators
+----------
 To know more about indicators that are extracted from data, check out `Meta-Information Indicators <https://github.com/thoth-station/mi/tree/master/srcopsmetrics/entities#meta-information-indicators-metrics>`_.
 
 
