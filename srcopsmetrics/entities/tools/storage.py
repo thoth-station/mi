@@ -104,7 +104,7 @@ class KnowledgeStorage:
                 json.dump(data, f)
             _LOGGER.info("Saved locally at %s" % file_path)
 
-    def load_data(self, file_path: Optional[Path] = None, as_json: bool = False) -> Dict[str, Any]:
+    def load_data(self, file_path: Optional[Path] = None, as_json: bool = False) -> pd.DataFrame:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory.
 
         Arguments:
@@ -120,17 +120,13 @@ class KnowledgeStorage:
 
         """
         if file_path is None:
-            raise ValueError("Filepath has to be specified.")
+            raise ValueError("Filepath is required.")
 
         results = (
             self.load_locally(file_path, as_json=as_json)
             if self.is_local
             else self.load_remotely(file_path, as_json=as_json)
         )
-
-        if results is None:
-            _LOGGER.info("File does not exist.")
-            return {}
 
         _LOGGER.info("Data from file %s loaded")
         return results

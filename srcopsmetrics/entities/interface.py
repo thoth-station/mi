@@ -22,14 +22,14 @@ import logging
 import os
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from typing import Collection
+from typing import Collection, Optional
 
 import pandas as pd
 from github.Repository import Repository
 from voluptuous.error import MultipleInvalid
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics import utils
+from srcopsmetrics import github_handling, utils
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.enums import StoragePath
 
@@ -39,14 +39,24 @@ _LOGGER = logging.getLogger(__name__)
 class Entity(metaclass=ABCMeta):
     """This class defines interface every entity class should implement."""
 
-    def __init__(self, repository: Repository):
+    def __init__(self, repository: Optional[Repository] = None, repository_name: Optional[str] = None):
         """Initialize entity with github repository.
 
         Every entity should be initialized just with the repository name.
         """
         self.stored_entities = self.entities_schema()({})
         self.previous_knowledge = self.entities_schema()({})
+
+        if repository_name:
+            self.repository_name = repository_name
+        elif repository:
+            self.repository_name = repository.full_name
+        else:
+            raise ValueError("Repository object or slug is required")
+
         self.repository = repository
+        if not repository:
+            self.repository = github_handling.connect_to_source(repository_name)
 
     @classmethod
     def name(cls) -> str:
@@ -97,7 +107,7 @@ class Entity(metaclass=ABCMeta):
         path = Path.cwd().joinpath(os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.DEFAULT.value))
         path = path.joinpath(StoragePath.KNOWLEDGE.value)
 
-        project_path = path.joinpath("./" + self.repository.full_name)
+        project_path = path.joinpath("./" + self.repository_name)
         utils.check_directory(project_path)
 
         appendix = ".json"  # if as_csv else ".json" TODO implement as_csv bool
@@ -144,24 +154,16 @@ class Entity(metaclass=ABCMeta):
                 f.write(str(to_save))
             _LOGGER.info("Saved locally at %s" % file_path)
 
-    def load_previous_knowledge(self, is_local: bool = False, as_csv: bool = False) -> pd.DataFrame:
+    def load_previous_knowledge(self, is_local: bool = False) -> pd.DataFrame:
         """Load previously collected repo knowledge. If a repo was not inspected before, create its directory."""
-        if self.file_path is None and self.repository is None:
-            raise ValueError("Either filepath or project name have to be specified.")
-
-        df = (
-            KnowledgeStorage().load_locally(self.file_path)
-            if is_local
-            else KnowledgeStorage().load_remotely(self.file_path)
-        )
+        df = KnowledgeStorage(is_local=is_local).load_data(self.file_path)
 
         if df.empty:
             _LOGGER.info("No previous knowledge of type %s found" % self.name())
             return pd.DataFrame()
 
         _LOGGER.info(
-            "Found previous %s knowledge for %s with %d records"
-            % (self.name(), self.repository.full_name, len(df.index))
+            "Found previous %s knowledge for %s with %d records" % (self.name(), self.repository_name, len(df.index))
         )
         return df
 
