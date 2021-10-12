@@ -1,5 +1,24 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.9.0 (2021-10-12T13:06:30)
+* Remove unused traffic class
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Make mypy nonstrict towards optional
+* Remove self argument from method
+* Fix argument name
+* Initialize entities with repository using method from gh handling
+* Remove unused methods that are already in entities/tools
+* Remove repo name tupling
+* Update pre-commit container in prow.yaml
+* Change warning to raised exception
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Make pre-commit happy
+* Update pre-commit config
+* Fix previous knowledge guarding
+* Specify data loading example in main README
+* Fix loading as dataframes, remove as_csv option
+* Add slug name initialization, remove code
+
 ## Release 2.8.0 (2021-10-11T15:49:56)
 ### Features
 * Fix traffic entities, add their standalone classes
