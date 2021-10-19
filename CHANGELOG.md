@@ -1,5 +1,9 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.9.1 (2021-10-19T13:31:36)
+* Add bullet list, add subchapter
+* Move to entities doc, add links to main README
+
 ## Release 2.9.0 (2021-10-12T13:06:30)
 * Remove unused traffic class
 * :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
