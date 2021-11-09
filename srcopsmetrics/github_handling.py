@@ -34,6 +34,21 @@ API_RATE_MINIMAL_REMAINING = 80
 GITHUB_TIMEOUT_SECONDS = 60
 
 
+class GitHubSingleton(object):
+    """Singleton class for GitHub object."""
+
+    _instance = None
+
+    def __new__(cls):
+        """One-time initialize GH object if there is none."""
+        if not cls._instance:
+            _LOGGER.debug("Initializing singleton GitHub wrapper object")
+            cls._instance = super(GitHubSingleton, cls).__new__(cls)
+            cls.github = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
+
+        return cls._instance
+
+
 class GithubHandler:
     """Handler class that contains GH API rate handling logic."""
 
@@ -80,13 +95,15 @@ def github_handler(original_funcion):
 
 
 @github_handler
+def get_github_object() -> Github:
+    """Connect to GH and return its wrapper object."""
+    return GitHubSingleton().github
+
+
+@github_handler
 def connect_to_source(repository_name: str) -> Repository:
-    """Connect to GitHub.
+    """Connect to GitHub and return repository object.
 
     :param project: Tuple source repo and repo name.
     """
-    # Connect using PyGitHub
-    g = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=GITHUB_TIMEOUT_SECONDS)
-    repo = g.get_repo(repository_name)
-
-    return repo
+    return get_github_object().get_repo(repository_name)
