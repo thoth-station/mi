@@ -184,9 +184,12 @@ def cli(
     yesterday = today - timedelta(days=1)
 
     if thoth:
+        _LOGGER.info("#### Launching thoth data analysis ####")
         if repository and not merge:
-            kebechet_metrics = KebechetMetrics(repository=repos[0], day=yesterday, is_local=is_local)
-            kebechet_metrics.evaluate_and_store_kebechet_metrics()
+            for repo in repos:
+                _LOGGER.info("Creating metrics for repository %s" % repo)
+                kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)
+                kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
         if metrics:
             repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
@@ -205,6 +208,7 @@ def cli(
 
     if merge:
         if thoth:
+            _LOGGER.info("Merging kebechet metrics for %s" % yesterday)
             KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError
