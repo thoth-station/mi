@@ -1,5 +1,13 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.1 (2021-11-19T03:14:10)
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Add metrics analysis for mulitple repos case
+* Add singleton instance building
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+
 ## Release 2.10.0 (2021-10-28T20:27:00)
 * :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
 * Add initial implementation
