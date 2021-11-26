@@ -128,22 +128,27 @@ For more information about Ceph storing look `here <https://docs.aws.amazon.com/
 CLI
 ---
 
-See --help for all available options
+To view all of the available commands and their description use
 
-See some of the examples below
+.. code-block:: console
+
+    python -m srcopsmetrics.cli --help
+
+
+See some of the general usage examples below
 
 Get repository PullRequest data locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
-    srcopsmetrics --create --is-local --repository foo_repo --entities PullRequest
+    python -m srcopsmetrics.cli --create --is-local --repository foo_repo --entities PullRequest
 
 which is equivalent to
 
 .. code-block:: console
 
-    srcopsmetrics -clr foo_repo -e PullRequest
+    python -m srcopsmetrics.cli -clr foo_repo -e PullRequest
 
 
 Get organization PR data locally
@@ -151,7 +156,7 @@ Get organization PR data locally
 
 .. code-block:: console
 
-    srcopsmetrics -clo foo_org -e PullRequest
+    python -m srcopsmetrics.cli -clo foo_org -e PullRequest
 
 
 Get multiple repository PR data locally
@@ -159,7 +164,7 @@ Get multiple repository PR data locally
 
 .. code-block:: console
 
-    srcopsmetrics -clr foo_repo,bar_repo -e PullRequest
+    python -m srcopsmetrics.cli -clr foo_repo,bar_repo -e PullRequest
 
 
 Get multiple entity data locally
@@ -167,7 +172,7 @@ Get multiple entity data locally
 
 .. code-block:: console
 
-    srcopsmetrics -clr foo_repo -e PullRequest,Issue,Commit
+    python -m srcopsmetrics.cli -clr foo_repo -e PullRequest,Issue,Commit
 
 
 Meta-Information Entities Data
