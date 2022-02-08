@@ -111,6 +111,18 @@ Usage
 Setup
 -----
 
+Connect to GitHub
+~~~~~~~~~~~~~~~~~
+To be able to extract data from GitHub, access token must be configured. To generate one, read `https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token`
+To use the token with mi, set ``GITHUB_ACESS_TOKEN`` environment variable to the token value, for example:
+
+.. code-block:: console
+
+    export GITHUB_ACESS_TOKEN=<token_string>
+
+
+Data Location
+~~~~~~~~~~~~~
 To store data locally, use ``-l`` when calling CLI or set is_local=True when using **MI** as a module.
 
 By default **MI** will try to store the data on Ceph.
