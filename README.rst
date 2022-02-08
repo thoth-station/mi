@@ -113,7 +113,7 @@ Setup
 
 Connect to GitHub
 ~~~~~~~~~~~~~~~~~
-To be able to extract data from GitHub, access token must be configured. To generate one, read `https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token`
+To be able to extract data from GitHub, access token must be configured. To generate one, read `this <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
 To use the token with mi, set ``GITHUB_ACESS_TOKEN`` environment variable to the token value, for example:
 
 .. code-block:: console
