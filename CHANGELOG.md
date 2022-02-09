@@ -1,5 +1,12 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.3 (2022-02-09T14:05:38)
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Fix url link
+* Add token specification to readme
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+
 ## Release 2.10.2 (2022-01-28T13:15:25)
 * :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
 * :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
