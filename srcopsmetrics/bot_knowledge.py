@@ -18,7 +18,6 @@
 """Create, Visualize, Use bot knowledge from different Software Development Platforms."""
 
 import logging
-import os
 from importlib import import_module
 from pathlib import Path
 from pkgutil import iter_modules
@@ -28,6 +27,7 @@ from srcopsmetrics.entities import Entity, NOT_FOR_INSPECTION
 from srcopsmetrics.exceptions import NotKnownEntitiesError
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics import utils
+from srcopsmetrics import entities
 
 from srcopsmetrics import github_handling
 
@@ -42,7 +42,7 @@ def _get_all_entities():
     """Return all of the currently implemented entities."""
     entities_classes = []
 
-    for pkg in iter_modules([os.path.abspath("./srcopsmetrics/entities/")]):
+    for pkg in iter_modules(entities.__path__):
         if pkg.name in NOT_FOR_INSPECTION:
             continue
 
