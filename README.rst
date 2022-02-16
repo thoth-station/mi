@@ -119,14 +119,14 @@ To use the token with mi, set ``GITHUB_ACESS_TOKEN`` environment variable to the
 
 .. code-block:: console
 
-    $ export GITHUB_ACESS_TOKEN=<token_string>
+    export GITHUB_ACESS_TOKEN=<token_string>
 
 
 or
 
 .. code-block:: console
 
-    $ GITHUB_ACESS_TOKEN=<token_string> python -m srcopsmetrics.cli ...
+    GITHUB_ACESS_TOKEN=<token_string> python -m srcopsmetrics.cli ...
 
 
 and etc.
