@@ -1,5 +1,9 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.6 (2022-02-25T18:14:53)
+* Add Raw entities for Issue,PullRequest
+* Fix module loading example typo
+
 ## Release 2.10.5 (2022-02-25T11:36:48)
 * Change the ordering of parameters
 * :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
