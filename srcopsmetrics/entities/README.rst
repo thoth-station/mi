@@ -41,7 +41,7 @@ Using mi modules
     >>> pr = PullRequest(full_repo_slug)
 
     >>> # for local data in default mi data path
-    >>> data = load_previous_knowledge(is_local=True)
+    >>> data = pr.load_previous_knowledge(is_local=True)
     >>> data.head()
                                            title                                               body size  ...   changed_files     first_review_at    first_approve_at
     id                                                                                                        ...
