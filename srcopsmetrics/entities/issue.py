@@ -49,10 +49,13 @@ class Issue(Entity):
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
-        return self.get_only_new_entities()
+        return self.get_raw_github_data()
 
     def store(self, issue: GithubIssue):
         """Override :func:`~Entity.store`."""
+        if issue.pull_request:
+            return  # only issues that are not pull requests are considered
+
         if issue.number in self.previous_knowledge.index:
             return  # if in previous knowledge, no need to analyse
 
@@ -72,4 +75,4 @@ class Issue(Entity):
 
     def get_raw_github_data(self):
         """Override :func:`~Entity.get_raw_github_data`."""
-        return [issue for issue in self.repository.get_issues(state="all") if not issue.pull_request]
+        return self.repository.get_issues(state="all")
