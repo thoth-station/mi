@@ -1,5 +1,13 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.5 (2022-02-25T11:36:48)
+* Change the ordering of parameters
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* Update pre-commit configuration
+
 ## Release 2.10.4 (2022-02-15T12:54:12)
 * Fix section heading
 * Update templates from template-project
