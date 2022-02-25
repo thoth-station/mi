@@ -39,7 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 class Entity(metaclass=ABCMeta):
     """This class defines interface every entity class should implement."""
 
-    def __init__(self, repository: Optional[Repository] = None, repository_name: Optional[str] = None):
+    def __init__(self, repository_name: Optional[str] = None, repository: Optional[Repository] = None):
         """Initialize entity with github repository.
 
         Every entity should be initialized just with the repository name.
