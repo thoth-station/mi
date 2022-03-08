@@ -114,11 +114,22 @@ Setup
 Connect to GitHub
 ^^^^^^^^^^^^^^^^^
 To be able to extract data from GitHub, access token must be configured. To generate one, read `this <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`_
+
 To use the token with mi, set ``GITHUB_ACESS_TOKEN`` environment variable to the token value, for example:
 
 .. code-block:: console
 
     export GITHUB_ACESS_TOKEN=<token_string>
+
+
+or
+
+.. code-block:: console
+
+    GITHUB_ACESS_TOKEN=<token_string> python -m srcopsmetrics.cli ...
+
+
+and etc.
 
 
 Data Location
