@@ -125,7 +125,7 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
 )
 @click.option(
     "--metrics",
-    "-m",
+    "-x",
     is_flag=True,
     required=False,
     help="""Launch Metrics Calculation for specified repository.""",
