@@ -128,7 +128,6 @@ class KnowledgeStorage:
             else self.load_remotely(file_path, as_json=as_json)
         )
 
-        _LOGGER.info("Data from file %s loaded")
         return results
 
     @staticmethod
@@ -137,7 +136,7 @@ class KnowledgeStorage:
         _LOGGER.info("Loading knowledge locally")
 
         if not file_path.exists():
-            _LOGGER.debug("Knowledge %s not found locally" % file_path)
+            _LOGGER.info("Knowledge %s not found locally" % file_path)
             return pd.DataFrame()
 
         if as_json:
@@ -156,5 +155,5 @@ class KnowledgeStorage:
             return data
 
         except NotFoundError:
-            _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
+            _LOGGER.info("Knowledge %s not found on Ceph" % ceph_filename)
             return pd.DataFrame()
