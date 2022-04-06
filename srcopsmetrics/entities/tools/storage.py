@@ -36,9 +36,14 @@ _LOGGER = logging.getLogger(__name__)
 
 def load_data_frame(path_or_buf: Union[Path, Any]) -> pd.DataFrame:
     """Load DataFrame from either string data or path."""
-    df = pd.read_json(path_or_buf, orient="records", lines=True)
-    if not df.empty:
+    df = pd.DataFrame()
+
+    if isinstance(path_or_buf, dict):
+        df = pd.DataFrame.from_dict(path_or_buf, orient="index")
+    else:
+        df = pd.read_json(path_or_buf, orient="records", lines=True)
         df = df.set_index("id")
+
     return df
 
 
@@ -128,7 +133,6 @@ class KnowledgeStorage:
             else self.load_remotely(file_path, as_json=as_json)
         )
 
-        _LOGGER.info("Data from file %s loaded")
         return results
 
     @staticmethod
@@ -137,7 +141,7 @@ class KnowledgeStorage:
         _LOGGER.info("Loading knowledge locally")
 
         if not file_path.exists():
-            _LOGGER.debug("Knowledge %s not found locally" % file_path)
+            _LOGGER.info("Knowledge %s not found locally" % file_path)
             return pd.DataFrame()
 
         if as_json:
@@ -156,5 +160,5 @@ class KnowledgeStorage:
             return data
 
         except NotFoundError:
-            _LOGGER.debug("Knowledge %s not found on Ceph" % ceph_filename)
+            _LOGGER.info("Knowledge %s not found on Ceph" % ceph_filename)
             return pd.DataFrame()

@@ -20,7 +20,6 @@
 import logging
 import os
 from datetime import date, timedelta
-from pathlib import Path
 from typing import List, Optional
 
 import click
@@ -30,8 +29,6 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
-from srcopsmetrics.metrics import Metrics
-from srcopsmetrics.storage import KnowledgeStorage
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -125,7 +122,7 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
 )
 @click.option(
     "--metrics",
-    "-m",
+    "-x",
     is_flag=True,
     required=False,
     help="""Launch Metrics Calculation for specified repository.""",
@@ -191,20 +188,21 @@ def cli(
                 kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)
                 kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
-        if metrics:
-            repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
+        # TODO metrics class not working
+        # if metrics:
+        # repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
 
-            repo_metrics.get_metrics_outliers_pull_requests()
-            repo_metrics.get_metrics_outliers_issues()
+        # repo_metrics.get_metrics_outliers_pull_requests()
+        # repo_metrics.get_metrics_outliers_issues()
 
-            scores = repo_metrics.evaluate_scores_for_pull_requests()
+        # scores = repo_metrics.evaluate_scores_for_pull_requests()
 
-            path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
-            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
+        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
+        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
 
-            scores_issues = repo_metrics.evaluate_scores_for_issues()
-            path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
-            KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
+        # scores_issues = repo_metrics.evaluate_scores_for_issues()
+        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
+        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
     if merge:
         if thoth:

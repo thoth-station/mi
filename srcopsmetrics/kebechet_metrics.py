@@ -26,11 +26,10 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-from github import Github
 
-from srcopsmetrics import utils
 from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
+from srcopsmetrics.entities.thoth_advise_metrics import ThothAdviseMetrics
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.storage import get_merge_path
 
@@ -42,6 +41,28 @@ UPDATE_TYPES_AND_KEYWORDS = {
     "failure_notification": "Failed to update dependencies to their latest version",
     "initial_lock": "Initial dependency lock",
 }
+
+VERSION_TYPES_AND_KEYWORDS = {
+    "calendar": "New calendar release",
+    "major": "New major release",
+    "minor": "New minor release",
+    "patch": "New patch release",
+    "pre-release": "New pre-release",
+    "build": "New build release",
+}
+
+ADVISE_DATAFRAME_COLUMNS = [
+    "metrics_type",
+    "metrics_day",
+    "created_pull_requests",
+    "median_ttm",
+    "merged",
+    "merged_by_kebechet_bot",
+    "merged_by_other",
+    "rejected",
+    "rejected_by_kebechet_bot",
+    "rejected_by_other",
+]
 
 _LOGGER = logging.getLogger(__name__)
 _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -59,16 +80,25 @@ def get_update_manager_request_type(title: str) -> Optional[str]:
     return None
 
 
+def get_version_manager_request_type(title: str) -> Optional[str]:
+    """Get the type of the update request."""
+    for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
+        if keyword in title:
+            return request_type
+
+    return None
+
+
 class KebechetMetrics:
     """Kebechet Metrics inspected by MI."""
 
     def __init__(self, repository: str, is_local: bool = False, day: Optional[date] = None):
         """Initialize with collected knowledge."""
-        gh_repo = Github(login_or_token=_GITHUB_ACCESS_TOKEN, timeout=50).get_repo(repository)
-
         self.repo_name = repository
-        self.prs = PullRequest(gh_repo).load_previous_knowledge(is_local=is_local)
-        self.issues = Issue(gh_repo).load_previous_knowledge(is_local=is_local)
+
+        self.prs = PullRequest(repository_name=repository).load_previous_knowledge(is_local=is_local)
+        self.issues = Issue(repository_name=repository).load_previous_knowledge(is_local=is_local)
+
         self.day = day
         self.is_local = is_local
         self.root_dir = get_merge_path()
@@ -124,6 +154,25 @@ class KebechetMetrics:
         self.prs["type"] = self.prs["title"].apply(lambda x: get_update_manager_request_type(x))
 
         requests = self.prs[~self.prs["type"].isnull()].copy()
+
+        requests["ttm"] = requests.merged_at.sub(requests.created_at)
+        requests["tta"] = requests.first_approve_at - requests.created_at
+        requests["ttfr"] = requests.created_at - requests.first_review_at
+
+        not_merged = requests["merged_at"].isna()
+        closed_by_bot = requests.closed_by.isin(BOT_NAMES)
+
+        requests["merged_by_kebechet_bot"] = requests.merged_by.isin(BOT_NAMES)
+        requests["rejected_by_kebechet_bot"] = not_merged & closed_by_bot
+
+        return requests.sort_values(by=["created_at"]).reset_index(drop=True)
+
+    def _get_advise_manager_pull_requests(self) -> pd.DataFrame:
+
+        if self.prs.empty:
+            return pd.DataFrame()
+
+        requests = self.prs.copy()
 
         requests["ttm"] = requests.merged_at.sub(requests.created_at)
         requests["tta"] = requests.first_approve_at - requests.created_at
@@ -196,26 +245,11 @@ class KebechetMetrics:
             if self.day:
                 median_time = prs[prs["days"] == self.day]["ttm"].median()
                 day["median_ttm"] = median_time if not np.isnan(median_time) else 0
-                return day
+                # return day
 
             stats[str(specific_date)] = day
 
         return stats
-
-    def evaluate_and_store_kebechet_metrics(self):
-        """Calculate and store metrics for every kebechet manager in repository."""
-        for get_stats in [self.update_manager]:
-            stats = get_stats()
-
-            path = Path(f"./{self.root_dir}/{self.repo_name}/")
-            utils.check_directory(path)
-
-            file_name = f"kebechet_{get_stats.__name__}"
-            if self.day:
-                file_name += f"_{str(self.day)}"
-            file_name += ".json"
-
-            KnowledgeStorage(is_local=self.is_local).save_data(file_path=path.joinpath(file_name), data=stats)
 
     @staticmethod
     def merge_kebechet_metrics_per_day(day: date, is_local: bool = False):
@@ -258,6 +292,102 @@ class KebechetMetrics:
         daily_stats = self.get_daily_stats_update_manager()
         return {"overall": overall_stats, "daily": daily_stats}
 
+    def fill_advise_metrics_overall(self):
+        """Return stats over whole repository age."""
+        prs = self._get_advise_manager_pull_requests()
+
+        if prs.empty:
+            return
+
+        stats_id = f"{str(self.day)}_overall"
+        if stats_id in self.advise_metrics.index:
+            return
+
+        stats: Dict[str, Any] = {"metrics_type": "overall", "metrics_day": str(self.day)}
+        stats["created_pull_requests"] = len(prs)
+
+        stats["rejected"] = len(prs[np.isnan(prs["ttm"])])
+        stats["rejected_by_kebechet_bot"] = len(prs[prs["rejected_by_kebechet_bot"] == 1])
+        stats["rejected_by_other"] = stats["rejected"] - stats["rejected_by_kebechet_bot"]
+
+        stats["merged"] = len(prs) - stats["rejected"]
+        stats["merged_by_kebechet_bot"] = len(prs[prs["merged_by_kebechet_bot"] == 1])
+        stats["merged_by_other"] = stats["merged"] - stats["merged_by_kebechet_bot"]
+
+        median_time = prs["ttm"].median()
+        stats["median_ttm"] = median_time.total_seconds() if not pd.isna(median_time) else 0
+
+        self.advise_metrics = pd.concat([self.advise_metrics, pd.DataFrame(stats, index=[stats_id])])
+
+        return
+
+    def fill_advise_metrics_daily(self):
+        """Get daily stats.
+
+        If self.day is set, return only stats for that day.
+        """
+        prs = self._get_advise_manager_pull_requests()
+
+        if prs.empty:
+            return
+
+        prs["date"] = pd.to_datetime(prs.created_at).dt.date
+
+        if self.day:
+            prs = prs[prs.date == self.day]
+
+        for specific_date in prs.date.unique():
+            stats_id = f"{specific_date}_daily"
+
+            if stats_id in self.advise_metrics.index:
+                continue
+
+            prs_day = prs[prs.date == specific_date]  # TODO CHYBA treba porovnavat s pd.datetime
+
+            day = {"metrics_type": "daily", "metrics_day": str(specific_date)}
+
+            day["created_pull_requests"] = len(prs_day)
+
+            day["rejected"] = prs_day.merged_at.isna().sum()
+
+            day["rejected_by_kebechet_bot"] = prs_day.rejected_by_kebechet_bot.sum()
+            day["rejected_by_other"] = day["rejected"] - day["rejected_by_kebechet_bot"]
+
+            day["merged"] = prs_day.merged_at.notna().sum()
+            day["merged_by_kebechet_bot"] = prs_day.merged_by_kebechet_bot.sum()
+            day["merged_by_other"] = day["merged"] - day["merged_by_kebechet_bot"]
+
+            # TODO consider adding median_time to every day statistics (rolling windown maybe?)
+
+            if self.day:
+                median_time = prs[prs.date == self.day]["ttm"].median()
+                day["median_ttm"] = median_time.total_seconds() if not pd.isnull(median_time) else 0
+                self.advise_metrics = pd.concat([self.advise_metrics, pd.DataFrame(day, index=[stats_id])])
+
+    def advise_manager(self):
+        """Calculate and store version manager metrics."""
+        self.advise_metrics_entity = ThothAdviseMetrics(self.repo_name, self.is_local)
+        self.advise_metrics = self.advise_metrics_entity.load_previous_knowledge()
+
+        if self.advise_metrics.empty:
+            self.advise_metrics = pd.DataFrame(columns=ADVISE_DATAFRAME_COLUMNS)
+
+        self.fill_advise_metrics_overall()
+        self.fill_advise_metrics_daily()
+
+        self.advise_metrics_entity.stored_entities = self.advise_metrics
+        self.advise_metrics_entity.save_knowledge(from_dataframe=True, from_singleton=True)
+
+        path = Path(f"./{self.root_dir}/{self.repo_name}/")
+        file_name = f"kebechet_advise_{str(self.day)}.json"
+        self.advise_metrics_entity.save_knowledge(
+            file_path=path.joinpath(file_name),
+            is_local=self.is_local,
+            as_csv=True,
+            from_dataframe=True,
+            from_singleton=True,
+        )
+
     def label_bot_manager(self):
         """Calculate and store label bot manager metrics."""
         raise NotImplementedError
@@ -273,3 +403,19 @@ class KebechetMetrics:
     def pipfile_requirements(self):
         """Calculate and store pipfile requirements manager metrics."""
         raise NotImplementedError
+
+    def evaluate_and_store_kebechet_metrics(self):
+        """Calculate and store metrics for every kebechet manager in repository."""
+        for get_stats in [
+            self.advise_manager,
+        ]:
+            get_stats()
+
+            # path = Path(f"./{self.root_dir}/{self.repo_name}/")
+            # utils.check_directory(path)
+
+            # file_name = f"kebechet_{get_stats.__name__}_{str(self.day)}.json"
+
+            # KnowledgeStorage(is_local=self.is_local).save_data(
+            #   file_path=path.joinpath(file_name), data=stats.to_json()
+            # )

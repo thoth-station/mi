@@ -29,7 +29,7 @@ from github.Repository import Repository
 from voluptuous.error import MultipleInvalid
 from voluptuous.schema_builder import Schema
 
-from srcopsmetrics import github_handling, utils
+from srcopsmetrics import utils
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.enums import StoragePath
 
@@ -55,8 +55,8 @@ class Entity(metaclass=ABCMeta):
             raise ValueError("Repository object or slug is required")
 
         self.repository = repository
-        if not repository:
-            self.repository = github_handling.connect_to_source(repository_name)
+        # if not repository:
+        #     self.repository = github_handling.connect_to_source(repository_name)
 
     @classmethod
     def name(cls) -> str:
@@ -113,7 +113,14 @@ class Entity(metaclass=ABCMeta):
         appendix = ".json"  # if as_csv else ".json" TODO implement as_csv bool
         return project_path.joinpath("./" + self.filename + appendix)
 
-    def save_knowledge(self, file_path: Path = None, is_local: bool = False, as_csv: bool = False):
+    def save_knowledge(
+        self,
+        file_path: Path = None,
+        is_local: bool = False,
+        as_csv: bool = False,
+        from_dataframe: bool = False,
+        from_singleton: bool = False,
+    ):
         """Save collected knowledge as json."""
         if self.stored_entities is None or len(self.stored_entities) == 0:
             _LOGGER.info("Nothing to store.")
@@ -129,8 +136,14 @@ class Entity(metaclass=ABCMeta):
             _LOGGER.warning("Data found to be inconsistent with its schema, original message:")
             _LOGGER.warning(str(e))
 
-        new_data = pd.DataFrame.from_dict(self.stored_entities).T
-        to_save = pd.concat([new_data, self.previous_knowledge])
+        if from_dataframe:
+            if from_singleton:
+                to_save = self.stored_entities
+            else:
+                raise NotImplementedError
+        else:
+            new_data = pd.DataFrame.from_dict(self.stored_entities).T
+            to_save = pd.concat([new_data, self.previous_knowledge])
 
         _LOGGER.info("Knowledge file %s", (os.path.basename(file_path)))
         _LOGGER.info("new %d entities", len(self.stored_entities))
