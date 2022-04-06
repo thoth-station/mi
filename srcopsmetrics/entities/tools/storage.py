@@ -36,9 +36,14 @@ _LOGGER = logging.getLogger(__name__)
 
 def load_data_frame(path_or_buf: Union[Path, Any]) -> pd.DataFrame:
     """Load DataFrame from either string data or path."""
-    df = pd.read_json(path_or_buf, orient="records", lines=True)
-    if not df.empty:
+    df = pd.DataFrame()
+
+    if isinstance(path_or_buf, dict):
+        df = pd.DataFrame.from_dict(path_or_buf, orient="index")
+    else:
+        df = pd.read_json(path_or_buf, orient="records", lines=True)
         df = df.set_index("id")
+
     return df
 
 
