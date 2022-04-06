@@ -1,5 +1,24 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.7 (2022-04-06T18:52:48)
+* 307aad8 Add advise metrics entity, change pyproject.toml setup
+* 11b136a Fix pre-commit to 2.15.0, autoupdate
+* 2929a7a Add options for working with dataframe loading&saving
+* 558a9d7 Add options for working with dataframe loading&saving
+* e30cab3 Add update manager metrics aggregation
+* 0483715 Update metrics parameter, remove unused imports
+* fa81d01 Change log level to info
+* 57ed94e Change metrics cli flag to x
+* 33744e3 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 949bdd5 :ship: Bump up base image initialized in CI.
+* 1bd9fa8 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 7b7629a :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* ad92088 Update OWNERS
+* 8bc6238 add @mayaCostantini
+* c33d10d Reduce approvers to pacospace and xtuchyna, add reviewers
+* 0dce4a2 Remove dollar signs
+* 59f6a36 Add token example
+
 ## Release 2.10.6 (2022-02-25T18:14:53)
 * Add Raw entities for Issue,PullRequest
 * Fix module loading example typo

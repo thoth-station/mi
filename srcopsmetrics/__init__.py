@@ -2,4 +2,4 @@
 
 
 __title__ = "srcopsmetrics"
-__version__ = "2.10.6"
+__version__ = "2.10.7"
