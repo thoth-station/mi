@@ -30,6 +30,8 @@ import pandas as pd
 from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.entities.thoth_advise_metrics import ThothAdviseMetrics
+from srcopsmetrics.entities.thoth_metrics import ThothMetrics
+from srcopsmetrics.entities.thoth_version_manager_metrics import ThothVersionManagerMetrics
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.storage import get_merge_path
 
@@ -50,6 +52,12 @@ VERSION_TYPES_AND_KEYWORDS = {
     "pre-release": "New pre-release",
     "build": "New build release",
 }
+
+VERSION_DATAFRAME_COLUMNS = [
+    "issues_created",
+    "issues_completed",
+    "issues_rejected",
+]
 
 ADVISE_DATAFRAME_COLUMNS = [
     "metrics_type",
@@ -82,11 +90,22 @@ def get_update_manager_request_type(title: str) -> Optional[str]:
 
 def get_version_manager_request_type(title: str) -> Optional[str]:
     """Get the type of the update request."""
-    for request_type, keyword in UPDATE_TYPES_AND_KEYWORDS.items():
+    for request_type, keyword in VERSION_TYPES_AND_KEYWORDS.items():
         if keyword in title:
             return request_type
 
     return None
+
+
+def get_version_manager_issues(issues) -> pd.DataFrame:
+    """Get filtered issues related to version manager."""
+    if issues.empty:
+        return pd.DataFrame()
+
+    version_issues = issues.copy()
+    version_issues.version_type = issues.title.apply(lambda x: get_version_manager_request_type(x))
+
+    return version_issues[~version_issues.version_type.isna()]
 
 
 class KebechetMetrics:
@@ -321,7 +340,7 @@ class KebechetMetrics:
 
         return
 
-    def fill_advise_metrics_daily(self):
+    def get_advise_metrics_daily(self) -> pd.DataFrame:
         """Get daily stats.
 
         If self.day is set, return only stats for that day.
@@ -329,58 +348,72 @@ class KebechetMetrics:
         prs = self._get_advise_manager_pull_requests()
 
         if prs.empty:
-            return
+            return pd.DataFrame()
 
         prs["date"] = pd.to_datetime(prs.created_at).dt.date
-
-        if self.day:
-            prs = prs[prs.date == self.day]
+        metrics = {}
 
         for specific_date in prs.date.unique():
-            stats_id = f"{specific_date}_daily"
 
-            if stats_id in self.advise_metrics.index:
-                continue
+            pull_requests_per_specific_day = prs[prs.date == specific_date]
 
-            prs_day = prs[prs.date == specific_date]  # TODO CHYBA treba porovnavat s pd.datetime
+            approved = pull_requests_per_specific_day.first_approve_at.notna().sum()
 
-            day = {"metrics_type": "daily", "metrics_day": str(specific_date)}
+            # Merge stats
+            merged = pull_requests_per_specific_day.merged_at.notna().sum()
+            merged_by_bot = pull_requests_per_specific_day.merged_by_kebechet_bot.sum()
 
-            day["created_pull_requests"] = len(prs_day)
+            # Rejection stats
+            rejected = pull_requests_per_specific_day.merged_at.isna().sum()
+            rejected_by_bot = pull_requests_per_specific_day.rejected_by_kebechet_bot.sum()
 
-            day["rejected"] = prs_day.merged_at.isna().sum()
+            metrics[str(specific_date)] = {
+                "created_pull_requests": len(pull_requests_per_specific_day.index),
+                "approved_pull_requests": approved,
+                "merged_pull_requests": merged,
+                "merged_by_bot": merged_by_bot,
+                "merged_by_other": merged - merged_by_bot,
+                "rejected_pull_requests": rejected,
+                "rejected_by_bot": rejected_by_bot,
+                "rejected_by_other": rejected - rejected_by_bot,
+                "daily_mean_time_to_merge": pull_requests_per_specific_day.ttm.mean().seconds,
+            }
 
-            day["rejected_by_kebechet_bot"] = prs_day.rejected_by_kebechet_bot.sum()
-            day["rejected_by_other"] = day["rejected"] - day["rejected_by_kebechet_bot"]
+        return pd.DataFrame.from_dict(metrics, orient="index")
 
-            day["merged"] = prs_day.merged_at.notna().sum()
-            day["merged_by_kebechet_bot"] = prs_day.merged_by_kebechet_bot.sum()
-            day["merged_by_other"] = day["merged"] - day["merged_by_kebechet_bot"]
+    def get_version_metrics_daily(self) -> pd.DataFrame:
+        """Get metrics for version manager."""
+        issues = get_version_manager_issues(self.issues)
 
-            # TODO consider adding median_time to every day statistics (rolling windown maybe?)
+        if issues.empty:
+            return pd.DataFrame()
 
-            if self.day:
-                median_time = prs[prs.date == self.day]["ttm"].median()
-                day["median_ttm"] = median_time.total_seconds() if not pd.isnull(median_time) else 0
-                self.advise_metrics = pd.concat([self.advise_metrics, pd.DataFrame(day, index=[stats_id])])
+        issues["date"] = pd.to_datetime(issues.created_at).dt.date
+        metrics = {}
 
-    def advise_manager(self):
-        """Calculate and store version manager metrics."""
-        self.advise_metrics_entity = ThothAdviseMetrics(self.repo_name, self.is_local)
-        self.advise_metrics = self.advise_metrics_entity.load_previous_knowledge()
+        for specific_day in issues.date.unique():
 
-        if self.advise_metrics.empty:
-            self.advise_metrics = pd.DataFrame(columns=ADVISE_DATAFRAME_COLUMNS)
+            issues_per_specific_day = issues[issues.date == specific_day]
 
-        self.fill_advise_metrics_overall()
-        self.fill_advise_metrics_daily()
+            issues_created = len(issues_per_specific_day.index)
+            issues_completed = len(issues_per_specific_day.closed_by.isin(BOT_NAMES))
 
-        self.advise_metrics_entity.stored_entities = self.advise_metrics
-        self.advise_metrics_entity.save_knowledge(from_dataframe=True, from_singleton=True)
+            metrics[str(specific_day)] = {
+                "issues_created": issues_created,
+                "issues_completed": issues_completed,
+                "issues_rejected": issues_created - issues_completed,
+            }
+
+        return pd.DataFrame.from_dict(metrics, orient="index")
+
+    def save_metrics(self, metrics, metrics_entity: ThothMetrics, metrics_name: str):
+        """Save given metrics."""
+        metrics_entity.stored_entities = metrics
 
         path = Path(f"./{self.root_dir}/{self.repo_name}/")
-        file_name = f"kebechet_advise_{str(self.day)}.json"
-        self.advise_metrics_entity.save_knowledge(
+        file_name = f"kebechet_{metrics_name}.csv"
+
+        metrics_entity.save_knowledge(
             file_path=path.joinpath(file_name),
             is_local=self.is_local,
             as_csv=True,
@@ -388,34 +421,33 @@ class KebechetMetrics:
             from_singleton=True,
         )
 
+    def advise_manager(self):
+        """Calculate and store advise manager metrics."""
+        advise_metrics_entity = ThothAdviseMetrics(self.repo_name, self.is_local)
+        self.advise_metrics = self.get_advise_metrics_daily()
+
+        self.save_metrics(self.advise_metrics, advise_metrics_entity, "advise_manager")
+
+    def version_manager(self):
+        """Calculate and store version manager metrics."""
+        version_metrics_entity = ThothVersionManagerMetrics(self.repo_name, self.is_local)
+        self.version_metrics = self.get_version_metrics_daily()
+
+        self.save_metrics(self.version_metrics, version_metrics_entity, "version_manager")
+
     def label_bot_manager(self):
         """Calculate and store label bot manager metrics."""
         raise NotImplementedError
 
-    def thoth_advise(self):
-        """Calculate and store thoth advise manager metrics."""
-        raise NotImplementedError
-
-    def thoth_provenance(self):
+    def provenance_manager(self):
         """Calculate and store promenance manager metrics."""
         raise NotImplementedError
 
-    def pipfile_requirements(self):
+    def pipfile_requirements_manager(self):
         """Calculate and store pipfile requirements manager metrics."""
         raise NotImplementedError
 
     def evaluate_and_store_kebechet_metrics(self):
         """Calculate and store metrics for every kebechet manager in repository."""
-        for get_stats in [
-            self.advise_manager,
-        ]:
-            get_stats()
-
-            # path = Path(f"./{self.root_dir}/{self.repo_name}/")
-            # utils.check_directory(path)
-
-            # file_name = f"kebechet_{get_stats.__name__}_{str(self.day)}.json"
-
-            # KnowledgeStorage(is_local=self.is_local).save_data(
-            #   file_path=path.joinpath(file_name), data=stats.to_json()
-            # )
+        self.version_manager()
+        self.advise_manager()

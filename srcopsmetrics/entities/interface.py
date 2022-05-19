@@ -160,7 +160,12 @@ class Entity(metaclass=ABCMeta):
         if not is_local:
             ceph_filename = os.path.relpath(file_path).replace("./", "")
             s3 = KnowledgeStorage().get_ceph_store()
-            s3.store_document(to_save, ceph_filename)
+
+            if as_csv:
+                s3.store_blob(to_save, ceph_filename)
+            else:
+                s3.store_document(to_save, ceph_filename)
+
             _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
         else:
             with open(file_path, "w") as f:
