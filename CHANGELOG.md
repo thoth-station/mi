@@ -1,5 +1,13 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.10.8 (2022-05-23T12:44:26)
+* c682995 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 815badb Add basic implementation for advise and version mngrs
+* a999c13 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* ee1cd55 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 2fd407f :ship: Bump up base image initialized in CI.
+* ce249b2 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+
 ## Release 2.10.7 (2022-04-06T18:52:48)
 * 307aad8 Add advise metrics entity, change pyproject.toml setup
 * 11b136a Fix pre-commit to 2.15.0, autoupdate
