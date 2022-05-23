@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with thoth-station/mi - Meta-information Indicators.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Advise manager metrics."""
+"""Thoth Version Manager Metrics class."""
 
 from srcopsmetrics.entities.thoth_metrics import ThothMetrics
 
 
-class ThothAdviseMetrics(ThothMetrics):
-    """Advise manager metrics class."""
+class ThothVersionManagerMetrics(ThothMetrics):
+    """Version manager metrics class."""
 
     pass
