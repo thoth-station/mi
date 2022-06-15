@@ -65,7 +65,8 @@ class Issue(Entity):
 
         comments = issue.get_comments()
         comments_list = [
-            {"created_at": com.created_at, "created_by": com.user.login, "body": com.body} for com in comments
+            {"created_at": int(com.created_at.timestamp()), "created_by": com.user.login, "body": com.body}
+            for com in comments
         ]
         commenters = set([com["created_by"] for com in comments_list])
 
