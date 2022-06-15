@@ -116,7 +116,7 @@ class KebechetMetrics:
         """Apply least square polynomial fit on time metrics data."""
         return np.poly1d(np.polyfit(x_series, y_series, degree))
 
-    def _compute_predictions(self, x_series: pd.Series, y_series: pd.Series, days_ahead: int = 7) -> np.array:
+    def _compute_predictions(self, x_series: pd.Series, y_series: pd.Series, days_ahead: int = 7):
         """Compute estimation of the mean metrics in time for future score.
 
         Return numpy.array with prediciton for all the available dates

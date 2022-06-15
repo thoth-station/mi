@@ -29,6 +29,7 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
+from srcopsmetrics.kebechet_sli_slo_metrics import KebechetSliSloMetrics
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -204,9 +205,14 @@ def cli(
         # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
         # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
+        keb_sli_slo = KebechetSliSloMetrics(repository)
+        keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
+
     if merge:
         if thoth:
             _LOGGER.info("Merging kebechet metrics for %s" % yesterday)
+
+            ## TODO: merge action omitted ?
             KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError
