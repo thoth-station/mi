@@ -1,5 +1,8 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.11.0 (2022-06-15T12:16:16)
+* 298d8e6 Add commenters and crossref metadata
+
 ## Release 2.10.8 (2022-05-23T12:44:26)
 * c682995 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
 * 815badb Add basic implementation for advise and version mngrs
