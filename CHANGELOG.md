@@ -1,5 +1,9 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.11.1 (2022-06-15T14:09:04)
+* 880e194 Remove francesco and fridex from OWNERS
+* bee8aa8 Convert timestamp to int
+
 ## Release 2.11.0 (2022-06-15T12:16:16)
 * 298d8e6 Add commenters and crossref metadata
 
