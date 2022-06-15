@@ -29,6 +29,7 @@ from srcopsmetrics.entities import Entity
 from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
 
 _LOGGER = logging.getLogger(__name__)
+CROSS_REFERENCE_EVENT_KEYWORD = "cross-referenced"
 
 
 class Issue(Entity):
@@ -62,6 +63,17 @@ class Issue(Entity):
         if issue.pull_request is not None:
             return  # we analyze issues and prs differentely
 
+        comments = issue.get_comments()
+        comments_list = [
+            {"created_at": com.created_at, "created_by": com.user.login, "body": com.body} for com in comments
+        ]
+        commenters = set([com["created_by"] for com in comments_list])
+
+        timeline = issue.get_timeline()
+        cross_references = [
+            entry.source.issue.url for entry in timeline if entry.event == CROSS_REFERENCE_EVENT_KEYWORD
+        ]
+
         self.stored_entities[str(issue.number)] = {
             "title": issue.title,
             "body": issue.body,
@@ -70,7 +82,13 @@ class Issue(Entity):
             "closed_by": issue.closed_by.login if issue.closed_by is not None else None,
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": GitHubKnowledge.get_labels(issue),
-            "interactions": GitHubKnowledge.get_interactions(issue.get_comments()),
+            "interactions": GitHubKnowledge.get_interactions(comments),
+            "first_response_at": min(comments_list, key=lambda x: int(x["created_at"])),
+            "commenters_number": len(commenters),
+            "comments_number": len(comments_list),
+            "comments": comments_list,
+            "cross_references": cross_references,
+            "cross_references_number": len(cross_references),
         }
 
     def get_raw_github_data(self):
