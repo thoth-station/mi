@@ -213,7 +213,7 @@ def cli(
         # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
         if sli_slo:
-            keb_sli_slo = KebechetSliSloMetrics(repositories=repos)
+            keb_sli_slo = KebechetSliSloMetrics(repositories=repos, is_local=is_local)
             keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
 
     if merge:
