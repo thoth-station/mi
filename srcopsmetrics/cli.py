@@ -142,6 +142,12 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     default=StoragePath.MERGE_PATH.value,
     help="""Data/statistics are stored under this path.""",
 )
+@click.option(
+    "--sli-slo",
+    is_flag=True,
+    required=False,
+    help="""Launch sli-slo metrics calculation given repositories.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -156,6 +162,7 @@ def cli(
     metrics: bool,
     merge: bool,
     merge_path: str,
+    sli_slo: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -205,8 +212,9 @@ def cli(
         # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
         # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
 
-        keb_sli_slo = KebechetSliSloMetrics(repository)
-        keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
+        if sli_slo:
+            keb_sli_slo = KebechetSliSloMetrics(repositories=repos)
+            keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
 
     if merge:
         if thoth:
