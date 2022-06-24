@@ -19,6 +19,7 @@
 """Issue entity class."""
 
 import logging
+from typing import Optional
 
 from github.Issue import Issue as GithubIssue
 from github.PaginatedList import PaginatedList
@@ -27,9 +28,17 @@ from voluptuous.validators import Any
 
 from srcopsmetrics.entities import Entity
 from srcopsmetrics.entities.tools.knowledge import GitHubKnowledge
+from srcopsmetrics.github_handling import get_github_object
 
 _LOGGER = logging.getLogger(__name__)
+
 CROSS_REFERENCE_EVENT_KEYWORD = "cross-referenced"
+
+PROJECT_REFERENCE_EVENT_KEYWORDS = {
+    "added_to_project",
+    "moved_columns_in_project",
+    "removed_from_project",
+}
 
 
 class Issue(Entity):
@@ -47,6 +56,27 @@ class Issue(Entity):
             "interactions": {str: int},
         }
     )
+
+    def get_project_board(self, timeline) -> Optional[Any]:
+        """Get current project board for issue."""
+        project_board_url = None
+
+        events = {}
+
+        for entry in timeline:
+
+            if entry.event in PROJECT_REFERENCE_EVENT_KEYWORDS:
+                event_timestamp = int(entry.created_at.timestamp())
+                project_board_url = entry.__dict__["_rawData"]["project_url"]
+                events[entry.event] = [(event_timestamp, project_board_url)]
+
+            if entry.event == "added_to_project" or entry.event == "moved_columns_in_project":
+
+                project_board_url = entry.__dict__["_rawData"]["project_url"]
+                # column_name = entry.__dict__["_rawData"]["column_name"]
+                project_board = get_github_object().get_project(project_board_url)
+
+        return project_board
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
