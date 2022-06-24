@@ -120,6 +120,7 @@ class Issue(Entity):
             "comments": comments_list,
             "cross_references": cross_references,
             "cross_references_number": len(cross_references),
+            "assignees": [user.login for user in issue.assignees],
         }
 
     def get_raw_github_data(self):
