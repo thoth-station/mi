@@ -84,7 +84,7 @@ class Issue(Entity):
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": GitHubKnowledge.get_labels(issue),
             "interactions": GitHubKnowledge.get_interactions(comments),
-            "first_response_at": min(comments_list, key=lambda x: int(x["created_at"])),
+            "first_response_at": min(comments_list, key=lambda x: x["created_at"]) if comments_list else None,
             "commenters_number": len(commenters),
             "comments_number": len(comments_list),
             "comments": comments_list,

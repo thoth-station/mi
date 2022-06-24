@@ -182,37 +182,23 @@ def cli(
     if create_knowledge:
         analyse_projects(repositories=repos, is_local=is_local, entities=entities_args)
 
-    for project in repos:
-        os.environ["PROJECT"] = project
+    # for project in repos:
+    #     os.environ["PROJECT"] = project
 
     today = date.today()
     yesterday = today - timedelta(days=1)
 
     if thoth:
         _LOGGER.info("#### Launching thoth data analysis ####")
-        if repository and not merge:
+
+        if repository and not merge and not sli_slo:
             for repo in repos:
                 _LOGGER.info("Creating metrics for repository %s" % repo)
                 kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)
                 kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
-        # TODO metrics class not working
-        # if metrics:
-        # repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
-
-        # repo_metrics.get_metrics_outliers_pull_requests()
-        # repo_metrics.get_metrics_outliers_issues()
-
-        # scores = repo_metrics.evaluate_scores_for_pull_requests()
-
-        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
-        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
-
-        # scores_issues = repo_metrics.evaluate_scores_for_issues()
-        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
-        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
-
         if sli_slo:
+            _LOGGER.info("#### Inspecting kebechet repositories and creating SLI/SLO metrics ####")
             keb_sli_slo = KebechetSliSloMetrics(repositories=repos, is_local=is_local)
             keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
 

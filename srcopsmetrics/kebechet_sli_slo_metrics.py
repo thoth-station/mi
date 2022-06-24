@@ -54,12 +54,12 @@ class KebechetSliSloMetrics:
 
         kebechet_metrics = KebechetMetrics(repository, is_local=self.is_local)
 
-        ## get sli/slo for managers
+        # get sli/slo for managers
         usage_sli_update = self._get_usage_sli_update_manager(kebechet_metrics)
         usage_sli_version = self._get_usage_sli_version_manager(kebechet_metrics)
         usage_sli_advise = self._get_usage_sli_advise_manager(kebechet_metrics)
 
-        ## merge data into one dataframe with unique indeces
+        # merge data into one dataframe with unique indeces
         data = {
             "advise": usage_sli_advise,
             "version": usage_sli_version,
