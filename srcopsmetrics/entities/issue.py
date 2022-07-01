@@ -20,9 +20,11 @@
 
 import logging
 from typing import Optional
+import github
 
 from github.Issue import Issue as GithubIssue
 from github.PaginatedList import PaginatedList
+
 from voluptuous.schema_builder import Schema
 from voluptuous.validators import Any
 
@@ -34,11 +36,14 @@ _LOGGER = logging.getLogger(__name__)
 
 CROSS_REFERENCE_EVENT_KEYWORD = "cross-referenced"
 
+PROJECT_DEREFERENCE_EVENT_KEYWORDS = {"removed_from_project"}
+
 PROJECT_REFERENCE_EVENT_KEYWORDS = {
     "added_to_project",
     "moved_columns_in_project",
-    "removed_from_project",
 }
+
+PROJECT_EVENT_KEYWORDS = PROJECT_REFERENCE_EVENT_KEYWORDS.union(PROJECT_DEREFERENCE_EVENT_KEYWORDS)
 
 
 class Issue(Entity):
@@ -57,26 +62,55 @@ class Issue(Entity):
         }
     )
 
-    def get_project_board(self, timeline) -> Optional[Any]:
-        """Get current project board for issue."""
-        project_board_url = None
+    def _get_project_details_timeline(self, issue):
+        return github.PaginatedList.PaginatedList(
+            github.TimelineEvent.TimelineEvent,
+            issue._requester,
+            f"{issue.url}/timeline",
+            None,
+            headers={
+                "Accept": "application/vnd.github.starfox-preview+json,application/vnd.github.mockingbird-preview"
+            },
+        )
 
-        events = {}
+    def get_project_boards(self, issue) -> Optional[Any]:
+        """Get all currently assigned project boards for Issue."""
+        timeline = self._get_project_details_timeline(issue)
+
+        project_board_assignments = {}
+        current_boards = {}
 
         for entry in timeline:
 
-            if entry.event in PROJECT_REFERENCE_EVENT_KEYWORDS:
-                event_timestamp = int(entry.created_at.timestamp())
-                project_board_url = entry.__dict__["_rawData"]["project_url"]
-                events[entry.event] = [(event_timestamp, project_board_url)]
+            project_board_url = (
+                entry.__dict__["_rawData"]["project_url"] if entry.event in PROJECT_EVENT_KEYWORDS else None
+            )
 
-            if entry.event == "added_to_project" or entry.event == "moved_columns_in_project":
+            if not project_board_url:
+                continue
 
-                project_board_url = entry.__dict__["_rawData"]["project_url"]
-                # column_name = entry.__dict__["_rawData"]["column_name"]
-                project_board = get_github_object().get_project(project_board_url)
+            column_name = entry.__dict__["_rawData"]["column_name"]
 
-        return project_board
+            event_timestamp = int(entry.created_at.timestamp())
+            # project_board = get_github_object().get_project(project_board_url)
+
+            if project_board_url not in project_board_assignments:
+                project_board_assignments[project_board_url] = [(event_timestamp, entry.event, column_name)]
+            else:
+                project_board_assignments[project_board_url].append((event_timestamp, entry.event, column_name))
+
+            # add whether it is active project or not
+            current_boards[project_board_url] = entry.event in PROJECT_REFERENCE_EVENT_KEYWORDS
+
+        active_boards_with_columns = {}
+
+        for url in current_boards:
+            if not current_boards[url]:
+                continue
+
+            active_boards_with_columns[url] = get_github_object().get_project(url)
+
+        return active_boards_with_columns
 
     def analyse(self) -> PaginatedList:
         """Override :func:`~Entity.analyse`."""
@@ -105,6 +139,8 @@ class Issue(Entity):
             entry.source.issue.url for entry in timeline if entry.event == CROSS_REFERENCE_EVENT_KEYWORD
         ]
 
+        project_boards = self.get_project_boards(issue)
+
         self.stored_entities[str(issue.number)] = {
             "title": issue.title,
             "body": issue.body,
@@ -121,6 +157,7 @@ class Issue(Entity):
             "cross_references": cross_references,
             "cross_references_number": len(cross_references),
             "assignees": [user.login for user in issue.assignees],
+            "project_boards": project_boards,
         }
 
     def get_raw_github_data(self):
