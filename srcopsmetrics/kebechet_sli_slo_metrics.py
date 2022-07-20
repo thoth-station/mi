@@ -17,7 +17,9 @@
 
 """SLI/SLO metrics for Kebechet managers."""
 
-from typing import Any, List, Tuple
+from pathlib import Path
+import pandas as pd
+from typing import Any, Dict, List, Tuple
 
 from srcopsmetrics.entities.thoth_sli_slo import ThothSliSlo
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
@@ -55,7 +57,7 @@ class KebechetSliSloMetrics:
         kebechet_metrics = KebechetMetrics(repository, is_local=self.is_local)
 
         # get sli/slo for managers
-        usage_sli_update = self._get_usage_sli_update_manager(kebechet_metrics)
+        # usage_sli_update = self._get_usage_sli_update_manager(kebechet_metrics)
         usage_sli_version = self._get_usage_sli_version_manager(kebechet_metrics)
         usage_sli_advise = self._get_usage_sli_advise_manager(kebechet_metrics)
 
@@ -63,18 +65,18 @@ class KebechetSliSloMetrics:
         data = {
             "advise": usage_sli_advise,
             "version": usage_sli_version,
-            "update": usage_sli_update,
+            # "update": usage_sli_update,
         }
 
         return data
 
     def _get_sli_slo_for_all_managers(self) -> Tuple[Any, Any]:
         """Return a tuple of overall aggregated metrics and overall sli metrics for each repository."""
-        overall_sli_slo_data = {
-            "advise": 0,
-            "version": 0,
-            "update": 0,
-            "repository_count": len(self.repositories),
+        overall_sli_slo_data: Dict[str, Any] = {
+            "advise": {"repository_usage_count": 0},
+            "version": {"repository_usage_count": 0},
+            "update": {"repository_usage_count": None},
+            "overall_repositories": len(self.repositories),
         }
 
         # raw data per repository
@@ -89,31 +91,33 @@ class KebechetSliSloMetrics:
             raw_sli_slo_data[repo] = data
 
             # add data to overall manager metrics count
-            overall_sli_slo_data["advise"] += data["advise"]["is_used"]
-            overall_sli_slo_data["version"] += data["version"]["is_used"]
-            overall_sli_slo_data["update"] += (
-                data["update"]["is_used_in_issues"] or data["update"]["is_used_in_pull_requests"]
-            )
+            overall_sli_slo_data["advise"]["repository_count"] += data["advise"]["is_used"]
+            overall_sli_slo_data["version"]["repository_count"] += data["version"]["is_used"]
+
+            # TODO: update manager & other
+            # overall_sli_slo_data["update"] += (
+            #     data["update"]["is_used_in_issues"] or data["update"]["is_used_in_pull_requests"]
+            # )
 
         return (overall_sli_slo_data, raw_sli_slo_data)
 
     def _store_metrics(self, metrics):
         """Store on ceph or locally."""
         sli_slo_entity = ThothSliSlo(repository_name="kebechet_sli_slo")
-        sli_slo_entity.stored_entities = metrics
+        sli_slo_entity.stored_entities = pd.DataFrame(metrics)
 
-        path = get_merge_path()
-        file_name = "kebechet_sli_slo.json"
+        path = Path(get_merge_path())
+        file_name = "kebechet_sli_slo.csv"
 
         sli_slo_entity.save_knowledge(
             file_path=path.joinpath(file_name),
             is_local=self.is_local,
-            as_csv=False,
-            from_dataframe=False,
+            as_csv=True,
+            from_dataframe=True,
             from_singleton=True,
         )
 
     def evaluate_and_store_sli_slo_kebechet_metrics(self):
         """Evaluate SLI/SLO for all kebechet repositories and store data."""
-        (sli_slo_metrics,) = self._get_sli_slo_for_all_managers()
+        sli_slo_metrics, _ = self._get_sli_slo_for_all_managers()
         self._store_metrics(sli_slo_metrics)
