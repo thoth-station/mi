@@ -38,7 +38,7 @@ def get_knowledge_path():
     return os.getenv(StoragePath.LOCATION_VAR.value, StoragePath.KNOWLEDGE_PATH.value)
 
 
-def get_merge_path():
+def get_merge_path() -> str:
     """Return merge path value."""
     return os.getenv(StoragePath.MERGE_LOCATION_ENVVAR_NAME.value, StoragePath.MERGE_PATH.value)
 
