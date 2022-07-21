@@ -25,6 +25,14 @@ from srcopsmetrics.entities.thoth_sli_slo import ThothSliSlo
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
 from srcopsmetrics.storage import get_merge_path
 
+import numpy as np
+
+USAGE_TIMESTAMPS_DATAFRAME_COLUMNS = ["repository_name", "manager_name", "timestamp"]
+
+
+def _get_timestamp_from_series(series: pd.Series) -> pd.Series:
+    return series.values.astype(np.int64) // 10**9
+
 
 class KebechetSliSloMetrics:
     """SLI/SLO metrics agregation class for Kebechet managers."""
@@ -91,8 +99,8 @@ class KebechetSliSloMetrics:
             raw_sli_slo_data[repo] = data
 
             # add data to overall manager metrics count
-            overall_sli_slo_data["advise"]["repository_count"] += data["advise"]["is_used"]
-            overall_sli_slo_data["version"]["repository_count"] += data["version"]["is_used"]
+            overall_sli_slo_data["advise"]["repository_usage_count"] += data["advise"]["is_used"]
+            overall_sli_slo_data["version"]["repository_usage_count"] += data["version"]["is_used"]
 
             # TODO: update manager & other
             # overall_sli_slo_data["update"] += (
@@ -101,16 +109,16 @@ class KebechetSliSloMetrics:
 
         return (overall_sli_slo_data, raw_sli_slo_data)
 
-    def _store_metrics(self, metrics):
-        """Store on ceph or locally."""
-        sli_slo_entity = ThothSliSlo(repository_name="kebechet_sli_slo")
+    def _store_metrics(self, metrics, data_file_name):
+        """Store on ceph or locally as csv."""
+        sli_slo_entity = ThothSliSlo(repository_name=data_file_name)
         sli_slo_entity.stored_entities = pd.DataFrame(metrics)
 
         path = Path(get_merge_path())
-        file_name = "kebechet_sli_slo.csv"
+        data_file_name += ".csv"
 
         sli_slo_entity.save_knowledge(
-            file_path=path.joinpath(file_name),
+            file_path=path.joinpath(data_file_name),
             is_local=self.is_local,
             as_csv=True,
             from_dataframe=True,
@@ -120,4 +128,47 @@ class KebechetSliSloMetrics:
     def evaluate_and_store_sli_slo_kebechet_metrics(self):
         """Evaluate SLI/SLO for all kebechet repositories and store data."""
         sli_slo_metrics, _ = self._get_sli_slo_for_all_managers()
-        self._store_metrics(sli_slo_metrics)
+        self._store_metrics(sli_slo_metrics, "kebechet_sli_slo")
+
+    def _evaluate_usage(self, repository: str, usage_data: pd.DataFrame):
+        """Evaluate usage timestamps across all managers for specific repository.
+
+        Add usage timestamps to the passed dataframe
+        """
+        kebechet_metrics = KebechetMetrics(repository, is_local=self.is_local)
+
+        advise = pd.DataFrame(columns=USAGE_TIMESTAMPS_DATAFRAME_COLUMNS)
+        advise.timestamp = kebechet_metrics._get_advise_manager_pull_requests().created_at
+        advise["manager_name"] = "advise"
+
+        version = pd.DataFrame(columns=USAGE_TIMESTAMPS_DATAFRAME_COLUMNS)
+        version.timestamp = kebechet_metrics._get_version_manager_issues().created_at
+        version["manager_name"] = "version"
+
+        data_list = [
+            advise,
+            version,
+        ]
+        # add repo column and convert datetime to timestamps
+        for data in data_list:
+            data.repository_name = repository
+            data.timestamp = _get_timestamp_from_series(data.timestamp)
+
+        data_list.append(usage_data)
+        return pd.concat(data_list)
+
+    def _get_usage_counts_for_all_managers(self) -> Any:
+        """Return usage timestamps for each repository."""
+        data = pd.DataFrame(columns=USAGE_TIMESTAMPS_DATAFRAME_COLUMNS)
+
+        for repo in self.repositories:
+
+            # for each repo evaluate sli slo
+            data = self._evaluate_usage(repo, data)
+
+        return data
+
+    def evaluate_and_store_usage_timestamp_sli_slo_kebechet_metrics(self):
+        """Evaluate ans save SLI usage counts for all kebechet repositories."""
+        usage_counts = self._get_usage_counts_for_all_managers()
+        self._store_metrics(usage_counts, "kebechet_usage_counts")
