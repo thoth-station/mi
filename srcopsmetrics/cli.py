@@ -38,7 +38,7 @@ logging.basicConfig(level=logging.INFO)
 def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     """Get passed entities as list."""
     if entities_raw and entities_raw != "":
-        return entities_raw.split(",")
+        return [e.strip() for e in entities_raw.split(",")]
 
     return []
 
@@ -201,6 +201,7 @@ def cli(
             _LOGGER.info("#### Inspecting kebechet repositories and creating SLI/SLO metrics ####")
             keb_sli_slo = KebechetSliSloMetrics(repositories=repos, is_local=is_local)
             keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
+            # keb_sli_slo.evaluate_and_store_usage_timestamp_sli_slo_kebechet_metrics()
 
     if merge:
         if thoth:
