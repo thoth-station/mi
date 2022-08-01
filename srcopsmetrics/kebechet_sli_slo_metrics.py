@@ -65,7 +65,7 @@ class KebechetSliSloMetrics:
         kebechet_metrics = KebechetMetrics(repository, is_local=self.is_local)
 
         # get sli/slo for managers
-        # usage_sli_update = self._get_usage_sli_update_manager(kebechet_metrics)
+        usage_sli_update = self._get_usage_sli_update_manager(kebechet_metrics)
         usage_sli_version = self._get_usage_sli_version_manager(kebechet_metrics)
         usage_sli_advise = self._get_usage_sli_advise_manager(kebechet_metrics)
 
@@ -73,7 +73,7 @@ class KebechetSliSloMetrics:
         data = {
             "advise": usage_sli_advise,
             "version": usage_sli_version,
-            # "update": usage_sli_update,
+            "update": usage_sli_update,
         }
 
         return data
@@ -83,7 +83,7 @@ class KebechetSliSloMetrics:
         overall_sli_slo_data: Dict[str, Any] = {
             "advise": {"repository_usage_count": 0},
             "version": {"repository_usage_count": 0},
-            "update": {"repository_usage_count": None},
+            "update": {"repository_usage_count": 0},
             "overall_repositories": len(self.repositories),
         }
 
@@ -103,9 +103,9 @@ class KebechetSliSloMetrics:
             overall_sli_slo_data["version"]["repository_usage_count"] += data["version"]["is_used"]
 
             # TODO: update manager & other
-            # overall_sli_slo_data["update"] += (
-            #     data["update"]["is_used_in_issues"] or data["update"]["is_used_in_pull_requests"]
-            # )
+            overall_sli_slo_data["update"]["repository_usage_count"] += (
+                data["update"]["is_used_in_issues"] or data["update"]["is_used_in_pull_requests"]
+            )
 
         return (overall_sli_slo_data, raw_sli_slo_data)
 
@@ -143,6 +143,11 @@ class KebechetSliSloMetrics:
 
         version = pd.DataFrame(columns=USAGE_TIMESTAMPS_DATAFRAME_COLUMNS)
         version.timestamp = kebechet_metrics._get_version_manager_issues().created_at
+        version["manager_name"] = "version"
+
+        update = pd.DataFrame(columns=USAGE_TIMESTAMPS_DATAFRAME_COLUMNS)
+        update.timestamp = kebechet_metrics._get_update_manager_issues().created_at
+        # TODO add PRs
         version["manager_name"] = "version"
 
         data_list = [
