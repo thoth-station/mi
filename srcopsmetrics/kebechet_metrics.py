@@ -79,6 +79,7 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 def get_update_manager_request_type(title: str) -> Optional[str]:
     """Get the type of the update request."""
+    # needs to be exact match
     if title == UPDATE_TYPES_AND_KEYWORDS["manual"]:
         return "manual"
 
@@ -96,6 +97,30 @@ def get_version_manager_request_type(title: str) -> Optional[str]:
             return request_type
 
     return None
+
+
+def get_manager_request_type(title: str, manager_keywords: Dict[str, str]) -> Optional[str]:
+    """Get the type of the update request."""
+    for request_type, keyword in manager_keywords.items():
+        if keyword in title:
+            return request_type
+
+    return None
+
+
+# TODO: use this method instead of the specific ones for every manager
+def get_annotated_requests(data: pd.DataFrame, keyword_dictionary) -> pd.DataFrame:
+    """Return annotated requests for specific manager from data.
+
+    data object must have title column
+    """
+    if data.empty:
+        return pd.DataFrame()
+
+    data_copy = data.copy()
+    data_copy.request_type = data_copy.title.apply(lambda x: get_manager_request_type(x, keyword_dictionary))
+
+    return data_copy[~data_copy.request_type.isna()]
 
 
 class KebechetMetrics:
@@ -133,27 +158,15 @@ class KebechetMetrics:
         return None
 
     def _get_update_manager_issues(self):
-        data = []
-        for issue in self.issues.values():
-            issue_type = KebechetMetrics._get_update_manager_request_type(issue)
-            if not issue_type:
-                continue
+        update_issues = get_annotated_requests(self.issues, UPDATE_TYPES_AND_KEYWORDS)
 
-            created_at = int(issue["created_at"])
-            response = self._get_responded_time(issue)
-            ttre = response - created_at if response else None
+        update_issues["time_to_respond"] = update_issues.first_response_at - update_issues.created_at
 
-            closed_at = int(issue["closed_at"]) if issue["closed_at"] else None
-            closed_by = issue["closed_by"] if issue["closed_by"] else None
-            closed_by_bot = closed_by in BOT_NAMES if closed_by else False
-            ttci = closed_at - created_at if closed_at else None
+        update_issues["closed_by_bot"] = update_issues.closed_by.isin(BOT_NAMES)
 
-            data.append([created_at, issue_type, ttre, ttci, closed_by_bot])
+        update_issues["time_to_close"] = update_issues.closed_at - update_issues.created_at
 
-        df = pd.DataFrame(data)
-        df.columns = ["date", "type", "ttre", "ttci", "closed_by_bot"]
-
-        return df.sort_values(by=["date"]).reset_index(drop=True)
+        return update_issues.sort_values(by=["created_at"])
 
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
 
