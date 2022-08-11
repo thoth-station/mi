@@ -31,6 +31,7 @@ from srcopsmetrics.entities.issue import Issue
 from srcopsmetrics.entities.pull_request import PullRequest
 from srcopsmetrics.entities.thoth_advise_metrics import ThothAdviseMetrics
 from srcopsmetrics.entities.thoth_metrics import ThothMetrics
+from srcopsmetrics.entities.thoth_sli_slo import ThothSliSlo
 from srcopsmetrics.entities.thoth_version_manager_metrics import ThothVersionManagerMetrics
 from srcopsmetrics.entities.tools.storage import KnowledgeStorage
 from srcopsmetrics.storage import get_merge_path
@@ -78,6 +79,7 @@ _GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 def get_update_manager_request_type(title: str) -> Optional[str]:
     """Get the type of the update request."""
+    # needs to be exact match
     if title == UPDATE_TYPES_AND_KEYWORDS["manual"]:
         return "manual"
 
@@ -97,15 +99,28 @@ def get_version_manager_request_type(title: str) -> Optional[str]:
     return None
 
 
-def get_version_manager_issues(issues) -> pd.DataFrame:
-    """Get filtered issues related to version manager."""
-    if issues.empty:
+def get_manager_request_type(title: str, manager_keywords: Dict[str, str]) -> Optional[str]:
+    """Get the type of the update request."""
+    for request_type, keyword in manager_keywords.items():
+        if keyword in title:
+            return request_type
+
+    return None
+
+
+# TODO: use this method instead of the specific ones for every manager
+def get_annotated_requests(data: pd.DataFrame, keyword_dictionary) -> pd.DataFrame:
+    """Return annotated requests for specific manager from data.
+
+    data object must have title column
+    """
+    if data.empty:
         return pd.DataFrame()
 
-    version_issues = issues.copy()
-    version_issues.version_type = issues.title.apply(lambda x: get_version_manager_request_type(x))
+    data_copy = data.copy()
+    data_copy.request_type = data_copy.title.apply(lambda x: get_manager_request_type(x, keyword_dictionary))
 
-    return version_issues[~version_issues.version_type.isna()]
+    return data_copy[~data_copy.request_type.isna()]
 
 
 class KebechetMetrics:
@@ -115,7 +130,7 @@ class KebechetMetrics:
         """Initialize with collected knowledge."""
         self.repo_name = repository
 
-        self.prs = PullRequest(repository_name=repository).load_previous_knowledge(is_local=is_local)
+        self.pull_requests = PullRequest(repository_name=repository).load_previous_knowledge(is_local=is_local)
         self.issues = Issue(repository_name=repository).load_previous_knowledge(is_local=is_local)
 
         self.day = day
@@ -126,7 +141,7 @@ class KebechetMetrics:
         """Apply least square polynomial fit on time metrics data."""
         return np.poly1d(np.polyfit(x_series, y_series, degree))
 
-    def _compute_predictions(self, x_series: pd.Series, y_series: pd.Series, days_ahead: int = 7) -> np.array:
+    def _compute_predictions(self, x_series: pd.Series, y_series: pd.Series, days_ahead: int = 7):
         """Compute estimation of the mean metrics in time for future score.
 
         Return numpy.array with prediciton for all the available dates
@@ -143,36 +158,24 @@ class KebechetMetrics:
         return None
 
     def _get_update_manager_issues(self):
-        data = []
-        for issue in self.issues.values():
-            issue_type = KebechetMetrics._get_update_manager_request_type(issue)
-            if not issue_type:
-                continue
+        update_issues = get_annotated_requests(self.issues, UPDATE_TYPES_AND_KEYWORDS)
 
-            created_at = int(issue["created_at"])
-            response = self._get_responded_time(issue)
-            ttre = response - created_at if response else None
+        update_issues["time_to_respond"] = update_issues.first_response_at - update_issues.created_at
 
-            closed_at = int(issue["closed_at"]) if issue["closed_at"] else None
-            closed_by = issue["closed_by"] if issue["closed_by"] else None
-            closed_by_bot = closed_by in BOT_NAMES if closed_by else False
-            ttci = closed_at - created_at if closed_at else None
+        update_issues["closed_by_bot"] = update_issues.closed_by.isin(BOT_NAMES)
 
-            data.append([created_at, issue_type, ttre, ttci, closed_by_bot])
+        update_issues["time_to_close"] = update_issues.closed_at - update_issues.created_at
 
-        df = pd.DataFrame(data)
-        df.columns = ["date", "type", "ttre", "ttci", "closed_by_bot"]
-
-        return df.sort_values(by=["date"]).reset_index(drop=True)
+        return update_issues.sort_values(by=["created_at"])
 
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
 
-        if self.prs.empty:
+        if self.pull_requests.empty:
             return pd.DataFrame()
 
-        self.prs["type"] = self.prs["title"].apply(lambda x: get_update_manager_request_type(x))
+        self.pull_requests["type"] = self.pull_requests["title"].apply(lambda x: get_update_manager_request_type(x))
 
-        requests = self.prs[~self.prs["type"].isnull()].copy()
+        requests = self.pull_requests[~self.pull_requests["type"].isnull()].copy()
 
         requests["ttm"] = requests.merged_at.sub(requests.created_at)
         requests["tta"] = requests.first_approve_at - requests.created_at
@@ -188,10 +191,10 @@ class KebechetMetrics:
 
     def _get_advise_manager_pull_requests(self) -> pd.DataFrame:
 
-        if self.prs.empty:
+        if self.pull_requests.empty:
             return pd.DataFrame()
 
-        requests = self.prs.copy()
+        requests = self.pull_requests.copy()
 
         requests["ttm"] = requests.merged_at.sub(requests.created_at)
         requests["tta"] = requests.first_approve_at - requests.created_at
@@ -204,6 +207,16 @@ class KebechetMetrics:
         requests["rejected_by_kebechet_bot"] = not_merged & closed_by_bot
 
         return requests.sort_values(by=["created_at"]).reset_index(drop=True)
+
+    def _get_version_manager_issues(self) -> pd.DataFrame:
+        """Get filtered issues related to version manager."""
+        if self.issues.empty:
+            return pd.DataFrame()
+
+        version_issues = self.issues.copy()
+        version_issues.version_type = self.issues.title.apply(lambda x: get_version_manager_request_type(x))
+
+        return version_issues[~version_issues.version_type.isna()]
 
     def get_overall_stats_update_manager(self) -> Dict[str, Any]:
         """Return stats over whole repository age."""
@@ -383,7 +396,7 @@ class KebechetMetrics:
 
     def get_version_metrics_daily(self) -> pd.DataFrame:
         """Get metrics for version manager."""
-        issues = get_version_manager_issues(self.issues)
+        issues = self._get_version_manager_issues()
 
         if issues.empty:
             return pd.DataFrame()
@@ -421,15 +434,15 @@ class KebechetMetrics:
             from_singleton=True,
         )
 
-    def advise_manager(self):
-        """Calculate and store advise manager metrics."""
+    def advise_manager_daily_metrics(self):
+        """Calculate and store daily advise manager metrics."""
         advise_metrics_entity = ThothAdviseMetrics(self.repo_name, self.is_local)
         self.advise_metrics = self.get_advise_metrics_daily()
 
         self.save_metrics(self.advise_metrics, advise_metrics_entity, "advise_manager")
 
-    def version_manager(self):
-        """Calculate and store version manager metrics."""
+    def version_manager_daily_metrics(self):
+        """Calculate and store daily version manager metrics."""
         version_metrics_entity = ThothVersionManagerMetrics(self.repo_name, self.is_local)
         self.version_metrics = self.get_version_metrics_daily()
 
@@ -449,5 +462,24 @@ class KebechetMetrics:
 
     def evaluate_and_store_kebechet_metrics(self):
         """Calculate and store metrics for every kebechet manager in repository."""
-        self.version_manager()
-        self.advise_manager()
+        self.version_manager_daily_metrics()
+        self.advise_manager_daily_metrics()
+
+    def _is_advise_manager_used(self):
+        """Calculate and store SLI/SLO metrics for advise manager."""
+        return not self._get_advise_manager_pull_requests().empty
+
+    def _is_version_manager_used(self):
+        """Calculate and store SLI/SLO metrics for advise manager."""
+        return not self._get_version_manager_issues().empty
+
+    def evaluate_and_store_sli_slo_metrics(self):
+        """Calculate and store SLI/SLO metrics for Kebechet managers."""
+        sli_slo_metrics_entity = ThothSliSlo(self.repo_name, self.is_local)
+
+        usage_data = {
+            "advise_manager": self._is_advise_manager_used(),
+            "version_manager": self._is_version_manager_used(),
+        }
+
+        self.save_metrics(usage_data, sli_slo_metrics_entity, "sli_slo")

@@ -29,6 +29,7 @@ from srcopsmetrics.bot_knowledge import analyse_projects
 from srcopsmetrics.enums import EntityTypeEnum, StoragePath
 from srcopsmetrics.github_knowledge import GitHubKnowledge
 from srcopsmetrics.kebechet_metrics import KebechetMetrics
+from srcopsmetrics.kebechet_sli_slo_metrics import KebechetSliSloMetrics
 
 _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +38,7 @@ logging.basicConfig(level=logging.INFO)
 def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     """Get passed entities as list."""
     if entities_raw and entities_raw != "":
-        return entities_raw.split(",")
+        return [e.strip() for e in entities_raw.split(",")]
 
     return []
 
@@ -141,6 +142,12 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     default=StoragePath.MERGE_PATH.value,
     help="""Data/statistics are stored under this path.""",
 )
+@click.option(
+    "--sli-slo",
+    is_flag=True,
+    required=False,
+    help="""Launch sli-slo metrics calculation given repositories.""",
+)
 def cli(
     repository: Optional[str],
     organization: Optional[str],
@@ -155,6 +162,7 @@ def cli(
     metrics: bool,
     merge: bool,
     merge_path: str,
+    sli_slo: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
     os.environ["IS_LOCAL"] = "True" if is_local else "False"
@@ -174,39 +182,32 @@ def cli(
     if create_knowledge:
         analyse_projects(repositories=repos, is_local=is_local, entities=entities_args)
 
-    for project in repos:
-        os.environ["PROJECT"] = project
+    # for project in repos:
+    #     os.environ["PROJECT"] = project
 
     today = date.today()
     yesterday = today - timedelta(days=1)
 
     if thoth:
         _LOGGER.info("#### Launching thoth data analysis ####")
-        if repository and not merge:
+
+        if repository and not merge and not sli_slo:
             for repo in repos:
                 _LOGGER.info("Creating metrics for repository %s" % repo)
                 kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)
                 kebechet_metrics.evaluate_and_store_kebechet_metrics()
 
-        # TODO metrics class not working
-        # if metrics:
-        # repo_metrics = Metrics(repository=repos[0], visualize=visualize_statistics)
-
-        # repo_metrics.get_metrics_outliers_pull_requests()
-        # repo_metrics.get_metrics_outliers_issues()
-
-        # scores = repo_metrics.evaluate_scores_for_pull_requests()
-
-        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/pr_scores.json")
-        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores)
-
-        # scores_issues = repo_metrics.evaluate_scores_for_issues()
-        # path = Path(f"./srcopsmetrics/metrics/{repos[0]}/issue_scores.json")
-        # KnowledgeStorage(is_local=is_local).save_knowledge(file_path=path, data=scores_issues)
+        if sli_slo:
+            _LOGGER.info("#### Inspecting kebechet repositories and creating SLI/SLO metrics ####")
+            keb_sli_slo = KebechetSliSloMetrics(repositories=repos, is_local=is_local)
+            keb_sli_slo.evaluate_and_store_sli_slo_kebechet_metrics()
+            # keb_sli_slo.evaluate_and_store_usage_timestamp_sli_slo_kebechet_metrics()
 
     if merge:
         if thoth:
             _LOGGER.info("Merging kebechet metrics for %s" % yesterday)
+
+            ## TODO: merge action omitted ?
             KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError

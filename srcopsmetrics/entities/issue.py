@@ -75,6 +75,9 @@ class Issue(Entity):
             entry.source.issue.url for entry in timeline if entry.event == CROSS_REFERENCE_EVENT_KEYWORD
         ]
 
+        first_response = min(comments_list, key=lambda x: x["created_at"]) if comments_list else None
+        first_response_at = first_response["created_at"] if first_response else None
+
         self.stored_entities[str(issue.number)] = {
             "title": issue.title,
             "body": issue.body,
@@ -84,7 +87,8 @@ class Issue(Entity):
             "closed_at": int(issue.closed_at.timestamp()) if issue.closed_at is not None else None,
             "labels": GitHubKnowledge.get_labels(issue),
             "interactions": GitHubKnowledge.get_interactions(comments),
-            "first_response_at": min(comments_list, key=lambda x: int(x["created_at"])),
+            "first_response": first_response,
+            "first_response_at": first_response_at,
             "commenters_number": len(commenters),
             "comments_number": len(comments_list),
             "comments": comments_list,
