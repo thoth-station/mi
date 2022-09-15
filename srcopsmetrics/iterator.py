@@ -101,6 +101,9 @@ class KnowledgeAnalysis:
         except (GithubException, KeyboardInterrupt) as e:
             _LOGGER.warning(str(e))
             _LOGGER.warning("Problem occured, cached data will be saved")
+        except (NotImplementedError) as e:
+            _LOGGER.warning(str(e))
+            _LOGGER.warning("Entity '" + self.entity.name() + "' has not implemented Entity.analyse. Skipping.")
 
     def save_analysed_knowledge(self):
         """Save analysed knowledge if new information was extracted."""

@@ -142,8 +142,13 @@ class Entity(metaclass=ABCMeta):
             else:
                 raise NotImplementedError
         else:
-            new_data = pd.DataFrame.from_dict(self.stored_entities).T
-            to_save = pd.concat([new_data, self.previous_knowledge])
+            try:
+                new_data = pd.DataFrame.from_dict(self.stored_entities).T
+                to_save = pd.concat([new_data, self.previous_knowledge])
+            except Exception as e:
+                _LOGGER.warning("There was an error converting the stored entity to a DataFrame.")
+                _LOGGER.warning(str(e))
+                return
 
         _LOGGER.info("Knowledge file %s", (os.path.basename(file_path)))
         _LOGGER.info("new %d entities", len(self.stored_entities))
@@ -168,6 +173,7 @@ class Entity(metaclass=ABCMeta):
 
             _LOGGER.info("Saved on CEPH at %s/%s%s" % (s3.bucket, s3.prefix, ceph_filename))
         else:
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, "w") as f:
                 f.write(str(to_save))
             _LOGGER.info("Saved locally at %s" % file_path)
