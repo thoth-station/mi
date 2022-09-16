@@ -74,6 +74,8 @@ class KebechetSliSloMetrics:
             "advise": usage_sli_advise,
             "version": usage_sli_version,
             "update": usage_sli_update,
+            "missing_issue_metrics": kebechet_metrics.issues.empty,
+            "missing_pull_request_metrics": kebechet_metrics.pull_requests.empty
         }
 
         return data
@@ -85,6 +87,8 @@ class KebechetSliSloMetrics:
             "version": {"repository_usage_count": 0},
             "update": {"repository_usage_count": 0},
             "overall_repositories": len(self.repositories),
+            "repositories_missing_issue_metric": 0,
+            "repositories_missing_pull_request_metric": 0,
         }
 
         # raw data per repository
@@ -101,6 +105,8 @@ class KebechetSliSloMetrics:
             # add data to overall manager metrics count
             overall_sli_slo_data["advise"]["repository_usage_count"] += data["advise"]["is_used"]
             overall_sli_slo_data["version"]["repository_usage_count"] += data["version"]["is_used"]
+            overall_sli_slo_data["repositories_missing_issue_metric"] += data["missing_issue_metrics"]
+            overall_sli_slo_data["repositories_missing_pull_request_metric"] += data["missing_pull_request_metrics"]
 
             # TODO: update manager & other
             overall_sli_slo_data["update"]["repository_usage_count"] += (

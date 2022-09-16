@@ -160,6 +160,9 @@ class KebechetMetrics:
     def _get_update_manager_issues(self):
         update_issues = get_annotated_requests(self.issues, UPDATE_TYPES_AND_KEYWORDS)
 
+        if update_issues.empty:
+            return pd.DataFrame()
+
         update_issues["time_to_respond"] = update_issues.first_response_at - update_issues.created_at
 
         update_issues["closed_by_bot"] = update_issues.closed_by.isin(BOT_NAMES)
