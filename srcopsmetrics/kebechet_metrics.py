@@ -171,6 +171,17 @@ class KebechetMetrics:
 
         return update_issues.sort_values(by=["created_at"])
 
+    def _get_human_pull_request(self, filter_file=None) -> pd.DataFrame:
+        if self.pull_requests.empty:
+            return pd.DataFrame()
+
+        requests = self.pull_requests[self.pull_requests['labels'].apply(lambda x: 'bot' not in x)]
+
+        if(filter_file):
+            requests = requests[requests['changed_files'].apply(lambda x: filter_file in x)]
+
+        return requests.sort_values(by=["created_at"]).reset_index(drop=True)
+
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
 
         if self.pull_requests.empty:

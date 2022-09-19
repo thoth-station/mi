@@ -67,6 +67,7 @@ class PullRequest(Entity):
             "commits_number": int,
             "changed_files": [str],
             "changed_files_number": int,
+            "changed_files_changes": {str: int},
             "interactions": {str: int},
             "reviews": PullRequestReviews,
             "commits": [str],
@@ -97,6 +98,11 @@ class PullRequest(Entity):
 
         labels = [label.name for label in pull_request.get_labels()]
 
+        # get changed files changes
+        changes = {}
+        for f in pull_request.get_files():
+            changes[f.filename] = changes[f.filename] + f.changes  if f.filename in changes else f.changes
+
         # Evaluate size of PR
         pull_request_size = None
         if labels:
@@ -125,6 +131,7 @@ class PullRequest(Entity):
             "labels": labels,
             "commits": [c.sha for c in pull_request.get_commits()],
             "changed_files": [f.filename for f in pull_request.get_files()],
+            "changed_files_changes": changes,
             "first_review_at": get_first_review_time(reviews),
             "first_approve_at": get_approve_time(reviews),
         }
