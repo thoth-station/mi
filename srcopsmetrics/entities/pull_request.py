@@ -99,9 +99,9 @@ class PullRequest(Entity):
         labels = [label.name for label in pull_request.get_labels()]
 
         # get changed files changes
-        changes = {}
+        changes: Dict[str, int] = {}
         for f in pull_request.get_files():
-            changes[f.filename] = changes[f.filename] + f.changes  if f.filename in changes else f.changes
+            changes[f.filename] = changes[f.filename] + f.changes if f.filename in changes else f.changes
 
         # Evaluate size of PR
         pull_request_size = None

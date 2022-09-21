@@ -59,7 +59,7 @@ class KebechetSliSloMetrics:
         return {
             "is_used": is_used,
         }
- 
+
     def _get_source_code_changes_sli(self, kebechet_metrics, bot_prs):
         human_prs = kebechet_metrics._get_human_pull_request(filter_file="Pipfile.lock")
         total_lines_changed_by_bot = 0
@@ -85,8 +85,12 @@ class KebechetSliSloMetrics:
         usage_sli_version = self._get_usage_sli_version_manager(kebechet_metrics)
         usage_sli_advise = self._get_usage_sli_advise_manager(kebechet_metrics)
 
-        source_code_changes_sli_update = self._get_source_code_changes_sli(kebechet_metrics, kebechet_metrics._get_update_manager_pull_requests())
-        source_code_changes_sli_advise = self._get_source_code_changes_sli(kebechet_metrics, kebechet_metrics._get_advise_manager_pull_requests())
+        source_code_changes_sli_update = self._get_source_code_changes_sli(
+            kebechet_metrics, kebechet_metrics._get_update_manager_pull_requests()
+        )
+        source_code_changes_sli_advise = self._get_source_code_changes_sli(
+            kebechet_metrics, kebechet_metrics._get_advise_manager_pull_requests()
+        )
 
         # merge data into one dataframe with unique indices
         data = {
@@ -96,15 +100,23 @@ class KebechetSliSloMetrics:
             "missing_issue_metrics": kebechet_metrics.issues.empty,
             "missing_pull_request_metrics": kebechet_metrics.pull_requests.empty,
         }
-        
+
         return data
 
     def _get_sli_slo_for_all_managers(self) -> Tuple[Any, Any]:
         """Return a tuple of overall aggregated metrics and overall sli metrics for each repository."""
         overall_sli_slo_data: Dict[str, Any] = {
-            "advise": {"repository_usage_count": 0, "total_source_code_lines_changed_by_bot": 0, "percent_source_code_changes_by_bot": 0},
+            "advise": {
+                "repository_usage_count": 0,
+                "total_source_code_lines_changed_by_bot": 0,
+                "percent_source_code_changes_by_bot": 0,
+            },
             "version": {"repository_usage_count": 0},
-            "update": {"repository_usage_count": 0, "total_source_code_lines_changed_by_bot": 0, "percent_source_code_changes_by_bot": 0},
+            "update": {
+                "repository_usage_count": 0,
+                "total_source_code_lines_changed_by_bot": 0,
+                "percent_source_code_changes_by_bot": 0,
+            },
             "overall_repositories": len(self.repositories),
             "repositories_missing_issue_metric": 0,
             "repositories_missing_pull_request_metric": 0,
@@ -128,9 +140,13 @@ class KebechetSliSloMetrics:
             overall_sli_slo_data["repositories_missing_pull_request_metric"] += data["missing_pull_request_metrics"]
 
             # add data to overall code changes count
-            overall_sli_slo_data["advise"]["total_source_code_lines_changed_by_bot"] += data["advise"]["total_lines_changed_by_bot"]
+            overall_sli_slo_data["advise"]["total_source_code_lines_changed_by_bot"] += data["advise"][
+                "total_lines_changed_by_bot"
+            ]
             overall_sli_slo_data["advise"]["percent_source_code_changes_by_bot"] += data["advise"]["percent_by_bot"]
-            overall_sli_slo_data["update"]["total_source_code_lines_changed_by_bot"] += data["update"]["total_lines_changed_by_bot"]
+            overall_sli_slo_data["update"]["total_source_code_lines_changed_by_bot"] += data["update"][
+                "total_lines_changed_by_bot"
+            ]
             overall_sli_slo_data["update"]["percent_source_code_changes_by_bot"] += data["update"]["percent_by_bot"]
 
             # TODO: update manager & other

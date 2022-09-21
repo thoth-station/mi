@@ -56,19 +56,21 @@ def _parse_repos(repository: Optional[str], organization: Optional[str]):
 
 
 def _check_env_vars(is_local: bool):
-    if(not is_local):
-        ceph_needed_vars = ['CEPH_KEY_ID', 'CEPH_SECRET_KEY', 'CEPH_BUCKET_PREFIX', 'S3_ENDPOINT_URL', 'CEPH_BUCKET']
+    if not is_local:
+        ceph_needed_vars = ["CEPH_KEY_ID", "CEPH_SECRET_KEY", "CEPH_BUCKET_PREFIX", "S3_ENDPOINT_URL", "CEPH_BUCKET"]
         missing = []
         for env in ceph_needed_vars:
-            if os.getenv(env) == None:
+            if os.getenv(env) is None:
                 missing.append(env)
-        
+
         if len(missing) > 0:
             _LOGGER.warning("--is_local option is not set but Ceph environment variables are missing.")
-            _LOGGER.warning(f"Missing: " + ",".join(env))
+            _LOGGER.warning("Missing: " + ",".join(env))
 
-    if(os.getenv("GITHUB_ACCESS_TOKEN") == None):
-        _LOGGER.warning("Missing GITHUB_ACCESS_TOKEN environment variable; The rate limit of GitHub API request will be limited")
+    if os.getenv("GITHUB_ACCESS_TOKEN") is None:
+        _LOGGER.warning(
+            "Missing GITHUB_ACCESS_TOKEN environment variable; The rate limit of GitHub API request will be limited"
+        )
 
 
 def _set_env_vars(is_local: bool, knowledge_path: Optional[str], merge_path: Optional[str]):
@@ -237,7 +239,7 @@ def cli(
             KebechetMetrics.merge_kebechet_metrics_per_day(day=yesterday, is_local=is_local)
         else:
             raise NotImplementedError
-            
+
 
 if __name__ == "__main__":
     with logging_redirect_tqdm():
