@@ -219,7 +219,7 @@ def cli(
     if thoth:
         _LOGGER.info("#### Launching thoth data analysis ####")
 
-        if len(repos) > 0 and not merge and not sli_slo:
+        if repos and not merge and not sli_slo:
             for repo in repos:
                 _LOGGER.info("Creating metrics for repository %s" % repo)
                 kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)

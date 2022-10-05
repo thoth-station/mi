@@ -171,7 +171,7 @@ class KebechetMetrics:
 
         return update_issues.sort_values(by=["created_at"])
 
-    def _get_human_pull_request(self, filter_file=None) -> pd.DataFrame:
+    def get_human_pull_request(self, filter_file=None) -> pd.DataFrame:
         if self.pull_requests.empty:
             return pd.DataFrame()
 

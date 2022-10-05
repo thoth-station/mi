@@ -61,7 +61,7 @@ class KebechetSliSloMetrics:
         }
 
     def _get_source_code_changes_sli(self, kebechet_metrics, bot_prs):
-        human_prs = kebechet_metrics._get_human_pull_request(filter_file="Pipfile.lock")
+        human_prs = kebechet_metrics.get_human_pull_request(filter_file="Pipfile.lock")
         total_lines_changed_by_bot = 0
         total_lines_changed_by_human = 0
         for index, pr in bot_prs.iterrows():
