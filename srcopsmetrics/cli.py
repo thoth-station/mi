@@ -104,13 +104,6 @@ def _set_env_vars(is_local: bool, knowledge_path: Optional[str], merge_path: Opt
             Storage location is {StoragePath.KNOWLEDGE.value}
             Removes all previously processed storage""",
 )
-# @click.option(
-#     "--process-knowledge",
-#     "-p",
-#     is_flag=True,
-#     help=f"""Process knowledge into more explicit information from collected knowledge.
-#             Storage location is {StoragePath.PROCESSED.value}""",
-# )
 @click.option(
     "--is-local",
     "-l",
@@ -130,16 +123,6 @@ def _set_env_vars(is_local: bool, knowledge_path: Optional[str], merge_path: Opt
             """
     + "\n".join([entity.value for entity in EntityTypeEnum]),
 )
-# @click.option(
-#     "--visualize-statistics",
-#     "-v",
-#     is_flag=True,
-#     help="""Visualize statistics on the project repository knowledge collected.
-#             Dash application is launched and can be accesed at http://127.0.0.1:8050/""",
-# )
-# @click.option(
-#     "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
-# )
 @click.option(
     "--knowledge-path",
     "-k",
@@ -157,13 +140,13 @@ def _set_env_vars(is_local: bool, knowledge_path: Optional[str], merge_path: Opt
     required=False,
     help="""Launch performance analysis of Thoth Kebechet managers for specified repository for yesterday.""",
 )
-# @click.option(
-#     "--metrics",
-#     "-x",
-#     is_flag=True,
-#     required=False,
-#     help="""Launch Metrics Calculation for specified repository.""",
-# )
+@click.option(
+    "--metrics",
+    "-x",
+    is_flag=True,
+    required=False,
+    help="""Launch Metrics Calculation for specified repository.""",
+)
 @click.option(
     "--merge",
     "-m",
@@ -188,14 +171,11 @@ def cli(
     repository: Optional[str],
     organization: Optional[str],
     create_knowledge: bool,
-    # process_knowledge: bool,
     is_local: bool,
     entities: Optional[str],
-    # visualize_statistics: bool,
-    # reviewer_reccomender: bool,
     knowledge_path: str,
     thoth: bool,
-    # metrics: bool,
+    metrics: bool,
     merge: bool,
     merge_path: str,
     sli_slo: bool,
