@@ -1,5 +1,45 @@
 # Changelog for Thoth's Template GitHub Project
 
+## Release 2.12.0 (2022-10-12T18:48:59)
+* 20049ae added comments
+* 6dac506 removed unused params
+* 9a576ea Apply suggestions from code review
+* 16a9764 pre-commit fixes
+* a88a735 Added code change sli
+* d5d590f :ship: Bump up base image initialized in CI.
+* a676faa :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 331df84 sli/slo metrics dont fail on missing data and report missing
+* 98e55d1 added cli helpers and warnings for unset envs
+* 29f4ffd added try catches to avoid failing
+* b64ae33 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment (#606)
+* 1605a94 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment (#605)
+* 963bbbe :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 88ee432 Use dataframe handling for update manager metrics calculation
+* 1ab2ae2 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 0cc4225 Add update manager metrics
+* b19c348 Add first_response and fix first_response_at fields
+* 25aa916 Strip passed entities argument
+* d89c4e9 Add thoth_sli_slo entity class
+* 6497b95 Add usage count metrics
+* c9868f9 :ship: Bump up base image initialized in CI.
+* c77be6c :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* b60eea3 Add type hint for get_merge_path method
+* 8627c7a Disable update manager stats, fix saving
+* 79ce658 :ship: Bump up base image initialized in CI.
+* a8d9ac5 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 55fe45a Fix cli sli-slo calling bugs
+* 6fdfaea :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* 5cbcd51 :arrow_up: Automatic update of dependencies by Kebechet for the ubi8 environment
+* a5475de Implement kebechet sli slo metrics class
+* 31a4076 Add cli option for sli-slo metrics
+* a6f3ed1 Add additional functions and helpers
+* 96ecaea Add basic functions in wip state
+* 10710bf Implement kebechet sli slo metrics class
+* a7aa1c6 Remove hypothesis, update Pipfile.lock
+* db8e343 Add cli option for sli-slo metrics
+* adee57b Add additional functions and helpers
+* b101145 Add basic functions in wip state
+
 ## Release 2.11.1 (2022-06-15T14:09:04)
 * 880e194 Remove francesco and fridex from OWNERS
 * bee8aa8 Convert timestamp to int
