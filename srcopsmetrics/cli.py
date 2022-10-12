@@ -35,12 +35,48 @@ _LOGGER = logging.getLogger("aicoe-src-ops-metrics")
 logging.basicConfig(level=logging.INFO)
 
 
-def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
+def _parse_entities(entities_raw: Optional[str]) -> List[str]:
     """Get passed entities as list."""
     if entities_raw and entities_raw != "":
         return [e.strip() for e in entities_raw.split(",")]
 
     return []
+
+
+def _parse_repos(repository: Optional[str], organization: Optional[str]):
+    repos = []
+
+    if repository:
+        for rep in repository.split(","):
+            repos.extend(GitHubKnowledge().get_repositories(repository=rep.strip()))
+    if organization:
+        repos.extend(GitHubKnowledge().get_repositories(organization=organization))
+
+    return repos
+
+
+def _check_env_vars(is_local: bool):
+    if not is_local:
+        ceph_needed_vars = ["CEPH_KEY_ID", "CEPH_SECRET_KEY", "CEPH_BUCKET_PREFIX", "S3_ENDPOINT_URL", "CEPH_BUCKET"]
+        missing = []
+        for env in ceph_needed_vars:
+            if os.getenv(env) is None:
+                missing.append(env)
+
+        if len(missing) > 0:
+            _LOGGER.warning("--is_local option is not set but Ceph environment variables are missing.")
+            _LOGGER.warning("Missing: " + ",".join(env))
+
+    if os.getenv("GITHUB_ACCESS_TOKEN") is None:
+        _LOGGER.warning(
+            "Missing GITHUB_ACCESS_TOKEN environment variable; The rate limit of GitHub API request will be limited"
+        )
+
+
+def _set_env_vars(is_local: bool, knowledge_path: Optional[str], merge_path: Optional[str]):
+    os.environ["IS_LOCAL"] = "True" if is_local else "False"
+    os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
+    os.environ[StoragePath.MERGE_LOCATION_ENVVAR_NAME.value] = merge_path
 
 
 @click.command()
@@ -69,13 +105,6 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             Removes all previously processed storage""",
 )
 @click.option(
-    "--process-knowledge",
-    "-p",
-    is_flag=True,
-    help=f"""Process knowledge into more explicit information from collected knowledge.
-            Storage location is {StoragePath.PROCESSED.value}""",
-)
-@click.option(
     "--is-local",
     "-l",
     is_flag=True,
@@ -93,16 +122,6 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
             Current entities available are:
             """
     + "\n".join([entity.value for entity in EntityTypeEnum]),
-)
-@click.option(
-    "--visualize-statistics",
-    "-v",
-    is_flag=True,
-    help="""Visualize statistics on the project repository knowledge collected.
-            Dash application is launched and can be accesed at http://127.0.0.1:8050/""",
-)
-@click.option(
-    "--reviewer-reccomender", "-R", is_flag=True, help="Assign reviewers based on previous knowledge collected."
 )
 @click.option(
     "--knowledge-path",
@@ -146,17 +165,14 @@ def get_entities_as_list(entities_raw: Optional[str]) -> List[str]:
     "--sli-slo",
     is_flag=True,
     required=False,
-    help="""Launch sli-slo metrics calculation given repositories.""",
+    help="""Launch sli-slo metrics calculation given repositories. Must be used in conjunction with -t""",
 )
 def cli(
     repository: Optional[str],
     organization: Optional[str],
     create_knowledge: bool,
-    process_knowledge: bool,
     is_local: bool,
     entities: Optional[str],
-    visualize_statistics: bool,
-    reviewer_reccomender: bool,
     knowledge_path: str,
     thoth: bool,
     metrics: bool,
@@ -165,19 +181,11 @@ def cli(
     sli_slo: bool,
 ):
     """Command Line Interface for SrcOpsMetrics."""
-    os.environ["IS_LOCAL"] = "True" if is_local else "False"
-    os.environ[StoragePath.LOCATION_VAR.value] = knowledge_path
-    os.environ[StoragePath.MERGE_LOCATION_ENVVAR_NAME.value] = merge_path
+    _check_env_vars(is_local=is_local)
+    _set_env_vars(is_local=is_local, knowledge_path=knowledge_path, merge_path=merge_path)
 
-    repos = []
-
-    if repository:
-        for rep in repository.split(","):
-            repos.extend(GitHubKnowledge().get_repositories(repository=rep.strip()))
-    if organization:
-        repos.extend(GitHubKnowledge().get_repositories(organization=organization))
-
-    entities_args = get_entities_as_list(entities)
+    repos = _parse_repos(repository=repository, organization=organization)
+    entities_args = _parse_entities(entities)
 
     if create_knowledge:
         analyse_projects(repositories=repos, is_local=is_local, entities=entities_args)
@@ -191,7 +199,7 @@ def cli(
     if thoth:
         _LOGGER.info("#### Launching thoth data analysis ####")
 
-        if repository and not merge and not sli_slo:
+        if repos and not merge and not sli_slo:
             for repo in repos:
                 _LOGGER.info("Creating metrics for repository %s" % repo)
                 kebechet_metrics = KebechetMetrics(repository=repo, day=yesterday, is_local=is_local)

@@ -160,6 +160,9 @@ class KebechetMetrics:
     def _get_update_manager_issues(self):
         update_issues = get_annotated_requests(self.issues, UPDATE_TYPES_AND_KEYWORDS)
 
+        if update_issues.empty:
+            return pd.DataFrame()
+
         update_issues["time_to_respond"] = update_issues.first_response_at - update_issues.created_at
 
         update_issues["closed_by_bot"] = update_issues.closed_by.isin(BOT_NAMES)
@@ -167,6 +170,18 @@ class KebechetMetrics:
         update_issues["time_to_close"] = update_issues.closed_at - update_issues.created_at
 
         return update_issues.sort_values(by=["created_at"])
+
+    def get_human_pull_request(self, filter_file=None) -> pd.DataFrame:
+        """Get pull requests made by a human."""
+        if self.pull_requests.empty:
+            return pd.DataFrame()
+
+        requests = self.pull_requests[self.pull_requests["labels"].apply(lambda x: "bot" not in x)]
+
+        if filter_file:
+            requests = requests[requests["changed_files"].apply(lambda x: filter_file in x)]
+
+        return requests.sort_values(by=["created_at"]).reset_index(drop=True)
 
     def _get_update_manager_pull_requests(self) -> pd.DataFrame:
 
